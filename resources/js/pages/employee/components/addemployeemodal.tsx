@@ -8,7 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Employees, initialEmployeeFormData } from '@/hooks/employees';
 import { useForm } from '@inertiajs/react';
-import axios from 'axios';
 import { ChevronDownIcon, Fingerprint, Save, User } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,9 +23,10 @@ import FingerprintCapture from './fingerprintcapture';
 interface EmployeeDetails {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
-const AddEmployeeModal = ({ isOpen, onClose }: EmployeeDetails) => {
+const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
     const [openService, setOpenService] = useState(false);
     const [openBirth, setOpenBirth] = useState(false);
     const [date, setDate] = useState<Date | undefined>(undefined);
@@ -204,32 +204,33 @@ const AddEmployeeModal = ({ isOpen, onClose }: EmployeeDetails) => {
     const handleSaveInfo: FormEventHandler = async (event) => {
         event.preventDefault();
         if (savedEmployee) return; // Prevent double submit
+
+        // Debug log the form data being sent
+        console.log('Form data being submitted:', data);
+
         post(route('employee.store'), {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: async (page) => {
-                // Fetch the latest employee by employeeid from the new API endpoint using axios
-                if (data.employeeid) {
-                    try {
-                        const res = await axios.get('/api/employee/by-employeeid', {
-                            params: { employeeid: data.employeeid },
-                        });
-                        if (res.data && res.data.id) {
-                            setSavedEmployee(res.data);
-                        } else {
-                            setSavedEmployee({ ...data });
-                        }
-                    } catch {
-                        setSavedEmployee({ ...data });
-                    }
-                } else {
-                    setSavedEmployee({ ...data });
-                }
+                // Use the form data as the saved employee since the creation was successful
+                console.log('Employee created successfully:', data);
+                setSavedEmployee({ ...data });
                 toast.success('Employee info saved! Now register fingerprint.');
+
+                // Call the onSuccess callback to refresh the employee list
+                if (onSuccess) {
+                    onSuccess();
+                }
             },
             onError: (errors) => {
                 console.error('Validation errors:', errors);
-                
+                console.log('Form data that failed:', data);
+
+                // Show all errors in console for debugging
+                Object.keys(errors).forEach((key) => {
+                    console.error(`Error for ${key}:`, errors[key]);
+                });
+
                 // Show specific error messages for better user experience
                 if (errors.employeeid) {
                     toast.error(`Employee ID Error: ${errors.employeeid}`);
@@ -397,7 +398,9 @@ const AddEmployeeModal = ({ isOpen, onClose }: EmployeeDetails) => {
                                 }}
                                 aria-invalid={!!errors.gender}
                             >
-                                <SelectTrigger className={`border-green-300 focus:border-cfar-500 ${errors.gender ? 'border-red-500 focus:border-red-500' : ''}`}>
+                                <SelectTrigger
+                                    className={`border-green-300 focus:border-cfar-500 ${errors.gender ? 'border-red-500 focus:border-red-500' : ''}`}
+                                >
                                     <SelectValue placeholder="Select Gender" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -553,9 +556,9 @@ const AddEmployeeModal = ({ isOpen, onClose }: EmployeeDetails) => {
                                 <SelectContent>
                                     {availablePositions.length > 0 ? (
                                         availablePositions.map((pos) => (
-                                        <SelectItem key={pos} value={pos}>
-                                            {pos}
-                                        </SelectItem>
+                                            <SelectItem key={pos} value={pos}>
+                                                {pos}
+                                            </SelectItem>
                                         ))
                                     ) : (
                                         <div className="px-2 py-1.5 text-sm text-muted-foreground">

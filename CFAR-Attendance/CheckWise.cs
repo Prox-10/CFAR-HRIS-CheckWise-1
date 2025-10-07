@@ -88,7 +88,7 @@ namespace HRIS_CheckWise_ATMS_
         {
             try
             {
-                SoundPlayer player = new SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\success.wav"); // adjust path if needed
+                SoundPlayer player = new SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\success.wav"); // adjust path if needed
                 player.Play();
             }
             catch (Exception ex)
@@ -101,7 +101,7 @@ namespace HRIS_CheckWise_ATMS_
         {
             try
             {
-                SoundPlayer player = new SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\error.wav"); // adjust path if needed
+                SoundPlayer player = new SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav"); // adjust path if needed
                 player.Play();
             }
             catch (Exception ex)

@@ -241,6 +241,7 @@
     <Content Include="Properties\success.wav" />
     <None Include="Resources\Logo NEW.png" />
     <None Include="Resources\Logo NEW1.png" />
+    <Content Include="Sound\error.wav" />
     <Content Include="Sound\success.wav" />
     <Content Include="success.wav" />
   </ItemGroup>

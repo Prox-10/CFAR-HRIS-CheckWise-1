@@ -1,21 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using Avalonia;
 using DPFP;
 using DPFP.Capture;
 using DPFP.Processing;
 using DPFP.Verification;
 using MySql.Data.MySqlClient;
-using System.IO;
-using System.Media;
-using WebSocketSharp;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Media;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using WebSocketSharp;
 
 namespace HRIS_CheckWise_ATMS_
 {
@@ -248,14 +249,14 @@ namespace HRIS_CheckWise_ATMS_
             {
                 SetStatus("No match found in database.");
                 // Play error sound
-                System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\error.wav");
+                System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                 player.Play();
                 // Show error toast for unregistered fingerprint
                 new Toast(ToastType.Error, "Fingerprint Not Registered", "This fingerprint is not registered to any employee.").Show();
             }
             IsDbVerifying = true;
         }
-
+        
         private void VerifyEmployeeFromDatabase(string employeeId)
         {
             try
@@ -283,7 +284,7 @@ namespace HRIS_CheckWise_ATMS_
                             new Toast(ToastType.Success, "Successfully", "Attendance.").Show();
 
                             // Play success sound
-                            System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\success.wav");
+                            System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\success.wav");
                             player.Play();
                         }
                     }
@@ -292,7 +293,7 @@ namespace HRIS_CheckWise_ATMS_
             catch (Exception ex)
             {
                 // Play error sound
-                System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\error.wav");
+                System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                 player.Play();
                 MessageBox.Show("Error verifying employee: " + ex.Message);
             }
@@ -387,7 +388,7 @@ namespace HRIS_CheckWise_ATMS_
                     string message = $"Attendance not allowed at this time. Current time: {now.ToString("hh:mm:ss tt")}. Active session: {currentSession}";
                     
                     // Play error sound
-                    System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\error.wav");
+                    System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                     player.Play();
                     
                     // Show error message
@@ -728,7 +729,7 @@ namespace HRIS_CheckWise_ATMS_
                 }
                 catch (Exception ex)
                 {
-                    System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\C#\HRIS-CheckWise(ATMS)\Sound\error.wav");
+                    System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                     player.Play();
                     MessageBox.Show("Optional attendance error: " + ex.Message);
                 }

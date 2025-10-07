@@ -455,7 +455,6 @@ C:\C#\CFAR-Attendance\bin\Debug\System.Numerics.Vectors.xml
 C:\C#\CFAR-Attendance\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
 C:\C#\CFAR-Attendance\bin\Debug\System.Threading.Tasks.Extensions.xml
 C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).csproj.AssemblyReference.cache
-C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe.config
 C:\C#\CFAR-Attendance\obj\Debug\Avalonia\Resources.Inputs.cache
 C:\C#\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.CheckWise.resources
 C:\C#\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.Properties.Resources.resources
@@ -467,3 +466,84 @@ C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).csproj.CoreCompileInputs.ca
 C:\C#\CFAR-Attendance\obj\Debug\HRIS-Che.D286A6FE.Up2Date
 C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe
 C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).pdb
+C:\C#\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe.config
+C:\visual studio code\CFAR-Attendance\bin\Debug\HRIS-CheckWise(ATMS).exe.config
+C:\visual studio code\CFAR-Attendance\bin\Debug\HRIS-CheckWise(ATMS).exe
+C:\visual studio code\CFAR-Attendance\bin\Debug\HRIS-CheckWise(ATMS).pdb
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Base.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Controls.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.DesignerSupport.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Dialogs.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Markup.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Markup.Xaml.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Metal.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.MicroCom.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.OpenGL.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Remote.Protocol.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Vulkan.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\BouncyCastle.Cryptography.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Google.Protobuf.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Guna.Charts.WinForms.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Guna.UI2.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Compression.LZ4.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Compression.LZ4.Streams.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Hash.xxHash.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\MicroCom.Runtime.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\MySql.Data.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Newtonsoft.Json.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Buffers.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.ComponentModel.Annotations.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Configuration.ConfigurationManager.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Diagnostics.DiagnosticSource.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.IO.Pipelines.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Memory.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Numerics.Vectors.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Threading.Tasks.Extensions.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\websocket-sharp.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\ZstdSharp.dll
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Base.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Controls.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.DesignerSupport.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Dialogs.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Markup.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Markup.Xaml.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Metal.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.MicroCom.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.OpenGL.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Remote.Protocol.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Avalonia.Vulkan.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\BouncyCastle.Cryptography.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Google.Protobuf.pdb
+C:\visual studio code\CFAR-Attendance\bin\Debug\Google.Protobuf.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Guna.Charts.WinForms.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Compression.LZ4.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Compression.LZ4.Streams.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\K4os.Hash.xxHash.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\MySql.Data.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\Newtonsoft.Json.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Buffers.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Configuration.ConfigurationManager.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Diagnostics.DiagnosticSource.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.IO.Pipelines.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Memory.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Numerics.Vectors.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+C:\visual studio code\CFAR-Attendance\bin\Debug\System.Threading.Tasks.Extensions.xml
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).csproj.AssemblyReference.cache
+C:\visual studio code\CFAR-Attendance\obj\Debug\Avalonia\Resources.Inputs.cache
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.CheckWise.resources
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.Properties.Resources.resources
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.Attendance.resources
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS_CheckWise_ATMS_.Toast.resources
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).csproj.GenerateResource.cache
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).GeneratedMSBuildEditorConfig.editorconfig
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).csproj.CoreCompileInputs.cache
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-Che.D286A6FE.Up2Date
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).pdb
+C:\visual studio code\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe.config

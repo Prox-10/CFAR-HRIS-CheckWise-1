@@ -30,15 +30,15 @@ class EmployeeRequest extends FormRequest
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
-            'phone' => 'nullable|string|min:11',
+            'phone' => 'nullable|string',
             'gender' => 'required|string|max:255',
             'marital_status' => 'required|string|max:255',
             'nationality' => 'nullable|string|max:255',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'state' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
-            'zip_code' => 'required|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'zip_code' => 'nullable|string|max:255',
             'work_status' => 'required|string|max:255',
             'service_tenure' => 'required|date',
             'date_of_birth' => 'required|date',
@@ -85,7 +85,6 @@ class EmployeeRequest extends FormRequest
             
             // Phone validation messages
             'phone.string' => 'The phone number must be a text value.',
-            'phone.min' => 'The phone number must be at least 11 characters long.',
             
             // Gender validation messages
             'gender.required' => 'Please select the employee\'s gender.',
@@ -102,23 +101,18 @@ class EmployeeRequest extends FormRequest
             'nationality.max' => 'The nationality may not be greater than 255 characters.',
             
             // Address validation messages
-            'address.required' => 'Please enter the employee\'s address.',
             'address.string' => 'The address must be a text value.',
             'address.max' => 'The address may not be greater than 255 characters.',
             
-            'city.required' => 'Please enter the city.',
             'city.string' => 'The city must be a text value.',
             'city.max' => 'The city may not be greater than 255 characters.',
             
-            'state.required' => 'Please enter the state.',
             'state.string' => 'The state must be a text value.',
             'state.max' => 'The state may not be greater than 255 characters.',
             
-            'country.required' => 'Please enter the country.',
             'country.string' => 'The country must be a text value.',
             'country.max' => 'The country may not be greater than 255 characters.',
             
-            'zip_code.required' => 'Please enter the zip code.',
             'zip_code.string' => 'The zip code must be a text value.',
             'zip_code.max' => 'The zip code may not be greater than 255 characters.',
             

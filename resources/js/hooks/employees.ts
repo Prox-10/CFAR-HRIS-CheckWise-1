@@ -86,7 +86,7 @@ export const initialEmployeeFormData: Employees = {
     picture: null,
     country: '',
     zip_code: '',
-    nationality: undefined,
+    nationality: '',
     philhealth: '',
     tin: '',
     sss: '',

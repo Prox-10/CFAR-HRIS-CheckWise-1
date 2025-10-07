@@ -125,7 +125,6 @@ namespace HRIS_CheckWise_ATMS_
             dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(71)))), ((int)(((byte)(69)))), ((int)(((byte)(94)))));
             this.attendanceTable.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             this.attendanceTable.BackgroundColor = System.Drawing.Color.Honeydew;
-            this.attendanceTable.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Single;
             this.attendanceTable.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle2.BackColor = System.Drawing.Color.MediumSeaGreen;

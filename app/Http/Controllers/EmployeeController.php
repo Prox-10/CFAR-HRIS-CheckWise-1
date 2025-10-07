@@ -217,6 +217,14 @@ class EmployeeController extends Controller
     public function store(EmployeeRequest $request)
     {
         try {
+            // Log the incoming request data for debugging
+            \Log::info('Employee creation request received', [
+                'employeeid' => $request->employeeid,
+                'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
+                'email' => $request->email
+            ]);
+
             $fullName = $request->firstname . ' '
                 . ($request->middlename ? $request->middlename . ' ' : '')
                 . $request->lastname;
@@ -249,6 +257,9 @@ class EmployeeController extends Controller
                 'gmail_password' => $request->gmail_password
             ];
 
+            // Log the data array before creating
+            \Log::info('Employee data array prepared', $data);
+
             if ($request->hasFile('picture')) {
                 $file = $request->file('picture');
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -263,9 +274,26 @@ class EmployeeController extends Controller
                 $data['recommendation_letter'] = '/storage/' . $path;
             }
 
-            $employee = Employee::create($data);
+            // Try to create the employee with error handling
+            try {
+                $employee = Employee::create($data);
+                \Log::info('Employee::create() called successfully', ['employee_id' => $employee->id ?? 'null']);
+            } catch (\Exception $e) {
+                \Log::error('Employee::create() failed', [
+                    'error' => $e->getMessage(),
+                    'data' => $data
+                ]);
+                throw $e;
+            }
 
             if ($employee) {
+                // Log the successful creation for debugging
+                \Log::info('Employee created successfully', [
+                    'employee_id' => $employee->id,
+                    'employeeid' => $employee->employeeid,
+                    'employee_name' => $employee->employee_name
+                ]);
+                
                 // Only return JSON for API requests
                 if ($request->wantsJson() || $request->is('api/*')) {
                     return response()->json([
@@ -274,8 +302,10 @@ class EmployeeController extends Controller
                         'employee' => $employee,
                     ], 201);
                 }
-                // For Inertia/web requests, always redirect
-                return redirect()->route('employee.index')->with('success', 'Create employee successfully');
+                // For Inertia/web requests, redirect back with success message
+                return redirect()->back()->with('success', 'Employee created successfully');
+            } else {
+                \Log::error('Employee creation returned null/empty result');
             }
 
             if ($request->wantsJson() || $request->is('api/*')) {
