@@ -170,6 +170,32 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
         event.preventDefault();
         setLoading(true);
 
+        // Prepare form data with all required field fixes for Add Crew
+        const formData = { ...data };
+        if (isAddCrew) {
+            if (!formData.email || formData.email === null) {
+                formData.email = '';
+            }
+            if (!formData.employeeid || formData.employeeid === null) {
+                formData.employeeid = '';
+            }
+            if (!formData.department || formData.department === null) {
+                formData.department = '';
+            }
+            if (!formData.position || formData.position === null) {
+                formData.position = '';
+            }
+            if (!formData.service_tenure || formData.service_tenure === null) {
+                formData.service_tenure = '';
+            }
+            if (!formData.marital_status || formData.marital_status === null) {
+                formData.marital_status = '';
+            }
+        }
+
+        // Update the form data before submission
+        setData(formData);
+
         post(route('employee.update', employee?.id), {
             forceFormData: true,
             onSuccess: () => {
@@ -177,19 +203,19 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                 if (employee) {
                     onUpdate({
                         ...employee,
-                        employeeid: data.employeeid,
-                        firstname: data.firstname,
-                        middlename: data.middlename,
-                        lastname: data.lastname,
-                        gender: data.gender,
-                        department: data.department,
-                        position: data.position,
-                        phone: data.phone,
-                        work_status: data.work_status,
-                        marital_status: data.marital_status,
-                        service_tenure: data.service_tenure,
-                        date_of_birth: data.date_of_birth,
-                        email: data.email,
+                        employeeid: formData.employeeid,
+                        firstname: formData.firstname,
+                        middlename: formData.middlename,
+                        lastname: formData.lastname,
+                        gender: formData.gender,
+                        department: formData.department,
+                        position: formData.position,
+                        phone: formData.phone,
+                        work_status: formData.work_status,
+                        marital_status: formData.marital_status,
+                        service_tenure: formData.service_tenure,
+                        date_of_birth: formData.date_of_birth,
+                        email: formData.email,
                     });
                 }
                 closeModalWithDelay(1200);
@@ -646,37 +672,36 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                         </div>
                     </div>
 
-
                     <div>
-                                <h3 className="text-lg font-bold">Gmail Account</h3>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <Label>Email Address</Label>
-                        <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                        <Input
-                            type="email"
-                            placeholder="Enter email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            className={`border-green-300 focus:border-cfar-500 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
-                            aria-invalid={!!errors.email}
-                        />
-                        <InputError message={errors.email} />
+                        <h3 className="text-lg font-bold">Gmail Account</h3>
                     </div>
-                    <div>
-                        <Label>Password</Label>
-                        <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                        <Input
-                            type="text"
-                            placeholder="Enter password..."
-                            value={data.gmail_password}
-                            onChange={(e) => setData('gmail_password', e.target.value)}
-                            className="border-green-300 focus:border-cfar-500"
-                            aria-invalid={!!errors.gmail_password}
-                        />
-                        <InputError message={errors.gmail_password} />
-                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <Label>Email Address</Label>
+                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                            <Input
+                                type="email"
+                                placeholder="Enter email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                className={`border-green-300 focus:border-cfar-500 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
+                                aria-invalid={!!errors.email}
+                            />
+                            <InputError message={errors.email} />
+                        </div>
+                        <div>
+                            <Label>Password</Label>
+                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                            <Input
+                                type="text"
+                                placeholder="Enter password..."
+                                value={data.gmail_password}
+                                onChange={(e) => setData('gmail_password', e.target.value)}
+                                className="border-green-300 focus:border-cfar-500"
+                                aria-invalid={!!errors.gmail_password}
+                            />
+                            <InputError message={errors.gmail_password} />
+                        </div>
                     </div>
                     {!isAddCrew && (
                         <>

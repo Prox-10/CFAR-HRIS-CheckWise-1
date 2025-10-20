@@ -209,16 +209,42 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
         event.preventDefault();
         if (savedEmployee) return; // Prevent double submit
 
+        // Prepare form data with all required field fixes for Add Crew
+        const formData = { ...data };
+        if (isAddCrew) {
+            if (!formData.email || formData.email === null) {
+                formData.email = '';
+            }
+            if (!formData.employeeid || formData.employeeid === null) {
+                formData.employeeid = '';
+            }
+            if (!formData.department || formData.department === null) {
+                formData.department = '';
+            }
+            if (!formData.position || formData.position === null) {
+                formData.position = '';
+            }
+            if (!formData.service_tenure || formData.service_tenure === null) {
+                formData.service_tenure = '';
+            }
+            if (!formData.marital_status || formData.marital_status === null) {
+                formData.marital_status = '';
+            }
+        }
+
         // Debug log the form data being sent
-        console.log('Form data being submitted:', data);
+        console.log('Form data being submitted:', formData);
+
+        // Update the form data before submission
+        setData(formData);
 
         post(route('employee.store'), {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: async (page) => {
                 // Use the form data as the saved employee since the creation was successful
-                console.log('Employee created successfully:', data);
-                setSavedEmployee({ ...data });
+                console.log('Employee created successfully:', formData);
+                setSavedEmployee({ ...formData });
                 toast.success('Employee info saved! Now register fingerprint.');
 
                 // Call the onSuccess callback to refresh the employee list
@@ -228,7 +254,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
             },
             onError: (errors) => {
                 console.error('Validation errors:', errors);
-                console.log('Form data that failed:', data);
+                console.log('Form data that failed:', formData);
 
                 // Show all errors in console for debugging
                 Object.keys(errors).forEach((key) => {
