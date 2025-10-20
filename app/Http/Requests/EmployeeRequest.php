@@ -33,7 +33,6 @@ class EmployeeRequest extends FormRequest
             'phone' => 'nullable|string',
             'gender' => 'required|string|max:255',
             'marital_status' => 'required|string|max:255',
-            'nationality' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
@@ -45,12 +44,24 @@ class EmployeeRequest extends FormRequest
             'department' => 'required|string|max:255',
             'position' => 'required|string|max:255',
             'picture' => 'nullable|image|max:2048',
-            'sss' => 'nullable|string|max:255',
-            'pag_ibig' => 'nullable|string|max:255',
-            'philhealth' => 'nullable|string|max:255',
-            'tin' => 'nullable|string|max:255',
             'gmail_password' => 'nullable|string|max:255',
             'recommendation_letter' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,gif,bmp,tiff,txt,rtf|max:10240', // 10MB max
+            // HDMF fields
+            'hdmf_user_id' => 'nullable|string|max:255',
+            'hdmf_username' => 'nullable|string|max:255',
+            'hdmf_password' => 'nullable|string|max:255',
+            // SSS fields
+            'sss_user_id' => 'nullable|string|max:255',
+            'sss_username' => 'nullable|string|max:255',
+            'sss_password' => 'nullable|string|max:255',
+            // Philhealth fields
+            'philhealth_user_id' => 'nullable|string|max:255',
+            'philhealth_username' => 'nullable|string|max:255',
+            'philhealth_password' => 'nullable|string|max:255',
+            // TIN fields
+            'tin_user_id' => 'nullable|string|max:255',
+            'tin_username' => 'nullable|string|max:255',
+            'tin_password' => 'nullable|string|max:255',
             'fingerprint_template'    => 'nullable|string',
             'fingerprint_image'       => 'nullable|string',
             'fingerprint_captured_at' => 'nullable|date',
@@ -96,10 +107,6 @@ class EmployeeRequest extends FormRequest
             'marital_status.string' => 'The marital status must be a text value.',
             'marital_status.max' => 'The marital status may not be greater than 255 characters.',
             
-            // Nationality validation messages
-            'nationality.string' => 'The nationality must be a text value.',
-            'nationality.max' => 'The nationality may not be greater than 255 characters.',
-            
             // Address validation messages
             'address.string' => 'The address must be a text value.',
             'address.max' => 'The address may not be greater than 255 characters.',
@@ -140,19 +147,6 @@ class EmployeeRequest extends FormRequest
             // Profile picture validation messages
             'picture.image' => 'The profile picture must be an image file.',
             'picture.max' => 'The profile picture may not be greater than 2MB.',
-            
-            // Government ID validation messages
-            'sss.string' => 'The SSS number must be a text value.',
-            'sss.max' => 'The SSS number may not be greater than 255 characters.',
-            
-            'pag_ibig.string' => 'The Pag-IBIG number must be a text value.',
-            'pag_ibig.max' => 'The Pag-IBIG number may not be greater than 255 characters.',
-            
-            'philhealth.string' => 'The PhilHealth number must be a text value.',
-            'philhealth.max' => 'The PhilHealth number may not be greater than 255 characters.',
-            
-            'tin.string' => 'The TIN number must be a text value.',
-            'tin.max' => 'The TIN number may not be greater than 255 characters.',
             
             // Password validation messages
             'gmail_password.string' => 'The password must be a text value.',

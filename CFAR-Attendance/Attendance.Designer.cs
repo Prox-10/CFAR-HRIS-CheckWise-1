@@ -44,7 +44,6 @@ namespace HRIS_CheckWise_ATMS_
             this.TimeOut = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.date = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.employeeIDoptional = new Guna.UI2.WinForms.Guna2TextBox();
             this.guna2HtmlLabel6 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             this.submitID = new Guna.UI2.WinForms.Guna2Button();
             this.guna2HtmlLabel7 = new Guna.UI2.WinForms.Guna2HtmlLabel();
@@ -70,8 +69,9 @@ namespace HRIS_CheckWise_ATMS_
             this.timer3 = new System.Windows.Forms.Timer(this.components);
             this.timer4 = new System.Windows.Forms.Timer(this.components);
             this.color_indicator = new Guna.UI2.WinForms.Guna2Shapes();
-            this.device_status = new System.Windows.Forms.Label();
             this.guna2ShadowPanel1 = new Guna.UI2.WinForms.Guna2ShadowPanel();
+            this.employeeIDoptional = new Guna.UI2.WinForms.Guna2TextBox();
+            this.refreshBtn = new Guna.UI2.WinForms.Guna2Button();
             guna2HtmlLabel12 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             guna2HtmlLabel13 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             ((System.ComponentModel.ISupportInitialize)(this.attendanceTable)).BeginInit();
@@ -107,7 +107,7 @@ namespace HRIS_CheckWise_ATMS_
             // MessageDb
             // 
             this.MessageDb.AutoSize = true;
-            this.MessageDb.Location = new System.Drawing.Point(13, 36);
+            this.MessageDb.Location = new System.Drawing.Point(8, 9);
             this.MessageDb.Name = "MessageDb";
             this.MessageDb.Size = new System.Drawing.Size(59, 13);
             this.MessageDb.TabIndex = 26;
@@ -155,7 +155,7 @@ namespace HRIS_CheckWise_ATMS_
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.attendanceTable.DefaultCellStyle = dataGridViewCellStyle3;
             this.attendanceTable.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.attendanceTable.Location = new System.Drawing.Point(339, 202);
+            this.attendanceTable.Location = new System.Drawing.Point(334, 202);
             this.attendanceTable.Name = "attendanceTable";
             this.attendanceTable.ReadOnly = true;
             this.attendanceTable.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
@@ -233,26 +233,6 @@ namespace HRIS_CheckWise_ATMS_
             this.date.Name = "date";
             this.date.ReadOnly = true;
             // 
-            // employeeIDoptional
-            // 
-            this.employeeIDoptional.BorderRadius = 5;
-            this.employeeIDoptional.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.employeeIDoptional.DefaultText = "";
-            this.employeeIDoptional.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
-            this.employeeIDoptional.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
-            this.employeeIDoptional.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
-            this.employeeIDoptional.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
-            this.employeeIDoptional.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
-            this.employeeIDoptional.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.employeeIDoptional.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
-            this.employeeIDoptional.Location = new System.Drawing.Point(12, 162);
-            this.employeeIDoptional.Name = "employeeIDoptional";
-            this.employeeIDoptional.PasswordChar = '\0';
-            this.employeeIDoptional.PlaceholderText = "";
-            this.employeeIDoptional.SelectedText = "";
-            this.employeeIDoptional.Size = new System.Drawing.Size(233, 28);
-            this.employeeIDoptional.TabIndex = 41;
-            // 
             // guna2HtmlLabel6
             // 
             this.guna2HtmlLabel6.BackColor = System.Drawing.Color.Transparent;
@@ -273,7 +253,7 @@ namespace HRIS_CheckWise_ATMS_
             this.submitID.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
             this.submitID.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
             this.submitID.FillColor = System.Drawing.Color.LightGreen;
-            this.submitID.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.submitID.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.submitID.ForeColor = System.Drawing.Color.Black;
             this.submitID.HoverState.FillColor = System.Drawing.Color.LimeGreen;
             this.submitID.Location = new System.Drawing.Point(251, 162);
@@ -530,7 +510,7 @@ namespace HRIS_CheckWise_ATMS_
             // 
             // timer3
             // 
-            this.timer3.Tick += new System.EventHandler(this.timer3_Tick_1);
+            //this.timer3.Tick += new System.EventHandler(this.timer3_Tick_1);
             // 
             // color_indicator
             // 
@@ -545,15 +525,6 @@ namespace HRIS_CheckWise_ATMS_
             this.color_indicator.TabIndex = 48;
             this.color_indicator.Text = "guna2Shapes1";
             this.color_indicator.Zoom = 80;
-            // 
-            // device_status
-            // 
-            this.device_status.AutoSize = true;
-            this.device_status.Location = new System.Drawing.Point(13, 6);
-            this.device_status.Name = "device_status";
-            this.device_status.Size = new System.Drawing.Size(59, 13);
-            this.device_status.TabIndex = 49;
-            this.device_status.Text = "Initialize.....";
             // 
             // guna2ShadowPanel1
             // 
@@ -573,14 +544,57 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2ShadowPanel1.Size = new System.Drawing.Size(330, 340);
             this.guna2ShadowPanel1.TabIndex = 51;
             // 
+            // employeeIDoptional
+            // 
+            this.employeeIDoptional.BorderColor = System.Drawing.Color.SeaGreen;
+            this.employeeIDoptional.BorderRadius = 4;
+            this.employeeIDoptional.BorderThickness = 2;
+            this.employeeIDoptional.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.employeeIDoptional.DefaultText = "";
+            this.employeeIDoptional.DisabledState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(208)))), ((int)(((byte)(208)))), ((int)(((byte)(208)))));
+            this.employeeIDoptional.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
+            this.employeeIDoptional.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.employeeIDoptional.DisabledState.PlaceholderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(138)))), ((int)(((byte)(138)))), ((int)(((byte)(138)))));
+            this.employeeIDoptional.FocusedState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.employeeIDoptional.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.employeeIDoptional.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(193)))), ((int)(((byte)(200)))), ((int)(((byte)(207)))));
+            this.employeeIDoptional.HoverState.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(94)))), ((int)(((byte)(148)))), ((int)(((byte)(255)))));
+            this.employeeIDoptional.Location = new System.Drawing.Point(11, 162);
+            this.employeeIDoptional.Name = "employeeIDoptional";
+            this.employeeIDoptional.PasswordChar = '\0';
+            this.employeeIDoptional.PlaceholderText = "Employee ID";
+            this.employeeIDoptional.SelectedText = "";
+            this.employeeIDoptional.Size = new System.Drawing.Size(234, 28);
+            this.employeeIDoptional.TabIndex = 52;
+            // 
+            // refreshBtn
+            // 
+            this.refreshBtn.BorderRadius = 5;
+            this.refreshBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.refreshBtn.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
+            this.refreshBtn.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
+            this.refreshBtn.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
+            this.refreshBtn.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
+            this.refreshBtn.FillColor = System.Drawing.Color.LightGreen;
+            this.refreshBtn.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.refreshBtn.ForeColor = System.Drawing.Color.Black;
+            this.refreshBtn.Location = new System.Drawing.Point(1263, 168);
+            this.refreshBtn.Name = "refreshBtn";
+            this.refreshBtn.Size = new System.Drawing.Size(80, 29);
+            this.refreshBtn.TabIndex = 54;
+            this.refreshBtn.Text = "Refresh";
+            this.refreshBtn.Click += new System.EventHandler(this.guna2Button1_Click);
+            // 
             // Attendance
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.SeaGreen;
             this.ClientSize = new System.Drawing.Size(1350, 749);
+            this.Controls.Add(this.refreshBtn);
+            this.Controls.Add(this.employeeIDoptional);
+            this.Controls.Add(this.submitID);
             this.Controls.Add(this.guna2ShadowPanel1);
-            this.Controls.Add(this.device_status);
             this.Controls.Add(this.color_indicator);
             this.Controls.Add(guna2HtmlLabel13);
             this.Controls.Add(guna2HtmlLabel12);
@@ -589,8 +603,6 @@ namespace HRIS_CheckWise_ATMS_
             this.Controls.Add(this.guna2Separator1);
             this.Controls.Add(this.guna2PictureBox1);
             this.Controls.Add(this.guna2HtmlLabel7);
-            this.Controls.Add(this.submitID);
-            this.Controls.Add(this.employeeIDoptional);
             this.Controls.Add(this.guna2HtmlLabel6);
             this.Controls.Add(this.attendanceTable);
             this.Controls.Add(this.MessageDb);
@@ -612,7 +624,6 @@ namespace HRIS_CheckWise_ATMS_
         #endregion
         private System.Windows.Forms.Label MessageDb;
         private Guna.UI2.WinForms.Guna2DataGridView attendanceTable;
-        private Guna.UI2.WinForms.Guna2TextBox employeeIDoptional;
         private Guna.UI2.WinForms.Guna2HtmlLabel guna2HtmlLabel6;
         private Guna.UI2.WinForms.Guna2Button submitID;
         private Guna.UI2.WinForms.Guna2HtmlLabel guna2HtmlLabel7;
@@ -643,7 +654,8 @@ namespace HRIS_CheckWise_ATMS_
         private System.Windows.Forms.DataGridViewTextBoxColumn date;
         private System.Windows.Forms.Timer timer4;
         private Guna.UI2.WinForms.Guna2Shapes color_indicator;
-        private System.Windows.Forms.Label device_status;
         private Guna.UI2.WinForms.Guna2ShadowPanel guna2ShadowPanel1;
+        private Guna.UI2.WinForms.Guna2TextBox employeeIDoptional;
+        private Guna.UI2.WinForms.Guna2Button refreshBtn;
     }
 }

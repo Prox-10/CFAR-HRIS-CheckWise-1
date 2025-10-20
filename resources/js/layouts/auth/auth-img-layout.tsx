@@ -32,8 +32,6 @@ export default function AuthImgLayout({
                             {title && <h1 className="text-2xl font-bold text-background">{title}</h1>}
                             {description && <p className="text-balance text-background">{description}</p>}
                         </div>
-
-                        {/** Inject children here — for your form inputs, buttons, etc */}
                         {children}
                     </div>
                 </CardContent>

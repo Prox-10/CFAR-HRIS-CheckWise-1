@@ -53,7 +53,7 @@ class EmployeeController extends Controller
                 'date_of_birth' => $employee->date_of_birth,
                 'gender'        => $employee->gender,
                 'marital_status' => $employee->marital_status,
-                'nationality'   => $employee->nationality,
+                // 'nationality'   => $employee->nationality,
                 'address'       => $employee->address,
                 'city'          => $employee->city,
                 'state'         => $employee->state,
@@ -63,12 +63,24 @@ class EmployeeController extends Controller
                 'email'         => $employee->email,
                 'position'      => $employee->position,
                 'pin'           => $employee->pin,
-                'sss'           => $employee->sss,
-                'pag_ibig'      => $employee->pag_ibig,
-                'tin'           => $employee->tin,
                 'gmail_password' => $employee->gmail_password,
-                'philhealth'    => $employee->philhealth,
                 'recommendation_letter' => $employee->recommendation_letter,
+                // HDMF fields
+                'hdmf_user_id' => $employee->hdmf_user_id,
+                'hdmf_username' => $employee->hdmf_username,
+                'hdmf_password' => $employee->hdmf_password,
+                // SSS fields
+                'sss_user_id' => $employee->sss_user_id,
+                'sss_username' => $employee->sss_username,
+                'sss_password' => $employee->sss_password,
+                // Philhealth fields
+                'philhealth_user_id' => $employee->philhealth_user_id,
+                'philhealth_username' => $employee->philhealth_username,
+                'philhealth_password' => $employee->philhealth_password,
+                // TIN fields
+                'tin_user_id' => $employee->tin_user_id,
+                'tin_username' => $employee->tin_username,
+                'tin_password' => $employee->tin_password,
                 'created_at'    => $employee->created_at->format('d M Y'),
                 'fingerprints'  => $employee->fingerprints->map(function ($fp) {
                     return [
@@ -97,7 +109,7 @@ class EmployeeController extends Controller
             'Regular' => $employees->where('work_status', 'Regular')->count(),
             'Add Crew' => $employees->where('work_status', 'Add Crew')->count(),
             'Probationary' => $employees->where('work_status', 'Probationary')->count(),
-            'Sessional' => $employees->where('work_status', 'Sessional')->count(),
+            // 'Sessional' => $employees->where('work_status', 'Sessional')->count(),
         ];
 
         // Previous period calculations - also filter by supervisor role
@@ -178,7 +190,7 @@ class EmployeeController extends Controller
                 'date_of_birth' => $employee->date_of_birth,
                 'gender'        => $employee->gender,
                 'marital_status' => $employee->marital_status,
-                'nationality'   => $employee->nationality,
+                // 'nationality'   => $employee->nationality,
                 'address'       => $employee->address,
                 'city'          => $employee->city,
                 'state'         => $employee->state,
@@ -187,10 +199,24 @@ class EmployeeController extends Controller
                 'phone'         => $employee->phone,
                 'email'         => $employee->email,
                 'position'      => $employee->position,
-                'tin'           => $employee->tin,
                 'gmail_password' => $employee->gmail_password,
-                'philhealth'    => $employee->philhealth,
                 'recommendation_letter' => $employee->recommendation_letter,
+                // HDMF fields
+                'hdmf_user_id' => $employee->hdmf_user_id,
+                'hdmf_username' => $employee->hdmf_username,
+                'hdmf_password' => $employee->hdmf_password,
+                // SSS fields
+                'sss_user_id' => $employee->sss_user_id,
+                'sss_username' => $employee->sss_username,
+                'sss_password' => $employee->sss_password,
+                // Philhealth fields
+                'philhealth_user_id' => $employee->philhealth_user_id,
+                'philhealth_username' => $employee->philhealth_username,
+                'philhealth_password' => $employee->philhealth_password,
+                // TIN fields
+                'tin_user_id' => $employee->tin_user_id,
+                'tin_username' => $employee->tin_username,
+                'tin_password' => $employee->tin_password,
                 'created_at'    => $employee->created_at->format('d M Y'),
                 'fingerprints'  => $employee->fingerprints->map(function ($fp) {
                     return [
@@ -239,7 +265,7 @@ class EmployeeController extends Controller
                 'phone'           => $request->phone,
                 'gender'          => $request->gender,
                 'marital_status'  => $request->marital_status,
-                'nationality'     => $request->nationality,
+                // 'nationality'     => $request->nationality,
                 'address'         => $request->address,
                 'city'            => $request->city,
                 'state'           => $request->state,
@@ -250,11 +276,23 @@ class EmployeeController extends Controller
                 'date_of_birth'   => $request->date_of_birth,
                 'department'      => $request->department,
                 'position'        => $request->position,
-                'sss' => $request->sss,
-                'philhealth' => $request->philhealth,
-                'pag_ibig' => $request->pag_ibig,
-                'tin' => $request->tin,
-                'gmail_password' => $request->gmail_password
+                'gmail_password' => $request->gmail_password,
+                // HDMF fields
+                'hdmf_user_id' => $request->hdmf_user_id,
+                'hdmf_username' => $request->hdmf_username,
+                'hdmf_password' => $request->hdmf_password,
+                // SSS fields
+                'sss_user_id' => $request->sss_user_id,
+                'sss_username' => $request->sss_username,
+                'sss_password' => $request->sss_password,
+                // Philhealth fields
+                'philhealth_user_id' => $request->philhealth_user_id,
+                'philhealth_username' => $request->philhealth_username,
+                'philhealth_password' => $request->philhealth_password,
+                // TIN fields
+                'tin_user_id' => $request->tin_user_id,
+                'tin_username' => $request->tin_username,
+                'tin_password' => $request->tin_password,
             ];
 
             // Log the data array before creating

@@ -79,8 +79,8 @@ export default function Index({
     };
 
     const handleDelete = (id: string, onSuccess: () => void) => {
-        // Logic for deleting the attendanceData (e.g., API call)
-        router.delete(`/attendanceData/${id}`, {
+        // Delete attendance via correct endpoint
+        router.delete(`/attendance/${id}`, {
             onSuccess: () => {
                 toast.success('Employee Deleted!', {
                     duration: 1500,

@@ -14,7 +14,7 @@ interface Props {
         Regular: number;
         'Add Crew': number;
         Probationary: number;
-        Sessional: number;
+        // Sessional: number;
     };
     isSupervisor?: boolean;
     roleContent?: {
@@ -173,7 +173,7 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                             <span className="text-lg font-bold text-amber-800">{workStatusCounts?.Probationary || 0}</span>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        {/* <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="rounded-full bg-orange-100 p-1.5">
                                     <Calendar className="size-4 text-orange-600" />
@@ -181,7 +181,7 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                                 <span className="text-sm font-medium text-orange-700">Sessional</span>
                             </div>
                             <span className="text-lg font-bold text-orange-800">{workStatusCounts?.Sessional || 0}</span>
-                        </div>
+                        </div> */}
                     </div>
                 </CardHeader>
             </Card>

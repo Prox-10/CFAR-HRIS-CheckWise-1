@@ -33,12 +33,24 @@ class EmployeeController extends Controller
         'email'         => $employee->email,
         'pin'           => $employee->pin,
         'position'      => $employee->position,
-        'sss'           => $employee->sss,
-        'pag_ibig'      => $employee->pag_ibig,
-        'tin'           => $employee->tin,
-        'gmail_password' => $employee->gmail_password,
-        'philhealth'    => $employee->philhealth,
+                'gmail_password' => $employee->gmail_password,
         'recommendation_letter' => $employee->recommendation_letter,
+        // HDMF fields
+        'hdmf_user_id' => $employee->hdmf_user_id,
+        'hdmf_username' => $employee->hdmf_username,
+        'hdmf_password' => $employee->hdmf_password,
+        // SSS fields
+        'sss_user_id' => $employee->sss_user_id,
+        'sss_username' => $employee->sss_username,
+        'sss_password' => $employee->sss_password,
+        // Philhealth fields
+        'philhealth_user_id' => $employee->philhealth_user_id,
+        'philhealth_username' => $employee->philhealth_username,
+        'philhealth_password' => $employee->philhealth_password,
+        // TIN fields
+        'tin_user_id' => $employee->tin_user_id,
+        'tin_username' => $employee->tin_username,
+        'tin_password' => $employee->tin_password,
         'created_at'    => $employee->created_at->format('d M Y'),
         'fingerprints'  => $employee->fingerprints->map(function ($fp) {
           return [

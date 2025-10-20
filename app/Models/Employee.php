@@ -28,7 +28,6 @@ class Employee extends Model
         'work_status',
         'gender',
         'marital_status',
-        'nationality',
         'address',
         'city',
         'state',
@@ -37,11 +36,23 @@ class Employee extends Model
         'picture',
         'pin',
         'gmail_password',
-        'sss',
-        'philhealth',
-        'tin',
-        'pag_ibig',
         'recommendation_letter',
+        // HDMF fields
+        'hdmf_user_id',
+        'hdmf_username',
+        'hdmf_password',
+        // SSS fields
+        'sss_user_id',
+        'sss_username',
+        'sss_password',
+        // Philhealth fields
+        'philhealth_user_id',
+        'philhealth_username',
+        'philhealth_password',
+        // TIN fields
+        'tin_user_id',
+        'tin_username',
+        'tin_password',
     ];
 
     protected static function boot()

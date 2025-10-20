@@ -47,35 +47,47 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
 
     useEffect(() => {
         if (employee) {
-            setData({
-                employeeid: employee.employeeid,
-                employee_name: employee.employee_name,
-                firstname: employee.firstname,
-                middlename: employee.middlename || '',
-                lastname: employee.lastname,
-                gender: employee.gender,
-                department: employee.department,
-                position: employee.position,
-                phone: employee.phone,
-                work_status: employee.work_status,
-                marital_status: employee.marital_status,
-                service_tenure: employee.service_tenure,
-                date_of_birth: employee.date_of_birth,
-                email: employee.email,
-                address: employee.address,
-                city: employee.city || '',
-                state: employee.state || '',
-                country: employee.country || '',
-                zip_code: employee.zip_code || '',
-                picture: null,
-                nationality: employee.nationality || '',
-                philhealth: employee.philhealth || '',
-                tin: employee.tin || '',
-                sss: employee.sss || '',
-                pag_ibig: employee.pag_ibig || '',
-                gmail_password: employee.gmail_password || '',
-                _method: 'PUT',
-            });
+            setData(
+                (prev) =>
+                    ({
+                        ...prev,
+                        employeeid: employee.employeeid,
+                        employee_name: employee.employee_name,
+                        firstname: employee.firstname,
+                        middlename: employee.middlename || '',
+                        lastname: employee.lastname,
+                        gender: employee.gender,
+                        department: employee.department,
+                        position: employee.position,
+                        phone: employee.phone,
+                        work_status: employee.work_status,
+                        marital_status: employee.marital_status,
+                        service_tenure: employee.service_tenure,
+                        date_of_birth: employee.date_of_birth,
+                        email: employee.email,
+                        address: employee.address,
+                        city: employee.city || '',
+                        state: employee.state || '',
+                        country: employee.country || '',
+                        zip_code: employee.zip_code || '',
+                        picture: null, // ensure File|null
+                        philhealth_user_id: employee.philhealth_user_id || '',
+                        philhealth_username: employee.philhealth_username || '',
+                        philhealth_password: employee.philhealth_password || '',
+                        sss_user_id: employee.sss_user_id || '',
+                        sss_username: employee.sss_username || '',
+                        sss_password: employee.sss_password || '',
+                        hdmf_user_id: employee.hdmf_user_id || '',
+                        hdmf_username: employee.hdmf_username || '',
+                        hdmf_password: employee.hdmf_password || '',
+                        tin_user_id: employee.tin_user_id || '',
+                        tin_username: employee.tin_username || '',
+                        tin_password: employee.tin_password || '',
+                        gmail_password: employee.gmail_password || '',
+                        recommendation_letter: null, // ensure File|null
+                        _method: 'PUT',
+                    }) as unknown as Employees & { _method: string },
+            );
 
             if (employee.picture) {
                 setPreview(employee.picture);
@@ -99,6 +111,10 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
             setAvailablePositions([]);
         }
     }, [data.department]);
+
+    // Flow helpers based on Work Status
+    const hasWorkStatus = !!data.work_status;
+    const isAddCrew = data.work_status === 'Add Crew';
 
     const handleProfileImageUpload = () => {
         const input = document.createElement('input');
@@ -180,7 +196,7 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
             },
             onError: (errors: any) => {
                 console.error('Validation errors:', errors);
-                
+
                 // Show specific error messages for better user experience
                 if (errors.employeeid) {
                     toast.error(`Employee ID Error: ${errors.employeeid}`);
@@ -287,19 +303,21 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                         <h3 className="text-lg font-bold">Personal Information</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label>Employee ID</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Input
-                                type="text"
-                                placeholder="Enter employee id...."
-                                value={data.employeeid}
-                                onChange={(e) => setData('employeeid', e.target.value)}
-                                className={`border-main focus:border-green-500 ${errors.employeeid ? 'border-red-500 focus:border-red-500' : ''}`}
-                                aria-invalid={!!errors.employeeid}
-                            />
-                            <InputError message={errors.employeeid} />
-                        </div>
+                        {!isAddCrew && (
+                            <div>
+                                <Label>Employee ID</Label>
+                                <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                <Input
+                                    type="text"
+                                    placeholder="Enter employee id...."
+                                    value={data.employeeid}
+                                    onChange={(e) => setData('employeeid', e.target.value)}
+                                    className={`border-main focus:border-green-500 ${errors.employeeid ? 'border-red-500 focus:border-red-500' : ''}`}
+                                    aria-invalid={!!errors.employeeid}
+                                />
+                                <InputError message={errors.employeeid} />
+                            </div>
+                        )}
                         <div>
                             <Label>Firstname</Label>
                             <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
@@ -343,7 +361,9 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                             <Label htmlFor="gender">Gender</Label>
                             <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
                             <Select value={data.gender} onValueChange={(value) => setData('gender', value)} aria-invalid={!!errors.gender}>
-                                <SelectTrigger className={`border-main focus:border-green-500 ${errors.gender ? 'border-red-500 focus:border-red-500' : ''}`}>
+                                <SelectTrigger
+                                    className={`border-main focus:border-green-500 ${errors.gender ? 'border-red-500 focus:border-red-500' : ''}`}
+                                >
                                     <SelectValue placeholder="Select Gender" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -393,42 +413,44 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                                 <InputError message={errors.date_of_birth} />
                             </div>
                         </div>
-                        <div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="date" className="px-1">
-                                    Lenght of Service
-                                </Label>
-                                <Popover open={open} onOpenChange={setOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            id="date"
-                                            className="border-main w-48 justify-between font-normal sm:w-auto"
-                                            aria-invalid={!!errors.service_tenure}
-                                        >
-                                            {date ? date.toLocaleDateString() : 'Select date'}
-                                            <ChevronDownIcon />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={date}
-                                            captionLayout="dropdown"
-                                            onSelect={(selectedDate) => {
-                                                setDate(selectedDate);
-                                                setOpen(false);
-                                                if (selectedDate) {
-                                                    const localDateString = selectedDate.toLocaleDateString('en-CA');
-                                                    setData('service_tenure', localDateString);
-                                                }
-                                            }}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                <InputError message={errors.service_tenure} />
+                        {!isAddCrew && (
+                            <div>
+                                <div className="flex flex-col gap-3">
+                                    <Label htmlFor="date" className="px-1">
+                                        Lenght of Service
+                                    </Label>
+                                    <Popover open={open} onOpenChange={setOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                id="date"
+                                                className="border-main w-48 justify-between font-normal sm:w-auto"
+                                                aria-invalid={!!errors.service_tenure}
+                                            >
+                                                {date ? date.toLocaleDateString() : 'Select date'}
+                                                <ChevronDownIcon />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={date}
+                                                captionLayout="dropdown"
+                                                onSelect={(selectedDate) => {
+                                                    setDate(selectedDate);
+                                                    setOpen(false);
+                                                    if (selectedDate) {
+                                                        const localDateString = selectedDate.toLocaleDateString('en-CA');
+                                                        setData('service_tenure', localDateString);
+                                                    }
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <InputError message={errors.service_tenure} />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div>
                             <Label htmlFor="work_status">Work Status</Label>
@@ -452,79 +474,85 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                             <InputError message={errors.work_status} />
                         </div>
 
-                        <div>
-                            <Label htmlFor="departments">Departments</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Select
-                                value={data.department}
-                                onValueChange={(value) => setData('department', value)}
-                                aria-invalid={!!errors.department}
-                            >
-                                <SelectTrigger className="border-main focus:border-green-500">
-                                    <SelectValue placeholder="Select Departments" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {departmentsData.map((dept) => (
-                                        <SelectItem key={dept} value={dept}>
-                                            {dept}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.department} />
-                        </div>
-                        <div>
-                            <Label htmlFor="positions">Positions</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Select
-                                value={data.position}
-                                onValueChange={(value) => setData('position', value)}
-                                disabled={!data.department}
-                                aria-invalid={!!errors.position}
-                            >
-                                <SelectTrigger className="border-main focus:border-green-500">
-                                    <SelectValue placeholder={data.department ? 'Select Positions' : 'Select Department first'} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availablePositions.length > 0 ? (
-                                        availablePositions.map((pos) => (
-                                            <SelectItem key={pos} value={pos}>
-                                                {pos}
+                        {!isAddCrew && (
+                            <div>
+                                <Label htmlFor="departments">Departments</Label>
+                                <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                <Select
+                                    value={data.department}
+                                    onValueChange={(value) => setData('department', value)}
+                                    aria-invalid={!!errors.department}
+                                >
+                                    <SelectTrigger className="border-main focus:border-green-500">
+                                        <SelectValue placeholder="Select Departments" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {departmentsData.map((dept) => (
+                                            <SelectItem key={dept} value={dept}>
+                                                {dept}
                                             </SelectItem>
-                                        ))
-                                    ) : (
-                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                            {data.department ? 'No positions available' : 'Select Department first'}
-                                        </div>
-                                    )}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.position} />
-                        </div>
-                        <div>
-                            <Label htmlFor="status">Marital Status</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Select
-                                value={data.marital_status}
-                                onValueChange={(value) => setData('marital_status', value)}
-                                aria-invalid={!!errors.marital_status}
-                            >
-                                <SelectTrigger className="border-main focus:border-green-500">
-                                    <SelectValue placeholder="Select Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {maritalStatusData.map((stat) => (
-                                        <SelectItem key={stat} value={stat}>
-                                            {stat}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.marital_status} />
-                        </div>
-                        <div>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.department} />
+                            </div>
+                        )}
+                        {!isAddCrew && (
+                            <div>
+                                <Label htmlFor="positions">Positions</Label>
+                                <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                <Select
+                                    value={data.position}
+                                    onValueChange={(value) => setData('position', value)}
+                                    disabled={!data.department}
+                                    aria-invalid={!!errors.position}
+                                >
+                                    <SelectTrigger className="border-main focus:border-green-500">
+                                        <SelectValue placeholder={data.department ? 'Select Positions' : 'Select Department first'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availablePositions.length > 0 ? (
+                                            availablePositions.map((pos) => (
+                                                <SelectItem key={pos} value={pos}>
+                                                    {pos}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                {data.department ? 'No positions available' : 'Select Department first'}
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.position} />
+                            </div>
+                        )}
+                        {!isAddCrew && (
+                            <div>
+                                <Label htmlFor="status">Marital Status</Label>
+                                <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                <Select
+                                    value={data.marital_status}
+                                    onValueChange={(value) => setData('marital_status', value)}
+                                    aria-invalid={!!errors.marital_status}
+                                >
+                                    <SelectTrigger className="border-main focus:border-green-500">
+                                        <SelectValue placeholder="Select Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {maritalStatusData.map((stat) => (
+                                            <SelectItem key={stat} value={stat}>
+                                                {stat}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.marital_status} />
+                            </div>
+                        )}
+                        {/* <div>
                             <Label>Nationality</Label>
-                            {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
+                            // {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> *
                             <Input
                                 type="text"
                                 placeholder="Enter your nationality..."
@@ -532,7 +560,7 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                                 onChange={(e) => setData('nationality', e.target.value)}
                                 className="border-green-300 focus:border-cfar-500"
                             />
-                        </div>
+                        </div> */}
                     </div>
                     <div>
                         <h3 className="text-lg font-bold">Contact Information</h3>
@@ -616,89 +644,218 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                             />
                             <InputError message={errors.zip_code} />
                         </div>
-                        <div>
-                            <Label>Email Address</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Input
-                                type="email"
-                                placeholder="Enter email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                className={`border-green-300 focus:border-cfar-500 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
-                                aria-invalid={!!errors.email}
-                            />
-                            <InputError message={errors.email} />
-                        </div>
-                        <div>
-                            <Label>Password</Label>
-                            <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
-                            <Input
-                                type="text"
-                                placeholder="Enter password..."
-                                value={data.gmail_password}
-                                onChange={(e) => setData('gmail_password', e.target.value)}
-                                className="border-green-300 focus:border-cfar-500"
-                                aria-invalid={!!errors.gmail_password}
-                            />
-                            <InputError message={errors.gmail_password} />
-                        </div>
+                    </div>
+
+
+                    <div>
+                                <h3 className="text-lg font-bold">Gmail Account</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <Label>Email Address</Label>
+                        <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                        <Input
+                            type="email"
+                            placeholder="Enter email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            className={`border-green-300 focus:border-cfar-500 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
+                            aria-invalid={!!errors.email}
+                        />
+                        <InputError message={errors.email} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold">Government IDs</h3>
+                        <Label>Password</Label>
+                        <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                        <Input
+                            type="text"
+                            placeholder="Enter password..."
+                            value={data.gmail_password}
+                            onChange={(e) => setData('gmail_password', e.target.value)}
+                            className="border-green-300 focus:border-cfar-500"
+                            aria-invalid={!!errors.gmail_password}
+                        />
+                        <InputError message={errors.gmail_password} />
                     </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="">
-                            <Label>Philhealth Number</Label>
-                            {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
-                            <Input
-                                type="text"
-                                placeholder="Enter your philhealth..."
-                                value={data.philhealth}
-                                onChange={(e) => setData('philhealth', e.target.value)}
-                                className="border-green-300 focus:border-cfar-500"
-                                aria-invalid={!!errors.philhealth}
-                            />
-                            <InputError message={errors.philhealth} />
-                        </div>
-                        <div>
-                            <Label>SSS Number</Label>
-                            {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
-                            <Input
-                                type="text"
-                                placeholder="Enter your sss..."
-                                value={data.sss}
-                                onChange={(e) => setData('sss', e.target.value)}
-                                className="border-green-300 focus:border-cfar-500"
-                                aria-invalid={!!errors.sss}
-                            />
-                            <InputError message={errors.sss} />
-                        </div>
-                        <div>
-                            <Label htmlFor="pag-ibig">Pag-ibig Number</Label>
-                            <Input
-                                id="pag-ibig"
-                                type="text"
-                                placeholder="Enter pag-ibig number..."
-                                value={data.pag_ibig}
-                                onChange={(e) => setData('pag_ibig', e.target.value)}
-                                className="border-green-300 focus:border-cfar-500"
-                                aria-invalid={!!errors.pag_ibig}
-                            />
-                            <InputError message={errors.pag_ibig} />
-                        </div>
-                        <div>
-                            <Label htmlFor="state">Tin Number</Label>
-                            <Input
-                                type="number"
-                                placeholder="Enter your tin_number.."
-                                value={data.tin}
-                                onChange={(e) => setData('tin', e.target.value)}
-                                className="border-green-300 focus:border-cfar-500"
-                                aria-invalid={!!errors.tin}
-                            />
-                            <InputError message={errors.tin} />
-                        </div>
                     </div>
+                    {!isAddCrew && (
+                        <>
+                            <div>
+                                <h3 className="text-lg font-bold">HDMF</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <Label>ID</Label>
+                                    <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter user id..."
+                                        value={data.hdmf_user_id}
+                                        onChange={(e) => setData('hdmf_user_id', e.target.value)}
+                                        className={`border-green-300 focus:border-cfar-500 ${errors.hdmf_user_id ? 'border-red-500 focus:border-red-500' : ''}`}
+                                        aria-invalid={!!errors.hdmf_user_id}
+                                    />
+                                    <InputError message={errors.hdmf_user_id} />
+                                </div>
+                                <div>
+                                    <Label>Username/Email Address</Label>
+                                    <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter username/email address..."
+                                        value={data.hdmf_username}
+                                        onChange={(e) => setData('hdmf_username', e.target.value)}
+                                        className={`border-green-300 focus:border-cfar-500 ${errors.hdmf_username ? 'border-red-500 focus:border-red-500' : ''}`}
+                                        aria-invalid={!!errors.hdmf_username}
+                                    />
+                                    <InputError message={errors.hdmf_username} />
+                                </div>
+                                <div>
+                                    <Label>Password</Label>
+                                    <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter password..."
+                                        value={data.hdmf_password}
+                                        onChange={(e) => setData('hdmf_password', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.hdmf_password}
+                                    />
+                                    <InputError message={errors.hdmf_password} />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold">Philhealth</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="">
+                                    <Label>ID</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your philhealth..."
+                                        value={data.philhealth_user_id}
+                                        onChange={(e) => setData('philhealth_user_id', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.philhealth_user_id}
+                                    />
+                                    <InputError message={errors.philhealth_user_id} />
+                                </div>
+                                <div>
+                                    <Label>Username/Email Address</Label>
+                                    {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your philhealth..."
+                                        value={data.philhealth_username}
+                                        onChange={(e) => setData('philhealth_username', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.philhealth_username}
+                                    />
+                                    <InputError message={errors.philhealth_username} />
+                                </div>
+                                <div className="">
+                                    <Label>Philhealth Password</Label>
+                                    {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your philhealth..."
+                                        value={data.philhealth_password}
+                                        onChange={(e) => setData('philhealth_password', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.philhealth_password}
+                                    />
+                                    <InputError message={errors.philhealth_password} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold">Tin</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <Label htmlFor="state">ID</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Enter your id.."
+                                        value={data.tin_user_id}
+                                        onChange={(e) => setData('tin_user_id', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.tin_user_id}
+                                    />
+                                    <InputError message={errors.tin_user_id} />
+                                </div>
+                                <div>
+                                    <Label htmlFor="state">Username/Email Address</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your username/email address.."
+                                        value={data.tin_username}
+                                        onChange={(e) => setData('tin_username', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.tin_username}
+                                    />
+                                    <InputError message={errors.tin_username} />
+                                </div>
+                                <div>
+                                    <Label htmlFor="state">Tin Password</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your tin_password.."
+                                        value={data.tin_password}
+                                        onChange={(e) => setData('tin_password', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.tin_password}
+                                    />
+                                    <InputError message={errors.tin_password} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold">SSS</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <Label>ID</Label>
+                                    {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter user id..."
+                                        value={data.sss_user_id}
+                                        onChange={(e) => setData('sss_user_id', e.target.value)}
+                                        className={`border-green-300 focus:border-cfar-500 ${errors.sss_user_id ? 'border-red-500 focus:border-red-500' : ''}`}
+                                        aria-invalid={!!errors.sss_user_id}
+                                    />
+                                    <InputError message={errors.sss_user_id} />
+                                </div>
+                                <div>
+                                    <Label>Username/Email Address</Label>
+                                    {/* <span className="ms-2 text-[15px] font-medium text-red-600">*</span> */}
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your username/email address..."
+                                        value={data.sss_username}
+                                        onChange={(e) => setData('sss_username', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.sss_username}
+                                    />
+                                    <InputError message={errors.sss_username} />
+                                </div>
+                                <div>
+                                    <Label>Password</Label>
+                                    <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter password..."
+                                        value={data.sss_password}
+                                        onChange={(e) => setData('sss_password', e.target.value)}
+                                        className="border-green-300 focus:border-cfar-500"
+                                        aria-invalid={!!errors.sss_password}
+                                    />
+                                    <InputError message={errors.sss_password} />
+                                </div>
+                            </div>
+                        </>
+                    )}
                     <div className="space-y-4">
                         <div className="md:col-span-2">
                             <Label className="mb-3 flex items-center gap-2">
@@ -717,7 +874,7 @@ const EditEmployeeModal = ({ isOpen, onClose, employee, onUpdate }: EditEmployee
                         <Button variant="outline" type="button" onClick={() => closeModalWithDelay(0)} disabled={processing}>
                             Cancel
                         </Button>
-                        <Button type="submit" variant="main" disabled={processing || loading}>
+                        <Button type="submit" variant="main" disabled={processing || loading || !hasWorkStatus}>
                             {processing || loading ? 'Updating...' : 'Update Employee'}
                         </Button>
                     </DialogFooter>

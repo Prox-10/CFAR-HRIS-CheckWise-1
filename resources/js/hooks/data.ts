@@ -59,7 +59,7 @@ export const miscellaneousPositions: string[] = [
 
 export const securityForcesPositions: string[] = ['Security Guard: Agency-MINVITS', 'Security Guard: SECURUS', 'Spray Man (Main Gate)'];
 
-export const workStatus = ['Regular', 'Add Crew', 'Probationary', 'Sessional'];
+export const workStatus = ['Regular', 'Add Crew', 'Probationary'];
 
 export const maritalStatus = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated', 'Other'];
 

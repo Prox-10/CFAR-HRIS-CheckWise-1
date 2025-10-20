@@ -17,6 +17,8 @@ namespace HRIS_CheckWise_ATMS_
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Attendance());
+            //Application.Run(new Admin());
+
         }
     }
 }

@@ -333,7 +333,7 @@ namespace HRIS_CheckWise_ATMS_
                 // Add null check for sessions
                 if (sessions == null || sessions.Count == 0)
                 {
-                    return "No Active Session";
+                    return "Wait for the next set time";
                 }
 
                 foreach (var session in sessions)
@@ -363,7 +363,7 @@ namespace HRIS_CheckWise_ATMS_
                     }
                 }
 
-                return "No Active Session";
+                return "Wait for the next set time";
             }
             catch (Exception ex)
             {

@@ -23,10 +23,19 @@ export interface Employee {
     country: string;
     zip_code: string;
     nationality?: string;
-    philhealth: string;
-    tin: string;
-    sss: string;
-    pag_ibig: string;
+    tin_password: string;
+    tin_user_id: string;
+    tin_username: string;
+    sss_user_id: string;
+    sss_username: string;
+    sss_password: string;
+    philhealth_user_id: string;
+    philhealth_username: string;
+    philhealth_password: string;
+    hdmf_user_id: string;
+    hdmf_username: string;
+    hdmf_password: string;
+
     gmail_password: string;
     recommendation_letter?: string; // URL string for display
     [key: string]: any;
@@ -55,10 +64,18 @@ export interface Employees {
     country: string;
     zip_code: string;
     nationality?: string;
-    philhealth: string;
-    tin: string;
-    sss: string;
-    pag_ibig: string;
+    tin_password: string;
+    tin_user_id: string;
+    tin_username: string;
+    sss_user_id: string;
+    sss_username: string;
+    sss_password: string;
+    philhealth_user_id: string;
+    philhealth_username: string;
+    philhealth_password: string;
+    hdmf_user_id: string;
+    hdmf_username: string;
+    hdmf_password: string;
     gmail_password: string;
     recommendation_letter: File | null; // File object for uploads
     [key: string]: any;
@@ -87,10 +104,19 @@ export const initialEmployeeFormData: Employees = {
     country: '',
     zip_code: '',
     nationality: '',
-    philhealth: '',
-    tin: '',
-    sss: '',
-    pag_ibig: '',
+
+    tin_password: '',
+    tin_user_id: '',
+    tin_username: '',
+    sss_user_id: '',
+    sss_username: '',
+    sss_password: '',
+    philhealth_user_id: '',
+    philhealth_username: '',
+    philhealth_password: '',
+    hdmf_user_id: '',
+    hdmf_username: '',
+    hdmf_password: '',
     gmail_password: '',
     recommendation_letter: null,
 };

@@ -188,7 +188,7 @@ export default function Index({ evaluations, employees, employees_all, user_perm
                                         </div>
                                     </div>
                                 )} */}
-                                <Tabs orientation="vertical" defaultValue="overview" className="space-y-4">
+                                {/* <Tabs orientation="vertical" defaultValue="overview" className="space-y-4">
                                     <TabsContent value="overview" className="space-y-4">
                                         <div className="flex flex-1 flex-col">
                                             <div className="relative flex flex-1 flex-col">
@@ -217,7 +217,7 @@ export default function Index({ evaluations, employees, employees_all, user_perm
                                         </div>
                                     </TabsContent>
                                     <Separator className="shadow-sm" />
-                                </Tabs>
+                                </Tabs> */}
                                 <div className="m-3 no-scrollbar">
                                     <Card className="border-main dark:bg-backgrounds bg-background drop-shadow-lg">
                                         <CardHeader>

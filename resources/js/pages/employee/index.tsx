@@ -41,7 +41,7 @@ interface Props {
         Regular: number;
         'Add Crew': number;
         Probationary: number;
-        Sessional: number;
+        // Sessional: number;
     };
     departments?: string[];
     positions?: string[];

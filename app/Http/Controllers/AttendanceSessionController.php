@@ -87,6 +87,8 @@ class AttendanceSessionController extends Controller
    */
   public function destroy(AttendanceSession $attendanceSession)
   {
-    //
+    $attendanceSession->delete();
+    
+    return redirect()->back()->with('success', 'Session time deleted successfully!');
   }
 }

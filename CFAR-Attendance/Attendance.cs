@@ -28,6 +28,7 @@ namespace HRIS_CheckWise_ATMS_
         protected Dictionary<string, Template> LocalTemplates = new Dictionary<string, Template>();
         private bool IsDbVerifying = false;
         private bool isDeviceConnected = false;
+            private bool isRefreshingAttendanceTable = false;
 
 
         public Attendance()
@@ -39,28 +40,40 @@ namespace HRIS_CheckWise_ATMS_
            
         }
 
+        // Helper to marshal actions to the UI thread
+        private void RunOnUiThread(Action action)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(action);
+            }
+            else
+            {
+                action();
+            }
+        }
+
         private bool IsDeviceConnected()
         {
             try
             {
                 ReadersCollection readers = new ReadersCollection();
                 readers.Refresh();
-                //color_indicator.FillColor = readers.Count > 0 ? Color.LightGreen : Color.Red;
 
                 if (readers.Count == 0)
                 {
-                    MessageDb.Text = "No fingerprint device connected.";
+                    RunOnUiThread(() => MessageDb.Text = "No fingerprint device connected.");
                     return false;
                 }
                 else
                 {
-                    MessageDb.Text = "Fingerprint device connected.";
+                    RunOnUiThread(() => MessageDb.Text = "Fingerprint device connected.");
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                MessageDb.Text = "Device check error: " + ex.Message;
+                RunOnUiThread(() => MessageDb.Text = "Device check error: " + ex.Message);
                 return false;
             }
         }
@@ -136,13 +149,13 @@ namespace HRIS_CheckWise_ATMS_
         public void OnReaderConnect(object Capture, string ReaderSerialNumber)
         {
             SetStatus("Reader Connected.");
-            color_indicator.FillColor = Color.LightGreen; // Change color to indicate reader connected
+            RunOnUiThread(() => color_indicator.FillColor = Color.LightGreen);
         }
 
         public void OnReaderDisconnect(object Capture, string ReaderSerialNumber)
         {
             SetStatus("Reader Disconnected.");
-            color_indicator.FillColor = Color.Red; // Change color to indicate reader disconnected
+            RunOnUiThread(() => color_indicator.FillColor = Color.Red);
         }
 
         public void OnFingerTouch(object Capture, string ReaderSerialNumber)
@@ -167,8 +180,11 @@ namespace HRIS_CheckWise_ATMS_
 
         public void OnComplete(object Capture, string ReaderSerialNumber, Sample Sample)
         {
+            RunOnUiThread(() =>
+        {
             MakeReport("Fingerprint captured.");
             Process(Sample);
+            });
         }
 
         protected virtual void Process(Sample sample)
@@ -206,7 +222,7 @@ namespace HRIS_CheckWise_ATMS_
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading templates: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                RunOnUiThread(() => MessageBox.Show("Error loading templates: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error));
             }
             finally
             {
@@ -248,11 +264,9 @@ namespace HRIS_CheckWise_ATMS_
             else
             {
                 SetStatus("No match found in database.");
-                // Play error sound
                 System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                 player.Play();
-                // Show error toast for unregistered fingerprint
-                new Toast(ToastType.Error, "Fingerprint Not Registered", "This fingerprint is not registered to any employee.").Show();
+                RunOnUiThread(() => new Toast(ToastType.Error, "Fingerprint Not Registered", "This fingerprint is not registered to any employee.").Show());
             }
             IsDbVerifying = true;
         }
@@ -276,14 +290,15 @@ namespace HRIS_CheckWise_ATMS_
                             string position = reader["position"].ToString();
                             string employeeid = reader["employeeid"].ToString();
 
+                            RunOnUiThread(() =>
+                            {
                             lblEmployeeName.Text = name;
                             lblEmployeeDepartment.Text = department;
                             lblEmployeePosition.Text = position;
                             lblEmployeeID.Text = employeeId;
-
                             new Toast(ToastType.Success, "Successfully", "Attendance.").Show();
+                            });
 
-                            // Play success sound
                             System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\success.wav");
                             player.Play();
                         }
@@ -292,10 +307,9 @@ namespace HRIS_CheckWise_ATMS_
             }
             catch (Exception ex)
             {
-                // Play error sound
                 System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                 player.Play();
-                MessageBox.Show("Error verifying employee: " + ex.Message);
+                RunOnUiThread(() => MessageBox.Show("Error verifying employee: " + ex.Message));
             }
             finally
             {
@@ -323,13 +337,8 @@ namespace HRIS_CheckWise_ATMS_
         // Fallback method for when API is unavailable
         private string DetermineSessionFallback(DateTime timeIn)
         {
-            int hour = timeIn.Hour;
-            if (hour >= 6 && hour < 12)
-                return "Morning";
-            else if (hour >= 12 && hour < 18)
-                return "Afternoon";
-            else
-                return "Night";
+            // Single company-wide schedule
+            return "company";
         }
 
         // Check if employee is late based on session times
@@ -387,12 +396,9 @@ namespace HRIS_CheckWise_ATMS_
                     string currentSession = await GetCurrentSessionNameAsync(now);
                     string message = $"Attendance not allowed at this time. Current time: {now.ToString("hh:mm:ss tt")}. Active session: {currentSession}";
                     
-                    // Play error sound
                     System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"C:\visual studio code\CFAR-Attendance\Sound\error.wav");
                     player.Play();
-                    
-                    // Show error message
-                    new Toast(ToastType.Error, "Attendance Restricted", message).Show();
+                    RunOnUiThread(() => new Toast(ToastType.Error, "Biometrics Attendance Restricted", message).Show());
                     //MessageDb.Text = "Attendance not allowed outside session hours.";
                     return;
                 }
@@ -411,7 +417,7 @@ namespace HRIS_CheckWise_ATMS_
                     {
                         string message = $"Employee ID not found!";
                         SystemSounds.Exclamation.Play();
-                        new Toast(ToastType.Error," ", message).Show();
+                        RunOnUiThread(() => new Toast(ToastType.Error," ", message).Show());
                         //MessageDb.Text = "Employee ID not found.";
                         return;
                     }
@@ -472,7 +478,7 @@ namespace HRIS_CheckWise_ATMS_
                                 {
                                     updateCmd.Parameters.AddWithValue("@out", timeOut24);
                                     updateCmd.Parameters.AddWithValue("@break", break12);
-                                    updateCmd.Parameters.AddWithValue("@status", "Attendance Complete");
+                                    updateCmd.Parameters.AddWithValue("@status", "Complete");
                                     updateCmd.Parameters.AddWithValue("@session", session);
                                     updateCmd.Parameters.AddWithValue("@aid", attendanceId);
                                     updateCmd.ExecuteNonQuery();
@@ -480,14 +486,14 @@ namespace HRIS_CheckWise_ATMS_
 
                                 SystemSounds.Asterisk.Play();
                                 // MessageDb.Text = "Time-out recorded.";
-                                new Toast(ToastType.Success, "Time-Out Recorded", "Time-out recorded successfully!").Show();
+                                RunOnUiThread(() => new Toast(ToastType.Success, "Time-Out Recorded", "Time-out recorded successfully!").Show());
                             }
                             else
                             {
                                 // Not in time-out period, show message
                                 SystemSounds.Exclamation.Play();
                                 // MessageDb.Text = "Not within time-out period.";
-                                new Toast(ToastType.Warning, "Time-Out Restricted", "Current time is not within the time-out period.").Show();
+                                RunOnUiThread(() => new Toast(ToastType.Warning, "Time-Out Restricted", "Current time is not within the time-out period.").Show());
                             }
                         }
                         else
@@ -499,7 +505,7 @@ namespace HRIS_CheckWise_ATMS_
                             {
                                 // In time-in period - record time-in
                                 bool isLate = await IsLateAsync(now, session);
-                                string attendanceStatus = isLate ? "Late" : "Login Successfully";
+                                string attendanceStatus = isLate ? "Late" : "Time In";
                                 string timeIn24 = now.ToString("HH:mm:ss");
                                 
                                 string insertQuery = "INSERT INTO attendances (employee_id, time_in, attendance_date, attendance_status, session) VALUES (@id, @in, CURDATE(), @status, @session)";
@@ -514,14 +520,14 @@ namespace HRIS_CheckWise_ATMS_
 
                                 SystemSounds.Asterisk.Play();
                                 // MessageDb.Text = "Time-in recorded.";
-                                new Toast(ToastType.Success, "Time-In Recorded", "Time-in recorded successfully!").Show();
+                                RunOnUiThread(() => new Toast(ToastType.Success, "Time-In Recorded", "Time-in recorded successfully!").Show());
                             }
                             else
                             {
                                 // In time-out period but no time-in recorded
                                 SystemSounds.Exclamation.Play();
                                 // MessageDb.Text = "No time-in recorded. Cannot record time-out.";
-                                new Toast(ToastType.Error, "No Time-In", "You must record time-in before recording time-out.").Show();
+                                RunOnUiThread(() => new Toast(ToastType.Error, "No Time-In", "You must record time-in before recording time-out.").Show());
                             }
                         }
                     }
@@ -537,7 +543,7 @@ namespace HRIS_CheckWise_ATMS_
                 {
                     errorMessage += $"\nInner error: {ex.InnerException.Message}";
                 }
-                MessageBox.Show(errorMessage, "Attendance Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                RunOnUiThread(() => MessageBox.Show(errorMessage, "Attendance Error", MessageBoxButtons.OK, MessageBoxIcon.Error));
                 Console.WriteLine($"Attendance error details: {ex}");
             }
             finally
@@ -567,11 +573,12 @@ namespace HRIS_CheckWise_ATMS_
             AutoDetectDeviceConnection();
             isDeviceConnected = IsDeviceConnected();
             timer2.Start();
-            timer3.Start(); // Start session status update timer
+            // Removed timer3 - no more continuous API fetching
+            timer4.Interval = 100000; // Slow down auto refresh to avoid blocking UI
             timer4.Start(); // Start automatic attendance data refresh timer
 
-            // Test API connection and update status
-            await UpdateSessionStatus();
+            // Set initial status without API call
+            RunOnUiThread(() => MessageDb.Text = "Ready. Click Refresh to check session status.");
 
             if (isDeviceConnected)
             {
@@ -579,7 +586,7 @@ namespace HRIS_CheckWise_ATMS_
             }
             else
             {
-                MessageDb.Text = "Device not detected.";
+                RunOnUiThread(() => MessageDb.Text = "Device not detected.");
             }
         }
 
@@ -587,6 +594,8 @@ namespace HRIS_CheckWise_ATMS_
         {
             try
             {
+                RunOnUiThread(() => MessageDb.Text = "Checking session status...");
+                
                 bool apiConnected = ApiConfig.TestApiConnection();
                 DateTime now = DateTime.Now;
                 string currentSession = await GetCurrentSessionNameAsync(now);
@@ -596,21 +605,21 @@ namespace HRIS_CheckWise_ATMS_
                 {
                     if (isAttendanceAllowed)
                     {
-                        MessageDb.Text = $"Device connected. API connected. Ready. Current session: {currentSession}";
+                        RunOnUiThread(() => MessageDb.Text = $"Place your fingerprint in Biometrics: {currentSession}");
                     }
                     else
                     {
-                        MessageDb.Text = $"Device connected. API connected. Attendance restricted. Current session: {currentSession}";
+                        RunOnUiThread(() => MessageDb.Text = $"Biometrics Attendance restricted: {currentSession}");
                     }
                 }
                 else
                 {
-                    MessageDb.Text = "Device connected. API not available - using fallback.";
+                    RunOnUiThread(() => MessageDb.Text = "API not available. Check connection.");
                 }
             }
             catch (Exception ex)
             {
-                MessageDb.Text = "Device connected. Error checking session status.";
+                RunOnUiThread(() => MessageDb.Text = "Error checking session status.");
                 Console.WriteLine($"Error updating session status: {ex.Message}");
             }
         }
@@ -620,6 +629,11 @@ namespace HRIS_CheckWise_ATMS_
         {
             try
             {
+                if (isRefreshingAttendanceTable)
+                {
+                    return;
+                }
+                isRefreshingAttendanceTable = true;
                 dbConn.OpenConnection();
                 string query = @"
             SELECT 
@@ -642,24 +656,23 @@ namespace HRIS_CheckWise_ATMS_
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
 
-                    // Prevent auto columns
+                    RunOnUiThread(() =>
+                    {
                     attendanceTable.AutoGenerateColumns = false;
-
-                    // Bind manually to your existing columns (ensure column DataPropertyNames match SQL aliases)
                     attendanceTable.DataSource = dt;
-
-                    // Attach CellFormatting event for 12-hour display
-                    attendanceTable.CellFormatting -= AttendanceTable_CellFormatting; // Avoid multiple subscriptions
+                        attendanceTable.CellFormatting -= AttendanceTable_CellFormatting;
                     attendanceTable.CellFormatting += AttendanceTable_CellFormatting;
+                    });
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading attendance data: " + ex.Message);
+                RunOnUiThread(() => MessageBox.Show("Error loading attendance data: " + ex.Message));
             }
             finally
             {
                 dbConn.CloseConnection();
+                isRefreshingAttendanceTable = false;
             }
         }
 
@@ -740,16 +753,29 @@ namespace HRIS_CheckWise_ATMS_
             }
         }
 
-        private async void timer3_Tick_1(object sender, EventArgs e)
+        // Manual refresh button click handler
+        private async void refreshBtn_Click(object sender, EventArgs e)
         {
             await UpdateSessionStatus();
         }
 
         private void timer4_Tick(object sender, EventArgs e)
         {
+            // Skip auto-refresh while user is typing or clicking on the optional input controls
+            if (employeeIDoptional.Focused || submitID.Focused)
+            {
+                return;
+            }
+            if (isRefreshingAttendanceTable)
+            {
+                return;
+            }
             LoadAttendanceData();
         }
 
+        private void guna2Button1_Click(object sender, EventArgs e)
+        {
         
+        }
     }
 }

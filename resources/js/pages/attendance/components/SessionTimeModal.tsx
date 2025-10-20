@@ -1,225 +1,234 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "@inertiajs/react";
-import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { router, useForm } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type Session = {
-  id: number;
-  session_name: string;
-  time_in_start: string;
-  time_in_end: string;
-  time_out_start: string;
-  time_out_end: string;
-  late_time?: string;
-  double_scan_window?: number;
+    id: number;
+    session_name: string;
+    time_in_start: string;
+    time_in_end: string;
+    time_out_start: string;
+    time_out_end: string;
+    late_time?: string;
+    double_scan_window?: number;
 };
 
 interface Props {
-  open: boolean;
-  onClose: () => void;
-  mode?: 'create' | 'update';
-  onSuccess?: () => void;
-  sessions: Session[];
+    open: boolean;
+    onClose: () => void;
+    mode?: 'create' | 'update';
+    onSuccess?: () => void;
+    sessions: Session[];
 }
 
-const sessionOptions = [
-  { value: "morning", label: "Morning" },
-  { value: "afternoon", label: "Afternoon" },
-  { value: "night", label: "Night" },
-];
-
 type FormValues = {
-  session_name: string;
-  time_in_start: string;
-  time_in_end: string;
-  time_out_start: string;
-  time_out_end: string;
-  late_time: string;
-  double_scan_window: number;
+    session_name: string;
+    time_in_start: string;
+    time_in_end: string;
+    time_out_start: string;
+    time_out_end: string;
+    late_time?: string;
+    double_scan_window?: number;
 };
 
 export const SessionTimeModal: React.FC<Props> = ({ open, onClose, mode = 'create', onSuccess, sessions }) => {
-  const [selected, setSelected] = useState<string>("morning");
-  const { data, setData, post, put, processing, errors } = useForm<FormValues>({
-    session_name: "morning",
-    time_in_start: "",
-    time_in_end: "",
-    time_out_start: "",
-    time_out_end: "",
-    late_time: "",
-    double_scan_window: 0,
-  });
+    const { data, setData, post, put, processing, errors } = useForm<FormValues>({
+        session_name: 'company',
+        time_in_start: '',
+        time_in_end: '',
+        time_out_start: '',
+        time_out_end: '',
+        late_time: '',
+        double_scan_window: undefined,
+    });
 
-  useEffect(() => {
-    if (mode === 'update') {
-      const session = sessions.find((s) => s.session_name === selected);
-      if (session) {
-        setData({
-          session_name: selected,
-          time_in_start: session.time_in_start,
-          time_in_end: session.time_in_end,
-          time_out_start: session.time_out_start,
-          time_out_end: session.time_out_end,
-          late_time: session.late_time || "",
-          double_scan_window: session.double_scan_window || 0,
-        });
-      }
-    } else if (mode === 'create') {
-      setData({
-        session_name: selected,
-        time_in_start: "",
-        time_in_end: "",
-        time_out_start: "",
-        time_out_end: "",
-        late_time: "",
-        double_scan_window: 0,
-      });
-    }
-  }, [selected, sessions, mode, setData]);
+    const [timeInStart, setTimeInStart] = useState<string>('');
+    const [timeInEnd, setTimeInEnd] = useState<string>('');
+    const [timeOutStart, setTimeOutStart] = useState<string>('');
+    const [timeOutEnd, setTimeOutEnd] = useState<string>('');
+    const [lateTime, setLateTime] = useState<string>('');
+    const [doubleScan, setDoubleScan] = useState<string>('');
+    const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mode === 'update') {
-      const session = sessions.find((s) => s.session_name === selected);
-      if (session) {
-        put(route('attendance-session.update', { id: session.id }), {
-          ...data,
-          preserveScroll: true,
-          onSuccess: () => {
-            toast.success("Session times updated!");
-            onSuccess?.();
-            onClose();
-          },
-          onError: (errors) => {
-            console.error('Update session error:', errors);
-            toast.error("Failed to update session times.");
-          },
-        });
-      } else {
-        toast.error("Session not found for update.");
-      }
-    } else if (mode === 'create') {
-      post(route('attendance-session.store'), {
-        ...data,
-        preserveScroll: true,
-        onSuccess: () => {
-          toast.success("Session times created!");
-          onSuccess?.();
-          onClose();
-        },
-        onError: (errors) => {
-          console.error('Create session error:', errors);
-          toast.error("Failed to create session times.");
-        },
-      });
-    }
-  };
+    useEffect(() => {
+        if (mode === 'update') {
+            const session = sessions[0];
+            if (session) {
+                // Set time values directly (input type="time" expects HH:MM format)
+                setTimeInStart(session.time_in_start || '');
+                setTimeInEnd(session.time_in_end || '');
+                setTimeOutStart(session.time_out_start || '');
+                setTimeOutEnd(session.time_out_end || '');
+                setLateTime(session.late_time || '');
+                setDoubleScan(session.double_scan_window != null ? String(session.double_scan_window) : '');
+                setData({
+                    session_name: session.session_name || 'company',
+                    time_in_start: session.time_in_start,
+                    time_in_end: session.time_in_end,
+                    time_out_start: session.time_out_start,
+                    time_out_end: session.time_out_end,
+                    late_time: session.late_time || '',
+                    double_scan_window: session.double_scan_window,
+                });
+            }
+        } else if (mode === 'create') {
+            setTimeInStart('');
+            setTimeInEnd('');
+            setTimeOutStart('');
+            setTimeOutEnd('');
+            setLateTime('');
+            setDoubleScan('');
+            setData({
+                session_name: 'company',
+                time_in_start: '',
+                time_in_end: '',
+                time_out_start: '',
+                time_out_end: '',
+                late_time: '',
+                double_scan_window: undefined,
+            });
+        }
+    }, [sessions, mode, setData]);
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === 'update' ? 'Change Set Time' : 'Set Session Times'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <Label>
-            Session:
-            <select
-              className="block w-full border rounded p-2 mt-1"
-              value={selected}
-              onChange={e => {
-                setSelected(e.target.value);
-                setData("session_name", e.target.value); // keep in sync
-              }}
-            >
-              {sessionOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Label>
-              Time In Start:
-              <Input
-                type="time"
-                value={data.time_in_start}
-                onChange={e => setData("time_in_start", e.target.value)}
-                required
-              />
-            </Label>
-            <Label>
-              Time In End:
-              <Input
-                type="time"
-                value={data.time_in_end}
-                onChange={e => setData("time_in_end", e.target.value)}
-                required
-              />
-            </Label>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Label>
-              Time Out Start (Optional):
-              <Input
-                type="time"
-                value={data.time_out_start}
-                onChange={e => setData("time_out_start", e.target.value)}
-              />
-            </Label>
-            <Label>
-              Time Out End (Optional):
-              <Input
-                type="time"
-                value={data.time_out_end}
-                onChange={e => setData("time_out_end", e.target.value)}
-              />
-            </Label>
-          </div>
-          <Label>
-            Late Time (Optional):
-            <Input
-              type="time"
-              value={data.late_time}
-              onChange={e => setData("late_time", e.target.value)}
-              min={data.time_in_start}
-              max={data.time_in_end}
-            />
-            <span className="text-xs text-muted-foreground">Set the time after which employees are considered late (must be between Time In Start and Time In End).</span>
-          </Label>
-          <Label>
-            Double Scan Window (minutes):
-            <Input
-              type="number"
-              value={data.double_scan_window}
-              onChange={e => setData("double_scan_window", parseInt(e.target.value) || 0)}
-              min={1}
-              max={60}
-              placeholder="10"
-            />
-            <span className="text-xs text-muted-foreground">Time window (in minutes) for double scan detection. Within this window, second scan is ignored. After this window, second scan becomes emergency logout.</span>
-          </Label>
-          <DialogFooter className="flex justify-end space-x-2 mt-2">
-            <DialogClose asChild>
-              <Button variant='outline' type="button">Cancel</Button>
-            </DialogClose>
-            <Button variant='main' type="submit" disabled={processing}>
-              {processing ? "Saving..." : (mode === 'update' ? "Update" : "Save")}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}; 
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Use the separate start and end times directly
+        const dsNum = doubleScan === '' ? undefined : Math.max(1, Math.min(60, parseInt(doubleScan)));
+
+        const payload = {
+            session_name: data.session_name || 'company',
+            time_in_start: timeInStart || '',
+            time_in_end: timeInEnd || '',
+            time_out_start: timeOutStart || '',
+            time_out_end: timeOutEnd || '',
+            late_time: lateTime || undefined,
+            double_scan_window: dsNum,
+        };
+
+        setSubmitting(true);
+        if (mode === 'update') {
+            const target = sessions[0];
+            if (target) {
+                router.put(route('attendance-session.update', { id: target.id }), payload as any, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        toast.success('Session times updated!');
+                        onSuccess?.();
+                        onClose();
+                    },
+                    onError: (errors) => {
+                        console.error('Update session error:', errors);
+                        toast.error('Failed to update session times.');
+                    },
+                    onFinish: () => setSubmitting(false),
+                });
+            } else {
+                setSubmitting(false);
+                toast.error('No existing session to update.');
+            }
+        } else if (mode === 'create') {
+            router.post(route('attendance-session.store'), payload as any, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Session times created!');
+                    onSuccess?.();
+                    onClose();
+                },
+                onError: (errors) => {
+                    console.error('Create session error:', errors);
+                    toast.error('Failed to create session times.');
+                },
+                onFinish: () => setSubmitting(false),
+            });
+        }
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(v) => {
+                if (!v) onClose();
+            }}
+        >
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{mode === 'update' ? 'Change Set Time' : 'Set Session Times'}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={onSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Time In</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Label className="text-xs">
+                                    Start Time:
+                                    <div className="mt-1">
+                                        <Input type="time" value={timeInStart} onChange={(e) => setTimeInStart(e.target.value)} required />
+                                    </div>
+                                </Label>
+                                <Label className="text-xs">
+                                    End Time:
+                                    <div className="mt-1">
+                                        <Input type="time" value={timeInEnd} onChange={(e) => setTimeInEnd(e.target.value)} required />
+                                    </div>
+                                </Label>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Time Out</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Label className="text-xs">
+                                    Start Time:
+                                    <div className="mt-1">
+                                        <Input type="time" value={timeOutStart} onChange={(e) => setTimeOutStart(e.target.value)} required />
+                                    </div>
+                                </Label>
+                                <Label className="text-xs">
+                                    End Time:
+                                    <div className="mt-1">
+                                        <Input type="time" value={timeOutEnd} onChange={(e) => setTimeOutEnd(e.target.value)} required />
+                                    </div>
+                                </Label>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Label>
+                            Late Time (optional):
+                            <div className="mt-1">
+                                <Input type="time" value={lateTime} onChange={(e) => setLateTime(e.target.value)} />
+                            </div>
+                        </Label>
+                        <Label>
+                            Double Scan Window (minutes):
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="10"
+                                value={doubleScan}
+                                onChange={(e) => {
+                                    const onlyDigits = e.target.value.replace(/\D+/g, '');
+                                    setDoubleScan(onlyDigits);
+                                }}
+                            />
+                        </Label>
+                    </div>
+                    <DialogFooter className="mt-2 flex justify-end space-x-2">
+                        <DialogClose asChild>
+                            <Button variant="outline" type="button">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button variant="main" type="submit" disabled={processing || submitting}>
+                            {processing ? 'Saving...' : mode === 'update' ? 'Update' : 'Save'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+};

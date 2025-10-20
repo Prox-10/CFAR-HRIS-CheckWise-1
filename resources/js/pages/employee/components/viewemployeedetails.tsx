@@ -66,20 +66,33 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
         address: '',
         service_tenure: '',
         date_of_birth: '',
-        picture: '', 
+        picture: '',
         city: '',
         state: '',
         country: '',
         zip_code: '',
         nationality: '',
-        philhealth: '',
-        tin: '',
-        sss: '',
-        pag_ibig: '',
+        tin_password: '',
+        tin_user_id: '',
+        tin_username: '',
+        sss_user_id: '',
+        sss_username: '',
+        sss_password: '',
+        philhealth_user_id: '',
+        philhealth_username: '',
+        philhealth_password: '',
+        hdmf_user_id: '',
+        hdmf_username: '',
+        hdmf_password: '',
         gmail_password: '',
+        recommendation_letter: '',
     };
 
     const { data, setData, errors, processing, reset, post } = useForm<Employee>(initialEmployeeViewData);
+
+    // Flow helpers based on Work Status
+    const hasWorkStatus = !!data.work_status;
+    const isAddCrew = data.work_status === 'Add Crew';
 
     useEffect(() => {
         if (employee) {
@@ -105,11 +118,20 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                 state: employee.state,
                 country: employee.country,
                 zip_code: employee.zip_code,
-                philhealth: employee.philhealth,
-                tin: employee.tin,
-                sss: employee.sss,
-                pag_ibig: employee.pag_ibig,
-                gmail_password: employee.gmail_password,
+                tin_password: employee.tin_password || '',
+                tin_user_id: employee.tin_user_id || '',
+                tin_username: employee.tin_username || '',
+                sss_user_id: employee.sss_user_id || '',
+                sss_username: employee.sss_username || '',
+                sss_password: employee.sss_password || '',
+                philhealth_user_id: employee.philhealth_user_id || '',
+                philhealth_username: employee.philhealth_username || '',
+                philhealth_password: employee.philhealth_password || '',
+                hdmf_user_id: employee.hdmf_user_id || '',
+                hdmf_username: employee.hdmf_username || '',
+                hdmf_password: employee.hdmf_password || '',
+                gmail_password: employee.gmail_password || '',
+                recommendation_letter: employee.recommendation_letter || '',
             });
 
             if (employee.picture) {
@@ -152,10 +174,8 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
 
     const fingerprintStatus = getFingerprintStatus();
 
-  
     const handleFingerprintCapture = (fingerprintData: any) => {
         setFingerprintData(fingerprintData);
-       
     };
 
     return (
@@ -171,7 +191,7 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                         {/* Employee Details Section - Top Card */}
                         <Card className="border-2 border-green-200 shadow-sm">
                             <CardContent className="p-6">
-                                <div className="flex flex-col space-y-6 lg:flex-row lg:space-x-8 lg:space-y-0">
+                                <div className="flex flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-8">
                                     {/* Profile Picture */}
                                     <div className="flex-shrink-0">
                                         <div className="relative h-32 w-32">
@@ -191,12 +211,14 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                             )}
                                         </div>
                                         <div className="mt-3 text-center">
-                                            <h2 className="break-words text-xl font-bold text-green-800" title={data.employee_name}>
+                                            <h2 className="text-xl font-bold break-words text-green-800" title={data.employee_name}>
                                                 {data.employee_name}
                                             </h2>
-                                            <Badge className="mt-1 bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                                                ID: {data.employeeid}
-                                            </Badge>
+                                            {!isAddCrew && (
+                                                <Badge className="mt-1 bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                                                    ID: {data.employeeid}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
 
@@ -211,29 +233,42 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                                 </Badge>
                                             </div>
 
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <Building className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">Department:</span>
-                                                <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.department}>
-                                                    {data.department}
-                                                </Badge>
-                                            </div>
+                                            {!isAddCrew && (
+                                                <div className="flex min-w-0 items-center space-x-3">
+                                                    <Building className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                    <span className="flex-shrink-0 text-sm font-medium text-gray-600">Department:</span>
+                                                    <Badge
+                                                        className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                        title={data.department}
+                                                    >
+                                                        {data.department}
+                                                    </Badge>
+                                                </div>
+                                            )}
 
                                             <div className="flex min-w-0 items-center space-x-3">
                                                 <Calendar className="h-5 w-5 flex-shrink-0 text-green-600" />
                                                 <span className="flex-shrink-0 text-sm font-medium text-gray-600">Birth Date:</span>
-                                                <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.date_of_birth ? formatDate(data.date_of_birth) : 'N/A'}>
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={data.date_of_birth ? formatDate(data.date_of_birth) : 'N/A'}
+                                                >
                                                     {data.date_of_birth ? formatDate(data.date_of_birth) : 'N/A'}
                                                 </Badge>
                                             </div>
 
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <Briefcase className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">Position:</span>
-                                                <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.position}>
-                                                    {data.position}
-                                                </Badge>
-                                            </div>
+                                            {!isAddCrew && (
+                                                <div className="flex min-w-0 items-center space-x-3">
+                                                    <Briefcase className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                    <span className="flex-shrink-0 text-sm font-medium text-gray-600">Position:</span>
+                                                    <Badge
+                                                        className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                        title={data.position}
+                                                    >
+                                                        {data.position}
+                                                    </Badge>
+                                                </div>
+                                            )}
 
                                             <div className="flex min-w-0 items-center space-x-3 sm:col-span-2">
                                                 <Mail className="h-5 w-5 flex-shrink-0 text-green-600" />
@@ -257,33 +292,41 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                         </Card>
 
                         {/* Employment Information Section - Middle Card */}
-                        <Card className="border-2 border-green-200 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-lg font-semibold text-green-800">Employment Information</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div className="flex min-w-0 items-center space-x-3">
-                                        <Calendar className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                        <span className="flex-shrink-0 text-sm font-medium text-gray-600">Hired Date:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}>
-                                            {data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}
-                                        </Badge>
-                                    </div>
-
-                                    <div className="flex min-w-0 flex-col items-start space-y-2">
-                                        <span className="text-sm font-medium text-gray-600">Employee Rating:</span>
-                                        {employee && employee.latest_rating ? (
-                                            <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={employee.latest_rating}>
-                                                {employee.latest_rating}
+                        {!isAddCrew && (
+                            <Card className="border-2 border-green-200 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-lg font-semibold text-green-800">Employment Information</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="flex min-w-0 items-center space-x-3">
+                                            <Calendar className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                            <span className="flex-shrink-0 text-sm font-medium text-gray-600">Hired Date:</span>
+                                            <Badge
+                                                className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                title={data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}
+                                            >
+                                                {data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}
                                             </Badge>
-                                        ) : (
-                                            <span className="text-sm text-gray-500">No rating</span>
-                                        )}
+                                        </div>
+
+                                        <div className="flex min-w-0 flex-col items-start space-y-2">
+                                            <span className="text-sm font-medium text-gray-600">Employee Rating:</span>
+                                            {employee && employee.latest_rating ? (
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={employee.latest_rating}
+                                                >
+                                                    {employee.latest_rating}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">No rating</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Personal Section - Bottom Card */}
                         <Card className="border-2 border-green-200 shadow-sm">
@@ -292,18 +335,26 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div className="flex min-w-0 items-center space-x-3">
-                                        <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                        <span className="flex-shrink-0 text-sm font-medium text-gray-600">Marital Status:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.marital_status}>
-                                            {data.marital_status}
-                                        </Badge>
-                                    </div>
+                                    {!isAddCrew && (
+                                        <div className="flex min-w-0 items-center space-x-3">
+                                            <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                            <span className="flex-shrink-0 text-sm font-medium text-gray-600">Marital Status:</span>
+                                            <Badge
+                                                className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                title={data.marital_status}
+                                            >
+                                                {data.marital_status}
+                                            </Badge>
+                                        </div>
+                                    )}
 
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <User className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">Nationality:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.nationality || 'Not specified'}>
+                                        <Badge
+                                            className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                            title={data.nationality || 'Not specified'}
+                                        >
                                             {data.nationality || 'Not specified'}
                                         </Badge>
                                     </div>
@@ -361,6 +412,70 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                             </CardContent>
                         </Card>
 
+                        {/* Government IDs Section - Only for non-Add Crew */}
+                        {!isAddCrew && (data.philhealth_user_id || data.sss_user_id || data.hdmf_user_id || data.tin_user_id) && (
+                            <Card className="border-2 border-green-200 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-lg font-semibold text-green-800">Government IDs</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        {data.philhealth_user_id && (
+                                            <div className="flex min-w-0 items-center space-x-3">
+                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">Philhealth ID:</span>
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={data.philhealth_user_id}
+                                                >
+                                                    {data.philhealth_user_id}
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {data.sss_user_id && (
+                                            <div className="flex min-w-0 items-center space-x-3">
+                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">SSS ID:</span>
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={data.sss_user_id}
+                                                >
+                                                    {data.sss_user_id}
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {data.hdmf_user_id && (
+                                            <div className="flex min-w-0 items-center space-x-3">
+                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">HDMF ID:</span>
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={data.hdmf_user_id}
+                                                >
+                                                    {data.hdmf_user_id}
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {data.tin_user_id && (
+                                            <div className="flex min-w-0 items-center space-x-3">
+                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">TIN ID:</span>
+                                                <Badge
+                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                    title={data.tin_user_id}
+                                                >
+                                                    {data.tin_user_id}
+                                                </Badge>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         {/* Fingerprints Section - Updated with registration functionality */}
                         <Card className="border-2 border-green-200 shadow-sm">
                             <CardHeader>
@@ -374,7 +489,9 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                                 : 'border border-red-300 bg-red-100 text-red-800'
                                         }`}
                                     >
-                                        <Fingerprint className={`mr-2 h-4 w-4 ${fingerprintStatus.hasFingerprint ? 'text-green-600' : 'text-red-600'}`} />
+                                        <Fingerprint
+                                            className={`mr-2 h-4 w-4 ${fingerprintStatus.hasFingerprint ? 'text-green-600' : 'text-red-600'}`}
+                                        />
                                         {fingerprintStatus.status}
                                     </Badge>
                                 </div>

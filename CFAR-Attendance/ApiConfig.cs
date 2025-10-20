@@ -60,7 +60,7 @@ namespace HRIS_CheckWise_ATMS_
             {
                 using (var client = new System.Net.Http.HttpClient())
                 {
-                    client.Timeout = TimeSpan.FromSeconds(5);
+                    client.Timeout = TimeSpan.FromSeconds(60);
                     var response = client.GetAsync($"{ApiBaseUrl}/api/attendance-sessions").Result;
                     return response.IsSuccessStatusCode;
                 }
