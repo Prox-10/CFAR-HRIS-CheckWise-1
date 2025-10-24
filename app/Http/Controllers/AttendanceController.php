@@ -54,6 +54,22 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Display the daily checking page for PP crew.
+     */
+    public function dailyChecking()
+    {
+        // Fetch employees from Production department
+        $employees = \App\Models\Employee::where('department', 'Production')
+            ->select('id', 'employeeid', 'employee_name', 'department', 'position', 'work_status')
+            ->orderBy('employee_name', 'asc')
+            ->get();
+
+        return Inertia::render('attendance/DailyCheckingPage', [
+            'employees' => $employees,
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

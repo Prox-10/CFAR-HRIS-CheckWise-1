@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware(['permission:View Attendance'])->group(function () {
+        Route::get('attendance/daily-checking', [AttendanceController::class, 'dailyChecking'])->name('attendance.daily-checking');
         Route::resource('attendance', AttendanceController::class)->names('attendance');
         Route::resource('attendance-session', AttendanceSessionController::class)->names('attendance-session');
     });

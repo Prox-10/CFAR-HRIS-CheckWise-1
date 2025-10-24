@@ -12,6 +12,7 @@ import { toast, Toaster } from 'sonner';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
 import EditEmployeeModal from './components/editemployeemodal';
+import { QuickActions } from './components/QuickActions';
 import { SectionCards } from './components/section-cards';
 import { Attendance } from './types/attendance';
 // import { Attendance } from './components/columns';
@@ -159,6 +160,20 @@ export default function Index({
                                                             }}
                                                         />
                                                         {/* <SectionCards totalRevenue={totalRevenue} payments={[]} totalEmployee={totalEmployee} /> */}
+                                                    </div>
+                                                    {/* Quick Actions Component */}
+                                                    <div className="mt-4">
+                                                        <QuickActions
+                                                            totalToday={
+                                                                data.filter((att) => {
+                                                                    const today = new Date().toISOString().split('T')[0];
+                                                                    const attDate = att.attendanceDate?.split('T')[0];
+                                                                    return attDate === today;
+                                                                }).length
+                                                            }
+                                                            onRefresh={handleRefresh}
+                                                            refreshing={refreshing}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>

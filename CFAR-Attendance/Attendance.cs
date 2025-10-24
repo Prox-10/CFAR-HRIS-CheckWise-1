@@ -277,7 +277,7 @@ namespace HRIS_CheckWise_ATMS_
             {
                 dbConn.OpenConnection();
 
-                string query = "SELECT employee_name,department,position,employeeid FROM employees WHERE employeeid = @id";
+                string query = "SELECT employee_name,department,position,employeeid,work_status FROM employees WHERE employeeid = @id";
                 using (MySqlCommand cmd = new MySqlCommand(query, dbConn.Connection))
                 {
                     cmd.Parameters.AddWithValue("@id", employeeId);
@@ -289,13 +289,14 @@ namespace HRIS_CheckWise_ATMS_
                             string department = reader["department"].ToString();
                             string position = reader["position"].ToString();
                             string employeeid = reader["employeeid"].ToString();
-
+                            string work_status = reader["work_status"].ToString();
                             RunOnUiThread(() =>
                             {
                             lblEmployeeName.Text = name;
                             lblEmployeeDepartment.Text = department;
                             lblEmployeePosition.Text = position;
                             lblEmployeeID.Text = employeeId;
+                            lblwork_status.Text = work_status;
                             new Toast(ToastType.Success, "Successfully", "Attendance.").Show();
                             });
 
@@ -756,6 +757,8 @@ namespace HRIS_CheckWise_ATMS_
         // Manual refresh button click handler
         private async void refreshBtn_Click(object sender, EventArgs e)
         {
+            // Add immediate feedback that button was clicked
+            RunOnUiThread(() => MessageDb.Text = "Refreshing session status...");
             await UpdateSessionStatus();
         }
 
@@ -776,6 +779,38 @@ namespace HRIS_CheckWise_ATMS_
         private void guna2Button1_Click(object sender, EventArgs e)
         {
         
+        }
+
+        private void attendanceTable_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            foreach (DataGridViewRow row in attendanceTable.Rows)
+            {
+                if (row.Index % 2 == 0)
+                    row.DefaultCellStyle.BackColor = Color.LightGreen;
+                else
+                    row.DefaultCellStyle.BackColor = Color.LightCoral;
+            }
+        }
+
+        private void guna2HtmlLabel14_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblEmployeeID_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void attendanceTable_AlternatingRowsDefaultCellStyleChanged(object sender, EventArgs e)
+        {
+            foreach (DataGridViewRow row in attendanceTable.Rows)
+            {
+                if (row.Index % 2 == 0)
+                    row.DefaultCellStyle.BackColor = Color.LightGreen;
+                else
+                    row.DefaultCellStyle.BackColor = Color.LightCoral;
+            }
         }
     }
 }

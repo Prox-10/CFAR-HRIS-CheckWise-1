@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
-import { CircleEllipsis, Edit, Eye } from 'lucide-react';
+import { CircleCheck, CircleCheckBig, CircleEllipsis, Edit, Eye } from 'lucide-react';
 // import { Employees } from '../types/employees';
 import DeleteConfirmationDialog from '@/components/delete-alert';
 import { usePermission } from '@/hooks/user-permission';
@@ -166,12 +166,18 @@ const columns = (
 
             let circleColor = 'bg-gray-300';
             if (status === 'Late') circleColor = 'bg-yellow-400';
-            else if (status === 'Time In') circleColor = 'bg-blue-500';
+            else if (status === 'Time In') circleColor = 'bg-green-500';
             else if (status === 'Attendance Complete') circleColor = 'bg-green-500';
 
             return (
                 <div className="flex w-24 items-center gap-2">
-                    <span className={`inline-block h-3 w-3 rounded-full ${circleColor}`}></span>
+                    {status === 'Complete' ? (
+                        <CircleCheckBig className="h-4 w-4 text-green-600" />
+                    ) : status === 'Time In' ? (
+                        <CircleCheck className="h-4 w-4 text-green-500" />
+                    ) : (
+                        <span className={`inline-block h-3 w-3 rounded-full ${circleColor}`}></span>
+                    )}
                     <span className="text-xs font-medium">{status}</span>
                 </div>
             );
