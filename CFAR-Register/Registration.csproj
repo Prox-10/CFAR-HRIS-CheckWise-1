@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Logo NEW.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Avalonia, Version=11.3.1.0, Culture=neutral, PublicKeyToken=c8d484a7012f9a8b, processorArchitecture=MSIL">
       <HintPath>packages\Avalonia.11.3.1\lib\netstandard2.0\Avalonia.dll</HintPath>
@@ -238,6 +241,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="Logo NEW.ico" />
     <Content Include="Properties\success.wav" />
     <None Include="Resources\Logo NEW.png" />
     <None Include="Resources\Logo NEW1.png" />

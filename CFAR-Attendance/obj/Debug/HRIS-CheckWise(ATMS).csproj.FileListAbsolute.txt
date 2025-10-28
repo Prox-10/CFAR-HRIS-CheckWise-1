@@ -626,4 +626,3 @@ C:\laragon\www\CFAR-HRIS-CheckWise\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS
 C:\laragon\www\CFAR-HRIS-CheckWise\CFAR-Attendance\obj\Debug\HRIS-Che.D286A6FE.Up2Date
 C:\laragon\www\CFAR-HRIS-CheckWise\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe
 C:\laragon\www\CFAR-HRIS-CheckWise\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).pdb
-C:\laragon\www\CFAR-HRIS-CheckWise\CFAR-Attendance\obj\Debug\HRIS-CheckWise(ATMS).exe.config

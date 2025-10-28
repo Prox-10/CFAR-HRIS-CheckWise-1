@@ -38,25 +38,27 @@ namespace HRIS_CheckWise_ATMS_
             this.MessageDb = new System.Windows.Forms.Label();
             this.guna2HtmlLabel1 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             this.fImage = new Guna.UI2.WinForms.Guna2PictureBox();
+            this.guna2GradientPanel1 = new Guna.UI2.WinForms.Guna2GradientPanel();
             ((System.ComponentModel.ISupportInitialize)(this.fImage)).BeginInit();
+            this.guna2GradientPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // readerInfo
             // 
             this.readerInfo.BackColor = System.Drawing.Color.Honeydew;
-            this.readerInfo.Location = new System.Drawing.Point(69, 61);
+            this.readerInfo.Location = new System.Drawing.Point(95, 58);
             this.readerInfo.Multiline = true;
             this.readerInfo.Name = "readerInfo";
             this.readerInfo.ReadOnly = true;
             this.readerInfo.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.readerInfo.Size = new System.Drawing.Size(245, 56);
+            this.readerInfo.Size = new System.Drawing.Size(295, 56);
             this.readerInfo.TabIndex = 11;
             // 
             // StatusTextLabel
             // 
             this.StatusTextLabel.BackColor = System.Drawing.Color.Transparent;
             this.StatusTextLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.StatusTextLabel.Location = new System.Drawing.Point(12, 28);
+            this.StatusTextLabel.Location = new System.Drawing.Point(7, 30);
             this.StatusTextLabel.Name = "StatusTextLabel";
             this.StatusTextLabel.Size = new System.Drawing.Size(66, 15);
             this.StatusTextLabel.TabIndex = 12;
@@ -65,7 +67,7 @@ namespace HRIS_CheckWise_ATMS_
             // employeeID
             // 
             this.employeeID.AutoSize = true;
-            this.employeeID.Location = new System.Drawing.Point(51, 29);
+            this.employeeID.Location = new System.Drawing.Point(74, 31);
             this.employeeID.Name = "employeeID";
             this.employeeID.Size = new System.Drawing.Size(59, 13);
             this.employeeID.TabIndex = 13;
@@ -78,18 +80,20 @@ namespace HRIS_CheckWise_ATMS_
             // 
             // save
             // 
-            this.save.BorderRadius = 10;
+            this.save.Animated = true;
+            this.save.AutoRoundedCorners = true;
+            this.save.BorderRadius = 17;
             this.save.BorderThickness = 1;
             this.save.DisabledState.BorderColor = System.Drawing.Color.DarkGray;
             this.save.DisabledState.CustomBorderColor = System.Drawing.Color.DarkGray;
             this.save.DisabledState.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(169)))), ((int)(((byte)(169)))), ((int)(((byte)(169)))));
             this.save.DisabledState.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(141)))), ((int)(((byte)(141)))));
             this.save.FillColor = System.Drawing.Color.LightGreen;
-            this.save.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.save.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.save.ForeColor = System.Drawing.Color.Black;
-            this.save.Location = new System.Drawing.Point(69, 373);
+            this.save.Location = new System.Drawing.Point(95, 414);
             this.save.Name = "save";
-            this.save.Size = new System.Drawing.Size(245, 39);
+            this.save.Size = new System.Drawing.Size(295, 37);
             this.save.TabIndex = 26;
             this.save.Text = "Save";
             this.save.Click += new System.EventHandler(this.save_Click_1);
@@ -97,7 +101,7 @@ namespace HRIS_CheckWise_ATMS_
             // MessageDb
             // 
             this.MessageDb.AutoSize = true;
-            this.MessageDb.Location = new System.Drawing.Point(51, 9);
+            this.MessageDb.Location = new System.Drawing.Point(46, 11);
             this.MessageDb.Name = "MessageDb";
             this.MessageDb.Size = new System.Drawing.Size(59, 13);
             this.MessageDb.TabIndex = 28;
@@ -107,7 +111,7 @@ namespace HRIS_CheckWise_ATMS_
             // 
             this.guna2HtmlLabel1.BackColor = System.Drawing.Color.Transparent;
             this.guna2HtmlLabel1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.guna2HtmlLabel1.Location = new System.Drawing.Point(12, 8);
+            this.guna2HtmlLabel1.Location = new System.Drawing.Point(7, 10);
             this.guna2HtmlLabel1.Name = "guna2HtmlLabel1";
             this.guna2HtmlLabel1.Size = new System.Drawing.Size(41, 15);
             this.guna2HtmlLabel1.TabIndex = 27;
@@ -118,28 +122,40 @@ namespace HRIS_CheckWise_ATMS_
             this.fImage.BackColor = System.Drawing.Color.Transparent;
             this.fImage.BorderRadius = 5;
             this.fImage.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.fImage.FillColor = System.Drawing.Color.Transparent;
+            this.fImage.FillColor = System.Drawing.Color.WhiteSmoke;
             this.fImage.ImageRotate = 0F;
-            this.fImage.Location = new System.Drawing.Point(69, 141);
+            this.fImage.Location = new System.Drawing.Point(95, 120);
             this.fImage.Name = "fImage";
-            this.fImage.Size = new System.Drawing.Size(245, 226);
+            this.fImage.Size = new System.Drawing.Size(295, 277);
             this.fImage.TabIndex = 22;
             this.fImage.TabStop = false;
             this.fImage.UseTransparentBackground = true;
+            // 
+            // guna2GradientPanel1
+            // 
+            this.guna2GradientPanel1.BackColor = System.Drawing.Color.Transparent;
+            this.guna2GradientPanel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("guna2GradientPanel1.BackgroundImage")));
+            this.guna2GradientPanel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.guna2GradientPanel1.Controls.Add(this.readerInfo);
+            this.guna2GradientPanel1.Controls.Add(this.MessageDb);
+            this.guna2GradientPanel1.Controls.Add(this.guna2HtmlLabel1);
+            this.guna2GradientPanel1.Controls.Add(this.fImage);
+            this.guna2GradientPanel1.Controls.Add(this.employeeID);
+            this.guna2GradientPanel1.Controls.Add(this.save);
+            this.guna2GradientPanel1.Controls.Add(this.StatusTextLabel);
+            this.guna2GradientPanel1.Location = new System.Drawing.Point(0, 0);
+            this.guna2GradientPanel1.Name = "guna2GradientPanel1";
+            this.guna2GradientPanel1.Size = new System.Drawing.Size(481, 489);
+            this.guna2GradientPanel1.TabIndex = 29;
+            this.guna2GradientPanel1.UseTransparentBackground = true;
             // 
             // Registration
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Honeydew;
-            this.ClientSize = new System.Drawing.Size(390, 472);
-            this.Controls.Add(this.MessageDb);
-            this.Controls.Add(this.guna2HtmlLabel1);
-            this.Controls.Add(this.save);
-            this.Controls.Add(this.fImage);
-            this.Controls.Add(this.employeeID);
-            this.Controls.Add(this.StatusTextLabel);
-            this.Controls.Add(this.readerInfo);
+            this.ClientSize = new System.Drawing.Size(481, 489);
+            this.Controls.Add(this.guna2GradientPanel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
@@ -151,8 +167,9 @@ namespace HRIS_CheckWise_ATMS_
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.CheckWise_FormClosing_1);
             this.Load += new System.EventHandler(this.CheckWise_Load_1);
             ((System.ComponentModel.ISupportInitialize)(this.fImage)).EndInit();
+            this.guna2GradientPanel1.ResumeLayout(false);
+            this.guna2GradientPanel1.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -165,6 +182,7 @@ namespace HRIS_CheckWise_ATMS_
         private Guna.UI2.WinForms.Guna2Button save;
         private System.Windows.Forms.Label MessageDb;
         private Guna.UI2.WinForms.Guna2HtmlLabel guna2HtmlLabel1;
+        private Guna.UI2.WinForms.Guna2GradientPanel guna2GradientPanel1;
     }
 }
 

@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sound", "Sound", "{02EA681E
 		..\..\Users\USER\Downloads\success.wav = ..\..\Users\USER\Downloads\success.wav
 	EndProjectSection
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Fin-Registration", "..\..\..\..\visual studio code\Fin-Registration\Fin-Registration.vdproj", "{DEFB9406-15A9-868B-6387-AADA7A9C09B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,8 @@ Global
 		{4FE9C952-101E-4CE3-BFE5-6B6BF35806C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FE9C952-101E-4CE3-BFE5-6B6BF35806C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FE9C952-101E-4CE3-BFE5-6B6BF35806C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEFB9406-15A9-868B-6387-AADA7A9C09B5}.Debug|Any CPU.ActiveCfg = Debug
+		{DEFB9406-15A9-868B-6387-AADA7A9C09B5}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

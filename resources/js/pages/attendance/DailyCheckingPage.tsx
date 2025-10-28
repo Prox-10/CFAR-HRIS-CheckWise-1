@@ -9,8 +9,9 @@ import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sideb
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import { pdf } from '@react-pdf/renderer';
 import axios from 'axios';
-import { Printer, Save } from 'lucide-react';
+import { Eye, Printer, Save } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -126,8 +127,102 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         toast.success('Daily checking saved successfully!');
     };
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = async () => {
+        try {
+            console.log('Generating PDF for printing...', { date, workers: assignmentData });
+
+            // Show loading toast
+            toast.loading('Generating PDF for printing...', { id: 'pdf-print' });
+
+            // Import the PDF component dynamically
+            const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+            const PackingPlantDocument = PackingPlantPDF({ weekStart: new Date(date), workers: assignmentData });
+
+            // Generate PDF blob
+            const instance = pdf(PackingPlantDocument());
+            const blob = await instance.toBlob();
+
+            // Dismiss loading toast
+            toast.dismiss('pdf-print');
+
+            // Create a blob URL
+            const pdfUrl = URL.createObjectURL(blob);
+
+            // Open in new window and trigger print dialog
+            const printWindow = window.open(pdfUrl, '_blank');
+
+            if (printWindow) {
+                printWindow.addEventListener('load', () => {
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 250);
+                });
+
+                // Clean up the URL after a delay
+                setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
+            }
+
+            toast.success('PDF opened for printing');
+        } catch (error) {
+            console.error('Error generating PDF for printing:', error);
+            toast.dismiss('pdf-print');
+            toast.error('Failed to generate PDF for printing. Please try again.');
+        }
+    };
+
+    // Function to view the PDF in a new window
+    const viewPPPdf = async () => {
+        try {
+            console.log('Generating PDF for new window...', { date, workers: assignmentData });
+
+            // Show loading toast
+            toast.loading('Generating PDF...', { id: 'pdf-generation' });
+
+            // Import the PDF component dynamically
+            const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+            const PackingPlantDocument = PackingPlantPDF({ weekStart: new Date(date), workers: assignmentData });
+
+            // Generate PDF blob
+            const instance = pdf(PackingPlantDocument());
+            const blob = await instance.toBlob();
+
+            // Dismiss loading toast
+            toast.dismiss('pdf-generation');
+
+            // Create a blob URL
+            const pdfUrl = URL.createObjectURL(blob);
+
+            // Try to open in new window
+            const newWindow = window.open('', '_blank');
+
+            if (newWindow) {
+                // Write the blob URL as iframe src to handle PDF viewing
+                newWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Packing Plant Daily Checking - ${date}</title>
+                            <style>
+                                body { margin: 0; padding: 0; }
+                                iframe { width: 100%; height: 100vh; border: none; }
+                            </style>
+                        </head>
+                        <body>
+                            <iframe src="${pdfUrl}" type="application/pdf"></iframe>
+                        </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            }
+
+            // Clean up the URL after longer delay to ensure PDF loads
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
+
+            toast.success('PDF opened in new window');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.dismiss('pdf-generation');
+            toast.error('Failed to generate PDF. Please try again.');
+        }
     };
 
     // Get days of the week for the table header (starting with Monday)
@@ -172,6 +267,10 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                     </div>
                                 </div>
                                 <div className="flex gap-2 print:hidden">
+                                    {/* <Button variant="outline" onClick={viewPPPdf} className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View
+                                    </Button> */}
                                     <Button variant="outline" onClick={handlePrint} className="border-blue-300 text-blue-600 hover:bg-blue-50">
                                         <Printer className="mr-2 h-4 w-4" />
                                         Print

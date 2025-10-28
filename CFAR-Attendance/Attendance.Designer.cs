@@ -48,7 +48,6 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2HtmlLabel6 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             this.submitID = new Guna.UI2.WinForms.Guna2Button();
             this.guna2HtmlLabel7 = new Guna.UI2.WinForms.Guna2HtmlLabel();
-            this.guna2Separator1 = new Guna.UI2.WinForms.Guna2Separator();
             this.lblTime = new Guna.UI2.WinForms.Guna2HtmlLabel();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.lblDate = new Guna.UI2.WinForms.Guna2HtmlLabel();
@@ -202,7 +201,7 @@ namespace HRIS_CheckWise_ATMS_
             this.attendanceTable.RowTemplate.DividerHeight = 2;
             this.attendanceTable.RowTemplate.Height = 50;
             this.attendanceTable.RowTemplate.ReadOnly = true;
-            this.attendanceTable.Size = new System.Drawing.Size(1017, 337);
+            this.attendanceTable.Size = new System.Drawing.Size(1017, 328);
             this.attendanceTable.TabIndex = 31;
             this.attendanceTable.Theme = Guna.UI2.WinForms.Enums.DataGridViewPresetThemes.Green;
             this.attendanceTable.ThemeStyle.AlternatingRowsStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(201)))), ((int)(((byte)(231)))), ((int)(((byte)(203)))));
@@ -327,21 +326,12 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2HtmlLabel7.Text = "CFARBEMCO";
             this.guna2HtmlLabel7.TextAlignment = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // guna2Separator1
-            // 
-            this.guna2Separator1.BackColor = System.Drawing.Color.Transparent;
-            this.guna2Separator1.FillColor = System.Drawing.Color.Black;
-            this.guna2Separator1.Location = new System.Drawing.Point(3, 545);
-            this.guna2Separator1.Name = "guna2Separator1";
-            this.guna2Separator1.Size = new System.Drawing.Size(1348, 10);
-            this.guna2Separator1.TabIndex = 43;
-            // 
             // lblTime
             // 
             this.lblTime.BackColor = System.Drawing.Color.Transparent;
             this.lblTime.Font = new System.Drawing.Font("LEMON MILK Bold", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTime.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.lblTime.Location = new System.Drawing.Point(489, 561);
+            this.lblTime.Location = new System.Drawing.Point(513, 561);
             this.lblTime.Name = "lblTime";
             this.lblTime.Size = new System.Drawing.Size(450, 93);
             this.lblTime.TabIndex = 44;
@@ -358,7 +348,7 @@ namespace HRIS_CheckWise_ATMS_
             this.lblDate.BackColor = System.Drawing.Color.Transparent;
             this.lblDate.Font = new System.Drawing.Font("Candara", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblDate.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.lblDate.Location = new System.Drawing.Point(608, 654);
+            this.lblDate.Location = new System.Drawing.Point(580, 654);
             this.lblDate.Name = "lblDate";
             this.lblDate.Size = new System.Drawing.Size(135, 31);
             this.lblDate.TabIndex = 45;
@@ -608,7 +598,7 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2ShadowPanel1.ShadowDepth = 0;
             this.guna2ShadowPanel1.ShadowShift = 0;
             this.guna2ShadowPanel1.ShadowStyle = Guna.UI2.WinForms.Guna2ShadowPanel.ShadowMode.ForwardDiagonal;
-            this.guna2ShadowPanel1.Size = new System.Drawing.Size(324, 337);
+            this.guna2ShadowPanel1.Size = new System.Drawing.Size(324, 351);
             this.guna2ShadowPanel1.TabIndex = 51;
             // 
             // guna2HtmlLabel14
@@ -717,7 +707,6 @@ namespace HRIS_CheckWise_ATMS_
             this.Controls.Add(guna2HtmlLabel12);
             this.Controls.Add(this.lblDate);
             this.Controls.Add(this.lblTime);
-            this.Controls.Add(this.guna2Separator1);
             this.Controls.Add(this.guna2PictureBox1);
             this.Controls.Add(this.guna2HtmlLabel7);
             this.Controls.Add(this.guna2HtmlLabel6);
@@ -745,7 +734,6 @@ namespace HRIS_CheckWise_ATMS_
         private Guna.UI2.WinForms.Guna2Button submitID;
         private Guna.UI2.WinForms.Guna2HtmlLabel guna2HtmlLabel7;
         private Guna.UI2.WinForms.Guna2PictureBox guna2PictureBox1;
-        private Guna.UI2.WinForms.Guna2Separator guna2Separator1;
         private Guna.UI2.WinForms.Guna2HtmlLabel lblTime;
         private System.Windows.Forms.Timer timer1;
         private Guna.UI2.WinForms.Guna2HtmlLabel lblDate;
