@@ -11,7 +11,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { pdf } from '@react-pdf/renderer';
 import axios from 'axios';
-import { Eye, Printer, Save } from 'lucide-react';
+import { Printer, Save } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -113,6 +113,19 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             ...prev,
             [field]: prev[field].map((item, i) => (i === index ? value : item)),
         }));
+    };
+
+    // Get all currently selected employees across all positions
+    const getSelectedEmployees = () => {
+        const selected: string[] = [];
+        Object.values(assignmentData).forEach((slots) => {
+            slots.forEach((employee) => {
+                if (employee && !selected.includes(employee)) {
+                    selected.push(employee);
+                }
+            });
+        });
+        return selected;
     };
 
     const handleLeaveChange = (type: string, value: string) => {
@@ -349,11 +362,23 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                     <SelectValue placeholder="Select..." />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    {employees.map((emp) => (
-                                                                        <SelectItem key={emp.id} value={emp.employee_name} className="text-xs">
-                                                                            {emp.employee_name}
-                                                                        </SelectItem>
-                                                                    ))}
+                                                                    {employees.map((emp) => {
+                                                                        const selectedEmployees = getSelectedEmployees();
+                                                                        const isSelected = selectedEmployees.includes(emp.employee_name);
+                                                                        const isCurrentSelection =
+                                                                            assignmentData[position.field]?.[slotIndex] === emp.employee_name;
+
+                                                                        return (
+                                                                            <SelectItem
+                                                                                key={emp.id}
+                                                                                value={emp.employee_name}
+                                                                                className="text-xs"
+                                                                                disabled={isSelected && !isCurrentSelection}
+                                                                            >
+                                                                                {emp.employee_name}
+                                                                            </SelectItem>
+                                                                        );
+                                                                    })}
                                                                 </SelectContent>
                                                             </Select>
                                                         </td>

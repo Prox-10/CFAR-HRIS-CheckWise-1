@@ -32,7 +32,7 @@ Route::post('/employee/store', [EmployeeController::class, 'store']);
 Route::get('/fingerprint/all', [FingerprintController::class, 'all']);
 Route::get('/employee/all', [ApiEmployeeController::class, 'index']);
 Route::get('/employees/packing-plant', function () {
-    $employees = Employee::where('department', 'Production')
+    $employees = Employee::where('department', 'Packing Plant')
         ->select('id', 'employeeid', 'employee_name', 'department', 'position', 'work_status')
         ->orderBy('employee_name', 'asc')
         ->get();
