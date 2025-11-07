@@ -19,9 +19,13 @@ interface Employee {
     id: string;
     employeeid: string;
     employee_name: string;
+    firstname?: string;
+    middlename?: string;
+    lastname?: string;
     department: string;
     position: string;
     work_status: string;
+    attendances?: { [date: string]: { time_in?: string; time_out?: string } };
 }
 
 interface DailyCheckingPageProps {
@@ -63,10 +67,36 @@ const positions = [
 // Leave types
 const leaveTypes = ['CW', 'ML', 'AWP', 'AWOP', 'SICK LEAVE', 'EMERGENCY LEAVE', 'CUT-OFF'];
 
+// Helper function to format employee name as "Lastname FirstInitial."
+const formatEmployeeDisplayName = (employee: Employee): string => {
+    if (employee.lastname && employee.firstname) {
+        // Get first initial from firstname (handle cases like "RJ Kyle" -> "R")
+        const firstInitial = employee.firstname.trim().charAt(0).toUpperCase();
+        return `${employee.lastname} ${firstInitial}.`;
+    }
+    // Fallback to employee_name if name fields are not available
+    return employee.employee_name;
+};
+
+// Helper function to format time from HH:mm:ss to HH:mm for HTML time input
+const formatTimeForInput = (time: string | undefined | null): string => {
+    if (!time) return '';
+    // If time is in HH:mm:ss format, extract HH:mm
+    if (time.includes(':')) {
+        const parts = time.split(':');
+        return `${parts[0]}:${parts[1]}`;
+    }
+    return time;
+};
+
 export default function DailyCheckingPage({ employees: initialEmployees = [] }: DailyCheckingPageProps) {
     const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [assignmentData, setAssignmentData] = useState<{ [key: string]: string[] }>({});
+    // Store time_in and time_out for each position field, slot index, and day index
+    const [timeData, setTimeData] = useState<{
+        [key: string]: { [slotIndex: number]: { [dayIndex: number]: { time_in: string; time_out: string } } };
+    }>({});
     const [leaveData, setLeaveData] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
     const [preparedBy, setPreparedBy] = useState('');
@@ -75,10 +105,19 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     // Initialize assignment data structure
     useEffect(() => {
         const initialData: { [key: string]: string[] } = {};
+        const initialTimeData: typeof timeData = {};
         positions.forEach((position) => {
             initialData[position.field] = Array(position.slots).fill('');
+            initialTimeData[position.field] = {};
+            for (let i = 0; i < position.slots; i++) {
+                initialTimeData[position.field][i] = {};
+                for (let j = 0; j < 7; j++) {
+                    initialTimeData[position.field][i][j] = { time_in: '', time_out: '' };
+                }
+            }
         });
         setAssignmentData(initialData);
+        setTimeData(initialTimeData);
 
         // Initialize leave data
         const initialLeaveData: { [key: string]: string } = {};
@@ -88,17 +127,43 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         setLeaveData(initialLeaveData);
     }, []);
 
-    // Fetch employees
-    useEffect(() => {
-        if (initialEmployees.length === 0) {
-            fetchPackingPlantEmployees();
-        }
-    }, []);
+    // Get days of the week for the table header (starting with Monday)
+    const getDaysOfWeek = () => {
+        const selectedDate = new Date(date);
+        const days = [];
+        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const startOfWeek = new Date(selectedDate);
 
-    const fetchPackingPlantEmployees = async () => {
+        // Calculate days to subtract to get to Monday
+        // If Sunday (0), go back 6 days; if Monday (1), go back 0 days, etc.
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(selectedDate.getDate() - daysToSubtract);
+
+        // Generate 7 days starting from Monday
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(startOfWeek);
+            day.setDate(startOfWeek.getDate() + i);
+            days.push(day);
+        }
+        return days; // [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+    };
+
+    // Fetch employees when date changes
+    useEffect(() => {
+        const days = getDaysOfWeek();
+        const startDate = days[0].toISOString().split('T')[0];
+        const endDate = days[6].toISOString().split('T')[0];
+        fetchPackingPlantEmployees(startDate, endDate);
+    }, [date]);
+
+    const fetchPackingPlantEmployees = async (startDate?: string, endDate?: string) => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/employees/packing-plant');
+            let url = '/api/employees/packing-plant';
+            if (startDate && endDate) {
+                url += `?start_date=${startDate}&end_date=${endDate}`;
+            }
+            const response = await axios.get(url);
             setEmployees(response.data);
         } catch (error) {
             console.error('Error fetching employees:', error);
@@ -108,10 +173,86 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         }
     };
 
-    const handleAssignmentChange = (field: string, index: number, value: string) => {
+    const handleAssignmentChange = (field: string, slotIndex: number, value: string) => {
         setAssignmentData((prev) => ({
             ...prev,
-            [field]: prev[field].map((item, i) => (i === index ? value : item)),
+            [field]: prev[field].map((item, i) => (i === slotIndex ? value : item)),
+        }));
+
+        // Auto-populate time_in and time_out when employee is selected
+        if (value) {
+            const selectedEmployee = employees.find((emp) => emp.employee_name === value);
+            if (selectedEmployee && selectedEmployee.attendances) {
+                const days = getDaysOfWeek();
+                const newTimeData = { ...timeData };
+
+                if (!newTimeData[field]) {
+                    newTimeData[field] = {};
+                }
+                if (!newTimeData[field][slotIndex]) {
+                    newTimeData[field][slotIndex] = {};
+                }
+
+                days.forEach((day, dayIndex) => {
+                    const dateStr = day.toISOString().split('T')[0];
+                    const attendance = selectedEmployee.attendances?.[dateStr];
+                    if (attendance) {
+                        newTimeData[field][slotIndex][dayIndex] = {
+                            time_in: formatTimeForInput(attendance.time_in),
+                            time_out: formatTimeForInput(attendance.time_out),
+                        };
+                    } else {
+                        newTimeData[field][slotIndex][dayIndex] = {
+                            time_in: '',
+                            time_out: '',
+                        };
+                    }
+                });
+
+                setTimeData(newTimeData);
+            } else {
+                // Clear times if employee is deselected or has no attendance data
+                const newTimeData = { ...timeData };
+                if (newTimeData[field] && newTimeData[field][slotIndex]) {
+                    const days = getDaysOfWeek();
+                    days.forEach((_, dayIndex) => {
+                        newTimeData[field][slotIndex][dayIndex] = {
+                            time_in: '',
+                            time_out: '',
+                        };
+                    });
+                    setTimeData(newTimeData);
+                }
+            }
+        } else {
+            // Clear times if employee is deselected
+            const newTimeData = { ...timeData };
+            if (newTimeData[field] && newTimeData[field][slotIndex]) {
+                const days = getDaysOfWeek();
+                days.forEach((_, dayIndex) => {
+                    newTimeData[field][slotIndex][dayIndex] = {
+                        time_in: '',
+                        time_out: '',
+                    };
+                });
+                setTimeData(newTimeData);
+            }
+        }
+    };
+
+    const handleTimeChange = (field: string, slotIndex: number, dayIndex: number, type: 'time_in' | 'time_out', value: string) => {
+        setTimeData((prev) => ({
+            ...prev,
+            [field]: {
+                ...prev[field],
+                [slotIndex]: {
+                    ...prev[field]?.[slotIndex],
+                    [dayIndex]: {
+                        ...prev[field]?.[slotIndex]?.[dayIndex],
+                        [type]: value,
+                    },
+                },
+            },
         }));
     };
 
@@ -238,27 +379,6 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         }
     };
 
-    // Get days of the week for the table header (starting with Monday)
-    const getDaysOfWeek = () => {
-        const selectedDate = new Date(date);
-        const days = [];
-        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        const startOfWeek = new Date(selectedDate);
-
-        // Calculate days to subtract to get to Monday
-        // If Sunday (0), go back 6 days; if Monday (1), go back 0 days, etc.
-        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-        startOfWeek.setDate(selectedDate.getDate() - daysToSubtract);
-
-        // Generate 7 days starting from Monday
-        for (let i = 0; i < 7; i++) {
-            const day = new Date(startOfWeek);
-            day.setDate(startOfWeek.getDate() + i);
-            days.push(day);
-        }
-        return days; // [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
-    };
-
     const daysOfWeek = getDaysOfWeek();
 
     return (
@@ -278,20 +398,6 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                         <p className="text-sm text-gray-600">PP-2701</p>
                                         <p className="text-lg font-semibold text-gray-700">DAILY CHECKING OF PP CREW</p>
                                     </div>
-                                </div>
-                                <div className="flex gap-2 print:hidden">
-                                    {/* <Button variant="outline" onClick={viewPPPdf} className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View
-                                    </Button> */}
-                                    <Button variant="outline" onClick={handlePrint} className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                        <Printer className="mr-2 h-4 w-4" />
-                                        Print
-                                    </Button>
-                                    <Button onClick={handleSave} className="bg-green-600 text-white hover:bg-green-700">
-                                        <Save className="mr-2 h-4 w-4" />
-                                        Save
-                                    </Button>
                                 </div>
                             </div>
 
@@ -375,7 +481,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                 className="text-xs"
                                                                                 disabled={isSelected && !isCurrentSelection}
                                                                             >
-                                                                                {emp.employee_name}
+                                                                                {formatEmployeeDisplayName(emp)}
                                                                             </SelectItem>
                                                                         );
                                                                     })}
@@ -386,10 +492,36 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                         {daysOfWeek.map((_, dayIndex) => (
                                                             <React.Fragment key={dayIndex}>
                                                                 <td className="border-2 border-black p-0">
-                                                                    <Input className="h-8 rounded-none border-0 text-center text-xs" />
+                                                                    <Input
+                                                                        type="time"
+                                                                        className="h-8 rounded-none border-0 text-center text-xs"
+                                                                        value={timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_in || ''}
+                                                                        onChange={(e) =>
+                                                                            handleTimeChange(
+                                                                                position.field,
+                                                                                slotIndex,
+                                                                                dayIndex,
+                                                                                'time_in',
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                    />
                                                                 </td>
                                                                 <td className="border-2 border-black p-0">
-                                                                    <Input className="h-8 rounded-none border-0 text-center text-xs" />
+                                                                    <Input
+                                                                        type="time"
+                                                                        className="h-8 rounded-none border-0 text-center text-xs"
+                                                                        value={timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_out || ''}
+                                                                        onChange={(e) =>
+                                                                            handleTimeChange(
+                                                                                position.field,
+                                                                                slotIndex,
+                                                                                dayIndex,
+                                                                                'time_out',
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                    />
                                                                 </td>
                                                             </React.Fragment>
                                                         ))}
@@ -453,6 +585,20 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                         placeholder="Name"
                                     />
                                 </div>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-2 print:hidden">
+                                {/* <Button variant="outline" onClick={viewPPPdf} className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View
+                                    </Button> */}
+                                <Button variant="outline" onClick={handlePrint} className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    Print
+                                </Button>
+                                <Button onClick={handleSave} className="bg-green-600 text-white hover:bg-green-700">
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save
+                                </Button>
                             </div>
                         </div>
                     </Main>

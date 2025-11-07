@@ -328,7 +328,7 @@ const columns = (
                                     </DropdownMenuItem>
                                 )}
 
-                                <DropdownMenuItem>
+                                {/* <DropdownMenuItem>
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -364,7 +364,7 @@ const columns = (
                                         <RefreshCw className="h-4 w-4" />
                                         Reset PIN
                                     </Button>
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
 
                                 {can('Delete Employee') && (
                                     <DropdownMenuItem asChild>

@@ -31,9 +31,56 @@ Route::post('/fingerprint/verify', [FingerprintController::class, 'verify']);
 Route::post('/employee/store', [EmployeeController::class, 'store']);
 Route::get('/fingerprint/all', [FingerprintController::class, 'all']);
 Route::get('/employee/all', [ApiEmployeeController::class, 'index']);
-Route::get('/employees/packing-plant', function () {
+Route::get('/employees/packing-plant', function (Request $request) {
+    $startDate = $request->query('start_date');
+    $endDate = $request->query('end_date');
+    
+    // If date range is provided, return only employees with attendance in that range
+    if ($startDate && $endDate) {
+        $employeeIds = \App\Models\Attendance::whereBetween('attendance_date', [$startDate, $endDate])
+            ->distinct()
+            ->pluck('employee_id');
+        
+        $employees = Employee::where('department', 'Packing Plant')
+            ->whereIn('id', $employeeIds)
+            ->select('id', 'employeeid', 'employee_name', 'firstname', 'middlename', 'lastname', 'department', 'position', 'work_status')
+            ->orderBy('employee_name', 'asc')
+            ->get();
+        
+        // Get attendance data for each employee
+        $employeesWithAttendance = $employees->map(function ($employee) use ($startDate, $endDate) {
+            $attendances = \App\Models\Attendance::where('employee_id', $employee->id)
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->get()
+                ->mapWithKeys(function ($attendance) {
+                    return [
+                        $attendance->attendance_date->format('Y-m-d') => [
+                            'time_in' => $attendance->time_in,
+                            'time_out' => $attendance->time_out,
+                        ]
+                    ];
+                });
+            
+            return [
+                'id' => $employee->id,
+                'employeeid' => $employee->employeeid,
+                'employee_name' => $employee->employee_name,
+                'firstname' => $employee->firstname,
+                'middlename' => $employee->middlename,
+                'lastname' => $employee->lastname,
+                'department' => $employee->department,
+                'position' => $employee->position,
+                'work_status' => $employee->work_status,
+                'attendances' => $attendances,
+            ];
+        });
+        
+        return response()->json($employeesWithAttendance);
+    }
+    
+    // If no date range, return all Packing Plant employees
     $employees = Employee::where('department', 'Packing Plant')
-        ->select('id', 'employeeid', 'employee_name', 'department', 'position', 'work_status')
+        ->select('id', 'employeeid', 'employee_name', 'firstname', 'middlename', 'lastname', 'department', 'position', 'work_status')
         ->orderBy('employee_name', 'asc')
         ->get();
     return response()->json($employees);

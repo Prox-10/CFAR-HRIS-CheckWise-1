@@ -106,7 +106,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ totalToday = 0, onRe
                 {/* Action Buttons Grid */}
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                     {/* Refresh Button */}
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="hover-lift h-auto flex-col gap-2 border-green-300 bg-white py-4 transition-all hover:border-green-500 hover:bg-green-50"
                         onClick={onRefresh}
@@ -114,10 +114,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ totalToday = 0, onRe
                     >
                         <RefreshCw className={`h-5 w-5 text-green-600 ${refreshing ? 'animate-spin' : ''}`} />
                         <span className="text-xs font-medium text-gray-700">{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
-                    </Button>
+                    </Button> */}
 
                     {/* Export Today */}
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="hover-lift h-auto flex-col gap-2 border-blue-300 bg-white py-4 transition-all hover:border-blue-500 hover:bg-blue-50"
                         onClick={handleExportToday}
@@ -125,10 +125,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ totalToday = 0, onRe
                     >
                         <Download className="h-5 w-5 text-blue-600" />
                         <span className="text-xs font-medium text-gray-700">{isExporting ? 'Exporting...' : 'Export Today'}</span>
-                    </Button>
+                    </Button> */}
 
                     {/* Export All */}
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="hover-lift h-auto flex-col gap-2 border-purple-300 bg-white py-4 transition-all hover:border-purple-500 hover:bg-purple-50"
                         onClick={handleExportAll}
@@ -136,17 +136,19 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ totalToday = 0, onRe
                     >
                         <FileText className="h-5 w-5 text-purple-600" />
                         <span className="text-xs font-medium text-gray-700">Export All</span>
-                    </Button>
+                    </Button> */}
 
                     {/* View Reports */}
-                    <Button
+                    {/* <Button
                         variant="outline"
                         className="hover-lift h-auto flex-col gap-2 border-amber-300 bg-white py-4 transition-all hover:border-amber-500 hover:bg-amber-50"
                         onClick={handleViewReports}
                     >
                         <FileText className="h-5 w-5 text-amber-600" />
                         <span className="text-xs font-medium text-gray-700">View Reports</span>
-                    </Button>
+                    </Button> */}
+
+                   
 
                     {/* Daily Checking PP Crew */}
                     <Button

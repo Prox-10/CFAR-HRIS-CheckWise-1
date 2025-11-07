@@ -63,7 +63,9 @@ class TestEvaluationSystem extends Command
     $employees = Employee::take(3)->get();
     foreach ($employees as $employee) {
       $canEvaluate = Evaluation::canEvaluateEmployee($employee->id, $employee->department);
-      $frequency = EvaluationConfiguration::getFrequencyForDepartment($employee->department);
+      $frequency = $employee->department 
+        ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
+        : 'annual';
       $this->line("   - {$employee->employee_name} ({$employee->department}): " .
         ($canEvaluate ? 'CAN evaluate' : 'CANNOT evaluate') .
         " (Frequency: {$frequency})");

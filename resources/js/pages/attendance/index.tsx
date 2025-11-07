@@ -12,7 +12,7 @@ import { toast, Toaster } from 'sonner';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
 import EditEmployeeModal from './components/editemployeemodal';
-import { QuickActions } from './components/QuickActions';
+// import { QuickActions } from './components/QuickActions';
 import { SectionCards } from './components/section-cards';
 import { Attendance } from './types/attendance';
 // import { Attendance } from './components/columns';
@@ -95,7 +95,7 @@ export default function Index({
                 });
             },
             preserveScroll: true,
-        });
+        }); 
     };
 
     const handleRefresh = async () => {
@@ -162,7 +162,7 @@ export default function Index({
                                                         {/* <SectionCards totalRevenue={totalRevenue} payments={[]} totalEmployee={totalEmployee} /> */}
                                                     </div>
                                                     {/* Quick Actions Component */}
-                                                    <div className="mt-4">
+                                                    {/* <div className="mt-4">
                                                         <QuickActions
                                                             totalToday={
                                                                 data.filter((att) => {
@@ -174,7 +174,7 @@ export default function Index({
                                                             onRefresh={handleRefresh}
                                                             refreshing={refreshing}
                                                         />
-                                                    </div>
+                                                    </div> */}
                                                 </div>
                                             </div>
                                         </div>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; 
 use App\Models\Evaluation;
 use App\Models\Employee;
 use App\Models\EvaluationConfiguration;
@@ -30,7 +30,9 @@ class EvaluationController extends Controller
 
         $employeeList = $employees->map(function ($employee) {
             $latestEval = $employee->evaluations()->with(['attendance', 'attitudes', 'workAttitude', 'workFunctions'])->first();
-            $frequency = EvaluationConfiguration::getFrequencyForDepartment($employee->department);
+            $frequency = $employee->department 
+                ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
+                : 'annual';
 
             $employeeData = [
                 'id' => $employee->id,

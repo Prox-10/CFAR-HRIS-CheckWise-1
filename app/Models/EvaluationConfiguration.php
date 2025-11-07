@@ -21,8 +21,13 @@ class EvaluationConfiguration extends Model
   /**
    * Get the evaluation frequency for a specific department
    */
-  public static function getFrequencyForDepartment(string $department): string
+  public static function getFrequencyForDepartment(?string $department): string
   {
+    // Return default if department is null or empty
+    if (empty($department)) {
+      return 'annual';
+    }
+    
     // Try exact match first
     $config = static::where('department', $department)->first();
     if ($config) {

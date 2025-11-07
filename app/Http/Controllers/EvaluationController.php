@@ -38,7 +38,9 @@ class EvaluationController extends Controller
 
         $employeeList = $employees->map(function ($employee) {
             $latestEval = $employee->evaluations()->with(['attendance', 'attitudes', 'workAttitude', 'workFunctions'])->first();
-            $frequency = EvaluationConfiguration::getFrequencyForDepartment($employee->department);
+            $frequency = $employee->department 
+                ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
+                : 'annual';
 
             // Debug logging for frequency lookup
             Log::info('Employee frequency lookup:', [
@@ -431,7 +433,9 @@ class EvaluationController extends Controller
 
         // Check evaluation frequency rules (Super Admin can bypass)
         if (!$user->isSuperAdmin()) {
-            $frequency = EvaluationConfiguration::getFrequencyForDepartment($employee->department);
+            $frequency = $employee->department 
+                ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
+                : 'annual';
             $now = now();
             $currentPeriod = Evaluation::calculatePeriod($now);
             $currentYear = $now->year;
@@ -555,7 +559,9 @@ class EvaluationController extends Controller
             ]);
 
             // Get the actual evaluation frequency for this department
-            $departmentFrequency = EvaluationConfiguration::getFrequencyForDepartment($validated['department']);
+            $departmentFrequency = !empty($validated['department'])
+                ? EvaluationConfiguration::getFrequencyForDepartment($validated['department'])
+                : 'annual';
 
             Log::info('Using department frequency for evaluation:', [
                 'department' => $validated['department'],
@@ -666,7 +672,9 @@ class EvaluationController extends Controller
      */
     public function checkExistingEvaluation($employeeId, $department)
     {
-        $frequency = EvaluationConfiguration::getFrequencyForDepartment($department);
+        $frequency = $department 
+            ? EvaluationConfiguration::getFrequencyForDepartment($department)
+            : 'annual';
         $now = now();
         $currentPeriod = Evaluation::calculatePeriod($now);
         $currentYear = $now->year;
