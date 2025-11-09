@@ -242,9 +242,55 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: async (page) => {
-                // Use the form data as the saved employee since the creation was successful
+                // Employee created successfully
                 console.log('Employee created successfully:', formData);
-                setSavedEmployee({ ...formData });
+
+                // Fetch the created employee to get the auto-generated employeeid (for Add Crew) or verify the employeeid
+                try {
+                    // Wait a bit for the database to be updated
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    const response = await fetch(`/api/employee/all`);
+                    const employees = await response.json();
+
+                    let foundEmployee = null;
+
+                    if (isAddCrew) {
+                        // For Add Crew, find by name and work status (employeeid is auto-generated)
+                        const matchingEmployees = employees
+                            .filter(
+                                (emp: any) =>
+                                    emp.firstname === formData.firstname &&
+                                    emp.lastname === formData.lastname &&
+                                    emp.work_status === formData.work_status,
+                            )
+                            .sort((a: any, b: any) => b.id - a.id);
+                        foundEmployee = matchingEmployees[0];
+                    } else {
+                        // For Regular/Probationary, find by employeeid
+                        if (formData.employeeid) {
+                            foundEmployee = employees.find((emp: any) => emp.employeeid === formData.employeeid);
+                        }
+                    }
+
+                    if (foundEmployee) {
+                        setSavedEmployee({
+                            ...formData,
+                            employeeid: foundEmployee.employeeid, // Use the employeeid (auto-generated for Add Crew)
+                            id: foundEmployee.id, // Database ID
+                        });
+
+                        if (isAddCrew) {
+                            toast.success(`Employee saved! Auto-generated Employee ID: ${foundEmployee.employeeid}`);
+                        }
+                    } else {
+                        setSavedEmployee({ ...formData });
+                        console.warn('Could not find created employee in API response');
+                    }
+                } catch (error) {
+                    console.error('Error fetching employee:', error);
+                    setSavedEmployee({ ...formData });
+                }
+
                 toast.success('Employee info saved! Now register fingerprint.');
 
                 // Call the onSuccess callback to refresh the employee list
@@ -1066,7 +1112,15 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                 </Label>
                                 {savedEmployee ? (
                                     <div className="mb-2 font-semibold text-green-700">
-                                        Employee ID: {savedEmployee.employeeid} (#{savedEmployee.id})
+                                        {savedEmployee.employeeid ? (
+                                            <>
+                                                Employee ID: {savedEmployee.employeeid} {isAddCrew && '(Auto-generated)'} (#{savedEmployee.id})
+                                            </>
+                                        ) : (
+                                            <>
+                                                Employee: {savedEmployee.firstname} {savedEmployee.lastname} (ID: #{savedEmployee.id})
+                                            </>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="mb-2 text-gray-500">Save employee info first to enable fingerprint registration.</div>
@@ -1074,6 +1128,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                 <FingerprintCapture
                                     onFingerprintCaptured={setFingerprintData}
                                     employeeId={savedEmployee?.employeeid}
+                                    employeeDatabaseId={savedEmployee?.id}
+                                    workStatus={data.work_status}
                                     employeeFingerprints={[]}
                                     onStartCapture={() => toast.info('Starting fingerprint capture...')}
                                 />

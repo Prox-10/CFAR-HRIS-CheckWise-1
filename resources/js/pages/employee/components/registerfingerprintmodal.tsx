@@ -8,9 +8,10 @@ interface RegisterFingerprintModalProps {
     isOpen: boolean;
     onClose: () => void;
     employee: {
-        employeeid: string;
+        employeeid?: string;
         employee_name: string;
         id?: string | number;
+        work_status?: string;
     } | null;
 }
 
@@ -51,7 +52,11 @@ const RegisterFingerprintModal: React.FC<RegisterFingerprintModalProps> = ({ isO
                 {employee && (
                     <div className="mb-4">
                         <div className="font-semibold">{employee.employee_name}</div>
-                        <div className="text-sm text-gray-500">Employee ID: {employee.employeeid}</div>
+                        {employee.employeeid ? (
+                            <div className="text-sm text-gray-500">Employee ID: {employee.employeeid}</div>
+                        ) : (
+                            <div className="text-sm text-gray-500">Employee Database ID: #{employee.id}</div>
+                        )}
                     </div>
                 )}
                 <div className="mb-4">
@@ -70,7 +75,12 @@ const RegisterFingerprintModal: React.FC<RegisterFingerprintModalProps> = ({ isO
                     </RadioGroup>
                 </div>
                 {/* Fingerprint Registration  */}
-                <FingerprintCapture onFingerprintCaptured={handleFingerprintCaptured} employeeId={employee?.employeeid} />
+                <FingerprintCapture
+                    onFingerprintCaptured={handleFingerprintCaptured}
+                    employeeId={employee?.employeeid}
+                    employeeDatabaseId={employee?.id}
+                    workStatus={employee?.work_status}
+                />
                 {wsFingerprintData && (
                     <div className="mt-4 text-center">
                         <div className="mb-2 font-medium text-green-800">Fingerprint Preview:</div>

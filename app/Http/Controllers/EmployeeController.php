@@ -14,6 +14,34 @@ use Illuminate\Support\Facades\Auth;
 class EmployeeController extends Controller
 {
     /**
+     * Generate a unique 6-digit employee ID for Add Crew employees
+     * Format: 6 digits (000001 to 999999)
+     */
+    private function generateAddCrewEmployeeId(): string
+    {
+        $maxAttempts = 100; // Prevent infinite loop
+        $attempts = 0;
+
+        do {
+            // Generate a random 6-digit number
+            $employeeId = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $exists = Employee::where('employeeid', $employeeId)->exists();
+            $attempts++;
+        } while ($exists && $attempts < $maxAttempts);
+
+        if ($attempts >= $maxAttempts) {
+            // Fallback: use timestamp-based ID if too many collisions
+            $employeeId = str_pad(substr(time(), -6), 6, '0', STR_PAD_LEFT);
+            // Still check if this exists, if so append random digit
+            if (Employee::where('employeeid', $employeeId)->exists()) {
+                $employeeId = str_pad(substr(time(), -5) . rand(0, 9), 6, '0', STR_PAD_LEFT);
+            }
+        }
+
+        return $employeeId;
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(): Response
@@ -255,9 +283,16 @@ class EmployeeController extends Controller
                 . ($request->middlename ? $request->middlename . ' ' : '')
                 . $request->lastname;
 
+            // Auto-generate employee ID for Add Crew employees
+            $employeeId = $request->employeeid;
+            if ($request->work_status === 'Add Crew' && empty($employeeId)) {
+                $employeeId = $this->generateAddCrewEmployeeId();
+                \Log::info('Auto-generated employee ID for Add Crew', ['employeeid' => $employeeId]);
+            }
+
             $data = [
                 'email'           => $request->email,
-                'employeeid'      => $request->employeeid,
+                'employeeid'      => $employeeId,
                 'firstname'       => $request->firstname,
                 'middlename'      => $request->middlename,
                 'lastname'        => $request->lastname,
@@ -331,7 +366,7 @@ class EmployeeController extends Controller
                     'employeeid' => $employee->employeeid,
                     'employee_name' => $employee->employee_name
                 ]);
-                
+
                 // Only return JSON for API requests
                 if ($request->wantsJson() || $request->is('api/*')) {
                     return response()->json([

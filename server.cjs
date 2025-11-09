@@ -14,7 +14,7 @@ wsServer.on('connection', (socket) => {
             console.log('[WS SERVER] Received from client:', msg);
             const data = JSON.parse(msg);
 
-            // Broadcast to all connected clients (React, etc.)
+            // Broadcast all messages as-is (Add Crew now has employeeid, same as Regular/Probationary)
             wsServer.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) {
                     console.log('[WS SERVER] Broadcasting to client:', JSON.stringify(data));

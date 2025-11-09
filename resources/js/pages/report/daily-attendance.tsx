@@ -2,21 +2,17 @@ import { AppSidebar } from '@/components/app-sidebar';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { departments } from '@/hooks/data';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
-import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
+import axios from 'axios';
 import { format } from 'date-fns';
-import { Calendar, ClipboardList } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Toaster } from 'sonner';
+import { ClipboardList } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast, Toaster } from 'sonner';
 
 // Mock data for preview
 const mockRows = Array.from({ length: 20 }).map((_, i) => ({
@@ -48,15 +44,77 @@ function SidebarHoverLogic({ children }: { children: React.ReactNode }) {
     );
 }
 
+interface MicroteamEmployee {
+    id: string;
+    employee_name: string;
+    employeeid: string;
+    work_status: string;
+    position: string;
+    time_in: string | null;
+    time_out: string | null;
+}
+
+interface MicroteamData {
+    'MICROTEAM - 01': MicroteamEmployee[];
+    'MICROTEAM - 02': MicroteamEmployee[];
+    'MICROTEAM - 03': MicroteamEmployee[];
+}
+
 export default function DailyAttendancePage() {
     const [reportDate, setReportDate] = useState<Date | undefined>(new Date());
     const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
     const [area, setArea] = useState<string>('all');
+    const [microteams, setMicroteams] = useState<MicroteamData>({
+        'MICROTEAM - 01': [],
+        'MICROTEAM - 02': [],
+        'MICROTEAM - 03': [],
+    });
+    const [loading, setLoading] = useState(false);
+
     const titleDate = useMemo(() => (reportDate ? format(reportDate, 'MMMM dd, yyyy') : ''), [reportDate]);
     const titleDay = useMemo(() => (reportDate ? format(reportDate, 'EEEE') : ''), [reportDate]);
 
+    // Fetch microteam data when reportDate changes
+    useEffect(() => {
+        if (reportDate) {
+            fetchMicroteamData();
+        }
+    }, [reportDate]);
+
+    const fetchMicroteamData = async () => {
+        if (!reportDate) return;
+
+        setLoading(true);
+        try {
+            const dateStr = format(reportDate, 'yyyy-MM-dd');
+            const response = await axios.get('/api/daily-checking/for-date', {
+                params: { date: dateStr },
+            });
+
+            if (response.data.microteams) {
+                setMicroteams(response.data.microteams);
+            }
+        } catch (error) {
+            console.error('Error fetching microteam data:', error);
+            toast.error('Failed to load microteam data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleExport = () => {
         // wire to backend later
+    };
+
+    // Helper function to format time
+    const formatTime = (timeStr: string | null): string => {
+        if (!timeStr) return '';
+        // If time is in HH:mm:ss format, extract HH:mm
+        if (timeStr.includes(':')) {
+            const parts = timeStr.split(':');
+            return `${parts[0]}:${parts[1]}`;
+        }
+        return timeStr;
     };
 
     return (
@@ -81,7 +139,7 @@ export default function DailyAttendancePage() {
                             <CardDescription>Generate and export the daily attendance record.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                            {/* <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                                 <div className="md:col-span-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -124,7 +182,7 @@ export default function DailyAttendancePage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Report body matching provided structure */}
                             <Card>
@@ -142,39 +200,60 @@ export default function DailyAttendancePage() {
                                                 <div className="text-center text-base font-bold">Daily Attendance Report (DTR)</div>
                                             </div>
                                             <div className="flex min-w-[110px] flex-col items-end">
-                                                <div className="text-sm"><span className="font-bold">Date:</span> {titleDate}</div>
-                                                <div className="text-sm mr-[71px]"><span className="font-bold">Day:</span> {titleDay}</div>
+                                                <div className="text-sm">
+                                                    <span className="font-bold">Date:</span> {titleDate}
+                                                </div>
+                                                <div className="mr-[66px] text-sm">
+                                                    <span className="font-bold">Day:</span> {titleDay}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Microteam tables */}
                                     <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                                        {['MICROTEAM - 01', 'MICROTEAM - 02', 'MICROTEAM - 03'].map((title) => (
-                                            <div key={title} className="border">
-                                                <div className="border-b px-2 py-1 text-[10px] font-semibold">{title}</div>
-                                                <div className="overflow-hidden">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-10 text-[10px]">No</TableHead>
-                                                                <TableHead className="text-[10px]">Name</TableHead>
-                                                                <TableHead className="w-24 text-[10px]">Remarks</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {Array.from({ length: 25 }).map((_, i) => (
-                                                                <TableRow key={i}>
-                                                                    <TableCell className="text-[10px]">{String(i + 1).padStart(2, '0')}</TableCell>
-                                                                    <TableCell className="text-[10px]"></TableCell>
-                                                                    <TableCell className="text-[10px]"></TableCell>
+                                        {(['MICROTEAM - 01', 'MICROTEAM - 02', 'MICROTEAM - 03'] as const).map((title) => {
+                                            const employees = microteams[title] || [];
+                                            const maxRows = 25;
+                                            const rowsToShow = Math.max(maxRows, employees.length);
+
+                                            return (
+                                                <div key={title} className="border">
+                                                    <div className="border-b px-2 py-1 text-[10px] font-semibold">{title}</div>
+                                                    <div className="overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead className="w-10 text-[10px]">No</TableHead>
+                                                                    <TableHead className="text-[10px]">Name</TableHead>
+                                                                    <TableHead className="w-24 text-[10px]">Remarks</TableHead>
                                                                 </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {Array.from({ length: rowsToShow }).map((_, i) => {
+                                                                    const employee = employees[i];
+                                                                    return (
+                                                                        <TableRow key={i}>
+                                                                            <TableCell className="text-[10px]">
+                                                                                {String(i + 1).padStart(2, '0')}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-[10px]">
+                                                                                {employee ? employee.employee_name : ''}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-[10px]">
+                                                                                {employee?.time_in && employee?.time_out
+                                                                                    ? `${formatTime(employee.time_in)} - ${formatTime(employee.time_out)}`
+                                                                                    : ''}
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    );
+                                                                })}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
 
                                     {/* Add Crew tables */}

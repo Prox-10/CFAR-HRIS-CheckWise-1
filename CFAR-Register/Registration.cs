@@ -563,7 +563,7 @@ namespace HRIS_CheckWise_ATMS_
             try
             {
                 dbConn.OpenConnection();
-                // Get employee's internal DB id using employeeid
+                // Get employee's internal DB id using employeeid (works for all employees including Add Crew)
                 string getEmpIdQuery = "SELECT id FROM employees WHERE employeeid = @employeeid LIMIT 1";
                 int employeeDbId = -1;
                 using (var cmd = new MySqlCommand(getEmpIdQuery, dbConn.Connection))
@@ -573,6 +573,7 @@ namespace HRIS_CheckWise_ATMS_
                     if (result != null)
                         employeeDbId = Convert.ToInt32(result);
                 }
+                
                 if (employeeDbId != -1)
                 {
                     string insertQuery = "INSERT INTO fingerprints (employee_id, fingerprint_template, fingerprint_image, fingerprint_captured_at) VALUES (@employee_id, @template, @image, @captured_at)";

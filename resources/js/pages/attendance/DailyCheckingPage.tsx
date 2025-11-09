@@ -11,7 +11,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { pdf } from '@react-pdf/renderer';
 import axios from 'axios';
-import { Printer, Save } from 'lucide-react';
+import { Loader2, Printer, Save } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -99,6 +99,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     }>({});
     const [leaveData, setLeaveData] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [preparedBy, setPreparedBy] = useState('');
     const [checkedBy, setCheckedBy] = useState('');
 
@@ -276,9 +277,63 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         }));
     };
 
-    const handleSave = () => {
-        console.log('Saving data:', { date, assignmentData, leaveData, preparedBy, checkedBy });
-        toast.success('Daily checking saved successfully!');
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            // Calculate Monday of the week
+            const days = getDaysOfWeek();
+            const weekStartDate = days[0].toISOString().split('T')[0];
+
+            // Transform assignmentData and timeData into the format expected by API
+            const assignments: any[] = [];
+
+            Object.keys(assignmentData).forEach((positionField) => {
+                const slots = assignmentData[positionField];
+                slots.forEach((employeeName, slotIndex) => {
+                    if (employeeName) {
+                        // Get time data for this position, slot, and all days
+                        const slotTimeData = timeData[positionField]?.[slotIndex] || {};
+
+                        assignments.push({
+                            employee_name: employeeName,
+                            position_field: positionField,
+                            slot_index: slotIndex,
+                            time_data: Array.from({ length: 7 }, (_, dayIndex) => {
+                                const dayTime = slotTimeData[dayIndex] || { time_in: '', time_out: '' };
+                                return {
+                                    time_in: dayTime.time_in || null,
+                                    time_out: dayTime.time_out || null,
+                                };
+                            }),
+                        });
+                    }
+                });
+            });
+
+            // Show loading toast
+            toast.loading('Saving daily checking assignments...', { id: 'save-daily-checking' });
+
+            const response = await axios.post('/api/daily-checking/store', {
+                week_start_date: weekStartDate,
+                assignments: assignments,
+                prepared_by: preparedBy,
+                checked_by: checkedBy,
+            });
+
+            toast.dismiss('save-daily-checking');
+
+            if (response.data.success) {
+                toast.success('Daily checking saved successfully!');
+            } else {
+                toast.error(response.data.message || 'Failed to save daily checking');
+            }
+        } catch (error: any) {
+            toast.dismiss('save-daily-checking');
+            console.error('Error saving daily checking:', error);
+            toast.error(error.response?.data?.message || 'Failed to save daily checking assignments');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handlePrint = async () => {
@@ -586,7 +641,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                     />
                                 </div>
                             </div>
-                            <div className="mt-4 flex justify-end gap-2 print:hidden">
+                            <div className="mt-4 flex justify-start gap-2 print:hidden">
                                 {/* <Button variant="outline" onClick={viewPPPdf} className="border-blue-300 text-blue-600 hover:bg-blue-50">
                                         <Eye className="mr-2 h-4 w-4" />
                                         View
@@ -595,8 +650,12 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                     <Printer className="mr-2 h-4 w-4" />
                                     Print
                                 </Button>
-                                <Button onClick={handleSave} className="bg-green-600 text-white hover:bg-green-700">
-                                    <Save className="mr-2 h-4 w-4" />
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" /> : <Save className="mr-2 h-4 w-4" />}
                                     Save
                                 </Button>
                             </div>

@@ -3,12 +3,21 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface FingerprintCaptureProps {
     onFingerprintCaptured: (data: any) => void;
-    employeeId?: string; // Add this prop
+    employeeId?: string; // Employee ID (for Regular/Probationary)
+    employeeDatabaseId?: number | string; // Database ID (for Add Crew)
+    workStatus?: string; // Work status to determine if EmployeeID is required
     onStartCapture?: () => void; // Optional callback when capture starts
     employeeFingerprints?: any[]; // Add this prop to check existing fingerprints
 }
 
-const FingerprintCapture: React.FC<FingerprintCaptureProps> = ({ onFingerprintCaptured, employeeId, onStartCapture, employeeFingerprints = [] }) => {
+const FingerprintCapture: React.FC<FingerprintCaptureProps> = ({
+    onFingerprintCaptured,
+    employeeId,
+    employeeDatabaseId,
+    workStatus,
+    onStartCapture,
+    employeeFingerprints = [],
+}) => {
     const [isCapturing, setIsCapturing] = useState(false);
     const [fingerprintData, setFingerprintData] = useState<any | null>(null);
     const ws = useRef<WebSocket | null>(null);
@@ -64,37 +73,42 @@ const FingerprintCapture: React.FC<FingerprintCaptureProps> = ({ onFingerprintCa
         };
     }, [onFingerprintCaptured]);
 
+    // Check if capture is allowed
+    // All employees (including Add Crew) now have an employeeid
+    const hasEmployeeId = employeeId && employeeId.trim() !== '';
+    const isCaptureAllowed = hasEmployeeId;
+
     const handleCapture = () => {
-        if (!employeeId || employeeId.trim() === '') {
-            alert('Please enter Employee ID first before capturing fingerprint.');
+        // All employees require employeeId (Add Crew now has auto-generated ID)
+        if (!isCaptureAllowed) {
+            alert('Please save employee info first before capturing fingerprint.');
             return;
         }
+
         if (typeof onStartCapture === 'function') {
             onStartCapture();
         }
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(
-                JSON.stringify({
-                    type: 'start_registration',
-                    employeeid: employeeId,
-                }),
-            );
+            // Send employeeid for all employees (Add Crew now has auto-generated ID)
+            const message: any = {
+                type: 'start_registration',
+                employeeid: employeeId,
+            };
+
+            ws.current.send(JSON.stringify(message));
             setIsCapturing(true);
         }
         // Do not show any alert or error if WebSocket is not open; just do nothing.
     };
-
-    // Check if employeeId is valid
-    const isEmployeeIdValid = employeeId && employeeId.trim() !== '';
 
     return (
         <div className="space-y-4">
             {/* Integrated Fingerprint Capture Area with Status */}
             <div
                 className={`flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${
-                    isEmployeeIdValid ? getBackgroundColor() : 'cursor-not-allowed border-gray-300 bg-gray-50'
+                    isCaptureAllowed ? getBackgroundColor() : 'cursor-not-allowed border-gray-300 bg-gray-50'
                 }`}
-                onClick={isEmployeeIdValid ? handleCapture : undefined}
+                onClick={isCaptureAllowed ? handleCapture : undefined}
             >
                 <div className="text-center">
                     {fingerprintData ? (
@@ -133,9 +147,7 @@ const FingerprintCapture: React.FC<FingerprintCaptureProps> = ({ onFingerprintCa
                                 <Fingerprint className="h-8 w-8 text-green-600" />
                             </div>
                             <div>
-                                <p className={`font-medium ${getTextColor()}`}>
-                                    Fingerprint Registered
-                                </p>
+                                <p className={`font-medium ${getTextColor()}`}>Fingerprint Registered</p>
                                 <p className="mb-3 text-sm text-green-600">Fingerprint already registered</p>
 
                                 {/* Display existing fingerprint images */}
@@ -168,10 +180,10 @@ const FingerprintCapture: React.FC<FingerprintCaptureProps> = ({ onFingerprintCa
                             </div>
                             <div>
                                 <p className={`font-medium ${getTextColor()}`}>
-                                    {isEmployeeIdValid ? 'No Fingerprints Registered' : 'Employee ID Required'}
+                                    {isCaptureAllowed ? 'No Fingerprints Registered' : 'Save Employee First'}
                                 </p>
                                 <p className="text-sm text-red-600">
-                                    {isEmployeeIdValid ? 'Click to capture first fingerprint' : 'Please enter Employee ID first'}
+                                    {isCaptureAllowed ? 'Click to capture first fingerprint' : 'Please save employee info first'}
                                 </p>
                             </div>
                         </div>

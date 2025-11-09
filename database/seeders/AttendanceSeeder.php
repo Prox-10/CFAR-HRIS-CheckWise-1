@@ -11,37 +11,9 @@ class AttendanceSeeder extends Seeder
 {
   public function run()
   {
-    // Clear existing attendance data
-    Attendance::truncate();
-
-    // Get all employees or create some if none exist
-    $employees = Employee::all();
-
-    if ($employees->isEmpty()) {
-      $employees = Employee::factory()->count(10)->create();
-      $this->output("Created {$employees->count()} test employees");
-    } else {
-      $this->output("Found {$employees->count()} existing employees");
-    }
-
-    $employeeIds = $employees->pluck('id')->toArray();
-
-    // Generate attendance data for the last 90 days
-    $startDate = Carbon::now()->subDays(10);
-    $endDate = Carbon::now();
-
-    $this->output('Generating attendance data from ' . $startDate->format('Y-m-d') . ' to ' . $endDate->format('Y-m-d'));
-
-    // Create attendance records efficiently
-    $totalCreated = $this->generateAttendanceData($startDate, $endDate, $employeeIds);
-    $this->output("Created {$totalCreated} attendance records");
-
-    // Generate additional random records for variety
-    $additionalCreated = $this->generateAdditionalRecords($employeeIds);
-    $this->output("Created additional {$additionalCreated} random attendance records");
-
-    // Display statistics
-    $this->displayStatistics();
+    // Attendance seeder is disabled - no attendance records will be created
+    $this->output("Attendance seeder is disabled - no records will be created");
+    return;
   }
 
   /**
@@ -104,20 +76,12 @@ class AttendanceSeeder extends Seeder
 
   /**
    * Create a single attendance record
+   * DISABLED: This method no longer creates attendance records
    */
   private function createAttendanceRecord($employeeId, $date)
   {
-    $session = $this->getRandomSession();
-
-    Attendance::create([
-      'employee_id' => $employeeId,
-      'time_in' => $this->generateTimeIn($session),
-      'time_out' => $this->generateTimeOut($session),
-      'break_time' => $this->generateBreakTime($session),
-      'attendance_status' => $this->generateAttendanceStatus(),
-      'attendance_date' => $date->format('Y-m-d'),
-      'session' => $session,
-    ]);
+    // Attendance record creation is disabled
+    return;
   }
 
   /**
@@ -136,24 +100,24 @@ class AttendanceSeeder extends Seeder
   {
     $times = [
       'morning' => [
-       
+
         '07:00:00',
-       
+
         '08:00:00',
-        
+
       ],
       'afternoon' => [
-       
+
         '13:00:00',
-       
+
         '14:00:00',
-        
+
       ],
       'night' => [
         '18:00:00',
-       
+
         '19:00:00',
-       
+
       ]
     ];
 
@@ -168,21 +132,21 @@ class AttendanceSeeder extends Seeder
     $times = [
       'morning' => [
         '14:00:00',
-       
-       
+
+
         '15:00:00',
-        
+
       ],
       'afternoon' => [
         '18:00:00',
-       
+
         '19:00:00',
-        
+
       ],
       'night' => [
-       
+
         '07:00:00',
-       
+
         '08:00:00'
       ]
     ];

@@ -507,6 +507,8 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                         <FingerprintCapture
                                             onFingerprintCaptured={handleFingerprintCapture}
                                             employeeId={data.employeeid}
+                                            employeeDatabaseId={employee?.id}
+                                            workStatus={data.work_status}
                                             employeeFingerprints={employee?.fingerprints || []}
                                         />
 

@@ -13,17 +13,9 @@ class AttendanceFactory extends Factory
 
   public function definition()
   {
-    $session = $this->faker->randomElement(['morning', 'afternoon', 'night']);
-
-    return [
-      'employee_id' => Employee::inRandomOrder()->first()?->id ?? 1,
-      'time_in' => $this->generateTimeIn($session),
-      'time_out' => $this->generateTimeOut($session),
-      'break_time' => $this->generateBreakTime($session),
-      'attendance_status' => $this->generateAttendanceStatus(),
-      'attendance_date' => $this->faker->dateTimeBetween('-90 days', 'now')->format('Y-m-d'),
-      'session' => $session,
-    ];
+    // Attendance factory is disabled - will not create attendance records
+    // Returning empty array to prevent record creation
+    return [];
   }
 
   /**

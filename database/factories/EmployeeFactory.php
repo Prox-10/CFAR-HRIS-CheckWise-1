@@ -103,7 +103,7 @@ class EmployeeFactory extends Factory
             // Keep country consistent with project context
             'country' => 'Philippines',
             'zip_code' => $this->faker->postcode(),
-            'nationality' => 'Filipino',
+            
         ];
     }
 
@@ -132,7 +132,7 @@ class EmployeeFactory extends Factory
                 'state' => 'Anytown',
                 'country' => 'Philippines',
                 'zip_code' => '12345',
-                'nationality' => 'Filipino',
+              
                 
             ];
         });

@@ -14,14 +14,35 @@ class FingerprintController extends Controller
   public function store(Request $request)
   {
     $request->validate([
-      'employeeid' => 'required|string',
+      'employeeid' => 'nullable|string', // Made nullable to support Add Crew
+      'employee_db_id' => 'nullable|integer', // New field for database ID
       'fingerprint_template' => 'required|string', // base64 from C#
       'fingerprint_image' => 'nullable|string',
       'fingerprint_captured_at' => 'required|date',
       'finger_name' => 'nullable|string',
     ]);
 
-    $employee = Employee::where('employeeid', $request->employeeid)->firstOrFail();
+    // Validate that at least one identifier is provided
+    if (!$request->employeeid && !$request->employee_db_id) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Either employeeid or employee_db_id is required.',
+      ], 400);
+    }
+
+    // Find employee by employeeid or database ID
+    if ($request->employeeid) {
+      $employee = Employee::where('employeeid', $request->employeeid)->first();
+    } else {
+      $employee = Employee::find($request->employee_db_id);
+    }
+
+    if (!$employee) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Employee not found.',
+      ], 404);
+    }
 
     // Decode base64 to raw bytes
     $templateBytes = base64_decode($request->fingerprint_template);
@@ -42,10 +63,24 @@ class FingerprintController extends Controller
   {
     $request->validate([
       'fingerprint_template' => 'required|string', // base64 string
-      'employeeid' => 'required|string',
+      'employeeid' => 'nullable|string',
+      'employee_db_id' => 'nullable|integer', // New field for database ID
     ]);
 
-    $employee = Employee::where('employeeid', $request->employeeid)->first();
+    // Validate that at least one identifier is provided
+    if (!$request->employeeid && !$request->employee_db_id) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Either employeeid or employee_db_id is required.',
+      ], 400);
+    }
+
+    // Find employee by employeeid or database ID
+    if ($request->employeeid) {
+      $employee = Employee::where('employeeid', $request->employeeid)->first();
+    } else {
+      $employee = Employee::find($request->employee_db_id);
+    }
 
     if (!$employee) {
       return response()->json([

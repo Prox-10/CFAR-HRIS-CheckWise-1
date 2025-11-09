@@ -9,7 +9,10 @@ class AttendanceController extends Controller
 {
   public function index()
   {
-    $attendance = Attendance::with('employee')->orderBy('created_at', 'desc')->get();
+    // Include soft-deleted employees in the relationship to ensure employee data is loaded
+    $attendance = Attendance::with(['employee' => function ($query) {
+      $query->withTrashed();
+    }])->orderBy('created_at', 'desc')->get();
 
     $attendanceList = $attendance->transform(
       fn($attendance) => [

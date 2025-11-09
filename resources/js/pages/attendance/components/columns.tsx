@@ -56,6 +56,10 @@ const columns = (
             const name = row.original.employee_name;
             const empid = row.original.employeeid;
 
+            // Handle missing employee data - show fallback if name or ID is missing
+            const displayName = name || 'Unknown Employee';
+            const displayId = empid || 'N/A';
+
             return (
                 <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
@@ -75,8 +79,8 @@ const columns = (
                         )}
                     </div>
                     <div>
-                        <div className="text-sm font-medium text-gray-900">{name}</div>
-                        <div className="text-xs text-gray-500">{empid}</div>
+                        <div className="text-sm font-medium text-gray-900">{displayName}</div>
+                        <div className="text-xs text-gray-500">{displayId}</div>
                     </div>
                 </div>
             );
