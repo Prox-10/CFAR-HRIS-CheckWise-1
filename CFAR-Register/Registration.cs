@@ -36,6 +36,8 @@ namespace HRIS_CheckWise_ATMS_
         private bool IsDbEnrolling = false;
         private Template CurrentDbTemplate;
         private Bitmap CurrentFingerprintImage;
+        private int enrollmentProgress = 0; // Track enrollment progress (0-4)
+        private const int MAX_ENROLLMENT_STEPS = 4; // Number of touches required
 
         private WebSocket ws;
         private string pendingEmployeeId = null;
@@ -141,16 +143,25 @@ namespace HRIS_CheckWise_ATMS_
             FeatureSet features = ExtractFeatures(sample, DataPurpose.Enrollment);
             if (features != null)
             {
+                // Increment progress for each successful feature extraction
+                enrollmentProgress++;
+                if (enrollmentProgress > MAX_ENROLLMENT_STEPS)
+                    enrollmentProgress = MAX_ENROLLMENT_STEPS;
+                
                 Enroller.AddFeatures(features);
-                MessageDb.Text = "Feature added to enrollment.";
-
+                
+                // Check enrollment status after adding features
                 if (Enroller.TemplateStatus == Enrollment.Status.Ready)
                 {
+                    // Enrollment is complete - set progress to 100% (4/4)
+                    enrollmentProgress = MAX_ENROLLMENT_STEPS;
+                    UpdateProgressBar(MAX_ENROLLMENT_STEPS);
+                    
                     CurrentDbTemplate = Enroller.Template;
                     CurrentFingerprintImage = ConvertSampleToBitmap(sample);
                     fImage.Image = new Bitmap(CurrentFingerprintImage, fImage.Size);
 
-                    MessageDb.Text = "Fingerprint captured. Click 'Save' to store in database.";
+                    MessageDb.Text = $"Fingerprint captured successfully! ({MAX_ENROLLMENT_STEPS}/{MAX_ENROLLMENT_STEPS}) Click 'Save' to store in database.";
                     PlaySuccessSound();
 
                     // Send fingerprint data to React via WebSocket
@@ -163,6 +174,23 @@ namespace HRIS_CheckWise_ATMS_
                     PlayErrorSound();
                     Enroller.Clear();
                     IsDbEnrolling = false;
+                    // Reset progress bar on failure
+                    ResetProgressBar();
+                }
+                else
+                {
+                    // Enrollment is still in progress - show current progress
+                    UpdateProgressBar(enrollmentProgress);
+                    MessageDb.Text = $"Feature added to enrollment. ({enrollmentProgress}/{MAX_ENROLLMENT_STEPS}) - Please touch again.";
+                }
+            }
+            else
+            {
+                // Feature extraction failed - poor quality sample
+                // Don't increment progress, but show message
+                if (IsDbEnrolling)
+                {
+                    MessageDb.Text = $"Poor quality sample. Please try again. ({enrollmentProgress}/{MAX_ENROLLMENT_STEPS})";
                 }
             }
         }
@@ -218,6 +246,48 @@ namespace HRIS_CheckWise_ATMS_
             else
             {
                 MessageDb.Text = message;
+            }
+        }
+
+        // Update progress bar based on enrollment progress
+        protected void UpdateProgressBar(int progress)
+        {
+            if (enrollmentProgressBar.InvokeRequired)
+            {
+                enrollmentProgressBar.Invoke(new Action(() =>
+                {
+                    // Calculate percentage (0-100)
+                    int percentage = (int)((progress / (double)MAX_ENROLLMENT_STEPS) * 100);
+                    enrollmentProgressBar.Value = percentage;
+                    enrollmentProgressBar.Text = $"{progress}/{MAX_ENROLLMENT_STEPS}";
+                }));
+            }
+            else
+            {
+                // Calculate percentage (0-100)
+                int percentage = (int)((progress / (double)MAX_ENROLLMENT_STEPS) * 100);
+                enrollmentProgressBar.Value = percentage;
+                enrollmentProgressBar.Text = $"{progress}/{MAX_ENROLLMENT_STEPS}";
+            }
+        }
+
+        // Reset progress bar to initial state
+        protected void ResetProgressBar()
+        {
+            if (enrollmentProgressBar.InvokeRequired)
+            {
+                enrollmentProgressBar.Invoke(new Action(() =>
+                {
+                    enrollmentProgressBar.Value = 0;
+                    enrollmentProgressBar.Text = "0/4";
+                    enrollmentProgress = 0;
+                }));
+            }
+            else
+            {
+                enrollmentProgressBar.Value = 0;
+                enrollmentProgressBar.Text = "0/4";
+                enrollmentProgress = 0;
             }
         }
 
@@ -431,6 +501,8 @@ namespace HRIS_CheckWise_ATMS_
                 Enroller.Clear();
                 IsDbEnrolling = false;
                 pendingEmployeeId = null;
+                // Reset progress bar
+                ResetProgressBar();
                 // Optionally clear UI
                 MessageDb.Text = "";
                 fImage.Image = null;
@@ -438,7 +510,7 @@ namespace HRIS_CheckWise_ATMS_
                 employeeID.Text = employeeId;
                 // Now start new registration
                 pendingEmployeeId = employeeId;
-                MessageDb.Text = $"Starting fingerprint registration for Employee ID: {employeeId}";
+                MessageDb.Text = $"Starting fingerprint registration for Employee ID: {employeeId}. Please touch the device 4 times.";
                 IsDbEnrolling = true;
                 // Optionally, focus the form or bring to front
                 this.Show();
@@ -520,6 +592,8 @@ namespace HRIS_CheckWise_ATMS_
                     CurrentDbTemplate = null;
                     CurrentFingerprintImage = null;
                     pendingEmployeeId = null;
+                    // Reset progress bar
+                    ResetProgressBar();
                 }
                 else
                 {
@@ -545,6 +619,11 @@ namespace HRIS_CheckWise_ATMS_
 
 
         private void CheckWise_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
         {
 
         }

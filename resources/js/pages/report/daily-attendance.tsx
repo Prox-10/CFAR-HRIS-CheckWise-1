@@ -4,6 +4,7 @@ import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
@@ -52,6 +53,7 @@ export default function DailyAttendancePage() {
     const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
     const [area, setArea] = useState<string>('all');
     const titleDate = useMemo(() => (reportDate ? format(reportDate, 'MMMM dd, yyyy') : ''), [reportDate]);
+    const titleDay = useMemo(() => (reportDate ? format(reportDate, 'EEEE') : ''), [reportDate]);
 
     const handleExport = () => {
         // wire to backend later
@@ -127,10 +129,23 @@ export default function DailyAttendancePage() {
                             {/* Report body matching provided structure */}
                             <Card>
                                 <CardContent className="p-4">
-                                    <div className="text-center">
-                                        <div className="text-sm font-semibold">CFARBEMPCO</div>
-                                        <div className="text-base font-bold">Daily Attendance Report (DTR)</div>
-                                        <div className="text-xs">{titleDate}</div>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex w-full flex-row items-center justify-between">
+                                            <div className="flex flex-col items-start">
+                                                <div className="text-sm font-semibold">CFARBEMPCO</div>
+                                                <div className="mt-1 flex items-center">
+                                                    <span className="mr-2 text-sm font-semibold">PH:</span>
+                                                    <Input type="text" placeholder="PH" className="w-20" />
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-1 justify-center">
+                                                <div className="text-center text-base font-bold">Daily Attendance Report (DTR)</div>
+                                            </div>
+                                            <div className="flex min-w-[110px] flex-col items-end">
+                                                <div className="text-sm"><span className="font-bold">Date:</span> {titleDate}</div>
+                                                <div className="text-sm mr-[71px]"><span className="font-bold">Day:</span> {titleDay}</div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Microteam tables */}

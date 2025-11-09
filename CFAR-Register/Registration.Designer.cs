@@ -39,6 +39,8 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2HtmlLabel1 = new Guna.UI2.WinForms.Guna2HtmlLabel();
             this.fImage = new Guna.UI2.WinForms.Guna2PictureBox();
             this.guna2GradientPanel1 = new Guna.UI2.WinForms.Guna2GradientPanel();
+            this.enrollmentProgressBar = new Guna.UI2.WinForms.Guna2ProgressBar();
+            this.progressLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.fImage)).BeginInit();
             this.guna2GradientPanel1.SuspendLayout();
             this.SuspendLayout();
@@ -58,7 +60,7 @@ namespace HRIS_CheckWise_ATMS_
             // 
             this.StatusTextLabel.BackColor = System.Drawing.Color.Transparent;
             this.StatusTextLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.StatusTextLabel.Location = new System.Drawing.Point(7, 30);
+            this.StatusTextLabel.Location = new System.Drawing.Point(6, 27);
             this.StatusTextLabel.Name = "StatusTextLabel";
             this.StatusTextLabel.Size = new System.Drawing.Size(66, 15);
             this.StatusTextLabel.TabIndex = 12;
@@ -67,7 +69,7 @@ namespace HRIS_CheckWise_ATMS_
             // employeeID
             // 
             this.employeeID.AutoSize = true;
-            this.employeeID.Location = new System.Drawing.Point(74, 31);
+            this.employeeID.Location = new System.Drawing.Point(73, 28);
             this.employeeID.Name = "employeeID";
             this.employeeID.Size = new System.Drawing.Size(59, 13);
             this.employeeID.TabIndex = 13;
@@ -91,7 +93,7 @@ namespace HRIS_CheckWise_ATMS_
             this.save.FillColor = System.Drawing.Color.LightGreen;
             this.save.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.save.ForeColor = System.Drawing.Color.Black;
-            this.save.Location = new System.Drawing.Point(95, 414);
+            this.save.Location = new System.Drawing.Point(95, 420);
             this.save.Name = "save";
             this.save.Size = new System.Drawing.Size(295, 37);
             this.save.TabIndex = 26;
@@ -101,7 +103,7 @@ namespace HRIS_CheckWise_ATMS_
             // MessageDb
             // 
             this.MessageDb.AutoSize = true;
-            this.MessageDb.Location = new System.Drawing.Point(46, 11);
+            this.MessageDb.Location = new System.Drawing.Point(46, 9);
             this.MessageDb.Name = "MessageDb";
             this.MessageDb.Size = new System.Drawing.Size(59, 13);
             this.MessageDb.TabIndex = 28;
@@ -111,7 +113,7 @@ namespace HRIS_CheckWise_ATMS_
             // 
             this.guna2HtmlLabel1.BackColor = System.Drawing.Color.Transparent;
             this.guna2HtmlLabel1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.guna2HtmlLabel1.Location = new System.Drawing.Point(7, 10);
+            this.guna2HtmlLabel1.Location = new System.Drawing.Point(7, 8);
             this.guna2HtmlLabel1.Name = "guna2HtmlLabel1";
             this.guna2HtmlLabel1.Size = new System.Drawing.Size(41, 15);
             this.guna2HtmlLabel1.TabIndex = 27;
@@ -124,7 +126,7 @@ namespace HRIS_CheckWise_ATMS_
             this.fImage.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.fImage.FillColor = System.Drawing.Color.WhiteSmoke;
             this.fImage.ImageRotate = 0F;
-            this.fImage.Location = new System.Drawing.Point(95, 120);
+            this.fImage.Location = new System.Drawing.Point(95, 139);
             this.fImage.Name = "fImage";
             this.fImage.Size = new System.Drawing.Size(295, 277);
             this.fImage.TabIndex = 22;
@@ -137,25 +139,48 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2GradientPanel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("guna2GradientPanel1.BackgroundImage")));
             this.guna2GradientPanel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.guna2GradientPanel1.Controls.Add(this.readerInfo);
-            this.guna2GradientPanel1.Controls.Add(this.MessageDb);
-            this.guna2GradientPanel1.Controls.Add(this.guna2HtmlLabel1);
             this.guna2GradientPanel1.Controls.Add(this.fImage);
-            this.guna2GradientPanel1.Controls.Add(this.employeeID);
             this.guna2GradientPanel1.Controls.Add(this.save);
-            this.guna2GradientPanel1.Controls.Add(this.StatusTextLabel);
-            this.guna2GradientPanel1.Location = new System.Drawing.Point(0, 0);
+            this.guna2GradientPanel1.Controls.Add(this.enrollmentProgressBar);
+            this.guna2GradientPanel1.Controls.Add(this.progressLabel);
+            this.guna2GradientPanel1.Location = new System.Drawing.Point(0, 49);
             this.guna2GradientPanel1.Name = "guna2GradientPanel1";
-            this.guna2GradientPanel1.Size = new System.Drawing.Size(481, 489);
+            this.guna2GradientPanel1.Size = new System.Drawing.Size(481, 474);
             this.guna2GradientPanel1.TabIndex = 29;
             this.guna2GradientPanel1.UseTransparentBackground = true;
+            // 
+            // enrollmentProgressBar
+            // 
+            this.enrollmentProgressBar.Location = new System.Drawing.Point(95, 119);
+            this.enrollmentProgressBar.Name = "enrollmentProgressBar";
+            this.enrollmentProgressBar.ProgressColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(213)))), ((int)(((byte)(115)))));
+            this.enrollmentProgressBar.ProgressColor2 = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(213)))), ((int)(((byte)(115)))));
+            this.enrollmentProgressBar.Size = new System.Drawing.Size(295, 15);
+            this.enrollmentProgressBar.TabIndex = 30;
+            this.enrollmentProgressBar.Text = "0/4";
+            this.enrollmentProgressBar.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SystemDefault;
+            // 
+            // progressLabel
+            // 
+            this.progressLabel.AutoSize = true;
+            this.progressLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.progressLabel.Location = new System.Drawing.Point(95, 387);
+            this.progressLabel.Name = "progressLabel";
+            this.progressLabel.Size = new System.Drawing.Size(60, 13);
+            this.progressLabel.TabIndex = 31;
+            this.progressLabel.Text = "Progress:";
             // 
             // Registration
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Honeydew;
-            this.ClientSize = new System.Drawing.Size(481, 489);
+            this.ClientSize = new System.Drawing.Size(481, 525);
             this.Controls.Add(this.guna2GradientPanel1);
+            this.Controls.Add(this.MessageDb);
+            this.Controls.Add(this.employeeID);
+            this.Controls.Add(this.guna2HtmlLabel1);
+            this.Controls.Add(this.StatusTextLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
@@ -170,6 +195,7 @@ namespace HRIS_CheckWise_ATMS_
             this.guna2GradientPanel1.ResumeLayout(false);
             this.guna2GradientPanel1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -183,6 +209,8 @@ namespace HRIS_CheckWise_ATMS_
         private System.Windows.Forms.Label MessageDb;
         private Guna.UI2.WinForms.Guna2HtmlLabel guna2HtmlLabel1;
         private Guna.UI2.WinForms.Guna2GradientPanel guna2GradientPanel1;
+        private Guna.UI2.WinForms.Guna2ProgressBar enrollmentProgressBar;
+        private System.Windows.Forms.Label progressLabel;
     }
 }
 
