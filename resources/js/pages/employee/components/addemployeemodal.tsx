@@ -170,6 +170,58 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
         input.click(); // Trigger the file input click to open file explorer
     };
 
+    // Generate unique Add Crew employee ID (AC + 6 digits)
+    const generateAddCrewEmployeeId = async (): Promise<string> => {
+        const maxAttempts = 100;
+        let attempts = 0;
+
+        try {
+            // Fetch existing employees to check for uniqueness
+            const response = await fetch('/api/employee/all');
+            const employees = await response.json();
+            const existingIds = new Set(employees.map((emp: any) => emp.employeeid).filter(Boolean));
+
+            do {
+                // Generate a random 6-digit number
+                const randomDigits = Math.floor(Math.random() * 900000) + 100000; // 100000 to 999999
+                const employeeId = `AC${randomDigits.toString().padStart(6, '0')}`;
+
+                if (!existingIds.has(employeeId)) {
+                    return employeeId;
+                }
+                attempts++;
+            } while (attempts < maxAttempts);
+
+            // Fallback: use timestamp-based ID if too many collisions
+            const timestampDigits = Date.now().toString().slice(-6).padStart(6, '0');
+            const fallbackId = `AC${timestampDigits}`;
+            if (!existingIds.has(fallbackId)) {
+                return fallbackId;
+            }
+
+            // Last resort: timestamp + random digit
+            const lastResortDigits = (Date.now().toString().slice(-5) + Math.floor(Math.random() * 10)).padStart(6, '0');
+            return `AC${lastResortDigits}`;
+        } catch (error) {
+            console.error('Error generating employee ID:', error);
+            // Fallback to simple random generation if API fails
+            const randomDigits = Math.floor(Math.random() * 900000) + 100000;
+            return `AC${randomDigits.toString().padStart(6, '0')}`;
+        }
+    };
+
+    // Auto-generate employee ID when Add Crew is selected
+    useEffect(() => {
+        if (data.work_status === 'Add Crew' && !data.employeeid) {
+            generateAddCrewEmployeeId().then((employeeId) => {
+                setData('employeeid', employeeId);
+            });
+        } else if (data.work_status !== 'Add Crew' && data.employeeid?.startsWith('AC')) {
+            // Clear AC ID if work status changes away from Add Crew
+            setData('employeeid', '');
+        }
+    }, [data.work_status]);
+
     // Update available positions when department changes
     useEffect(() => {
         if (data.department) {
@@ -280,7 +332,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                         });
 
                         if (isAddCrew) {
-                            toast.success(`Employee saved! Auto-generated Employee ID: ${foundEmployee.employeeid}`);
+                            toast.success(` Add Crew saved! Add Crew ID: ${foundEmployee.employeeid}`);
                         }
                     } else {
                         setSavedEmployee({ ...formData });
@@ -448,6 +500,20 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     aria-invalid={!!errors.employeeid}
                                 />
                                 <InputError message={errors.employeeid} />
+                            </div>
+                        )}
+                        {hasWorkStatus && isAddCrew && (
+                            <div className="">
+                                <Label>Employee ID (Auto-generated)</Label>
+                                <Input
+                                    type="text"
+                                    value={data.employeeid || 'Generating...'}
+                                    readOnly
+                                    className="border-green-300 bg-gray-50 focus:border-cfar-500"
+                                    aria-invalid={!!errors.employeeid}
+                                />
+                                <InputError message={errors.employeeid} />
+                                {data.employeeid && <p className="mt-1 text-xs text-green-600">Auto-generated ID: {data.employeeid}</p>}
                             </div>
                         )}
                         {hasWorkStatus && (

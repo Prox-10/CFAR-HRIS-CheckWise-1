@@ -95,18 +95,30 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
             wsPort: echo.options.wsPort,
         });
 
-        // Test Echo connection
-        echo.connector.pusher.connection.bind('connected', () => {
-            console.log('Echo connected successfully');
-        });
+        // Test Echo connection (works for both Pusher and Reverb)
+        const connector = echo.connector;
+        if (connector) {
+            // For Reverb, check if there's a connection object
+            if (connector.pusher && connector.pusher.connection) {
+                connector.pusher.connection.bind('connected', () => {
+                    console.log('Echo connected successfully');
+                });
 
-        echo.connector.pusher.connection.bind('disconnected', () => {
-            console.log('Echo disconnected');
-        });
+                connector.pusher.connection.bind('disconnected', () => {
+                    console.log('Echo disconnected');
+                });
 
-        echo.connector.pusher.connection.bind('error', (error: any) => {
-            console.error('Echo connection error:', error);
-        });
+                connector.pusher.connection.bind('error', (error: any) => {
+                    console.error('Echo connection error:', error);
+                });
+
+                // Check current connection state
+                const state = connector.pusher.connection.state;
+                console.log('Current Echo connection state:', state);
+            } else {
+                console.warn('Echo connector structure not recognized. Reverb server may not be running.');
+            }
+        }
 
         // Listen on notifications channel for general absence requests
         const notificationsChannel = echo.channel('notifications');
@@ -160,8 +172,8 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
             })
             .listen('.RequestStatusUpdated', (e: any) => {
                 console.log('Received RequestStatusUpdated event:', e);
-            if (String(e.type || '') !== 'absence_status') return;
-            setRequests((prev) => prev.map((r) => (String(r.id) === String(e.request_id) ? { ...r, status: e.status } : r)));
+                if (String(e.type || '') !== 'absence_status') return;
+                setRequests((prev) => prev.map((r) => (String(r.id) === String(e.request_id) ? { ...r, status: e.status } : r)));
             });
 
         // Also listen on private supervisor channel if user is supervisor
@@ -225,7 +237,7 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                 const currentUserId = (window as any).user?.id || (window as any).auth?.user?.id;
                 if (currentUserId) {
                     const supervisorChannel = echo.private(`supervisor.${currentUserId}`);
-                supervisorChannel.stopListening('.AbsenceRequested');
+                    supervisorChannel.stopListening('.AbsenceRequested');
                 }
             }
         };

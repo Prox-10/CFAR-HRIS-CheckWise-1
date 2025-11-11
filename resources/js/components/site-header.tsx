@@ -33,16 +33,35 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
 
         console.log('Setting up Echo listeners for user-specific notifications');
 
+        // Check Echo connection state
+        const connector = echo.connector;
+        if (connector && connector.pusher && connector.pusher.connection) {
+            const state = connector.pusher.connection.state;
+            console.log('Echo connection state:', state);
+
+            if (state !== 'connected' && state !== 'connecting') {
+                console.warn('Echo is not connected. State:', state);
+                console.warn('Make sure Reverb server is running: php artisan reverb:start');
+            }
+        }
+
         // Use supervisor-specific channel or general notifications channel based on user role
         const notificationChannel = isSupervisor && currentUser?.id ? echo.private(`supervisor.${currentUser.id}`) : echo.channel('notifications');
 
-        // Test connection
+        // Test connection with timeout
+        const subscriptionTimeout = setTimeout(() => {
+            console.warn('Subscription timeout: Channel subscription took too long. Check if Reverb server is running.');
+        }, 5000);
+
         notificationChannel.subscribed(() => {
+            clearTimeout(subscriptionTimeout);
             console.log('Successfully subscribed to notification channel');
         });
 
         notificationChannel.error((error: any) => {
+            clearTimeout(subscriptionTimeout);
             console.error('Error with notification channel:', error);
+            console.error('Full error details:', JSON.stringify(error, null, 2));
         });
 
         notificationChannel

@@ -3,17 +3,18 @@ import { Main } from '@/components/customize/main';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { pdf } from '@react-pdf/renderer';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import axios from 'axios';
-import { Loader2, Printer, Save } from 'lucide-react';
+import { Download, Eye, Loader2, Printer, Save } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 interface Employee {
     id: string;
@@ -89,6 +90,22 @@ const formatTimeForInput = (time: string | undefined | null): string => {
     return time;
 };
 
+// Helper function to format time to 12-hour format with AM/PM
+const formatTimeWithAMPM = (time: string | undefined | null): string => {
+    if (!time) return '--:--';
+
+    // Handle HH:mm:ss or HH:mm format
+    const timeStr = time.includes(':') ? time.split(':').slice(0, 2).join(':') : time;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+
+    if (isNaN(hours) || isNaN(minutes)) return '--:--';
+
+    const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const ampm = hours < 12 ? 'AM' : 'PM';
+
+    return `${String(hour12).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+};
+
 export default function DailyCheckingPage({ employees: initialEmployees = [] }: DailyCheckingPageProps) {
     const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -102,6 +119,10 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     const [saving, setSaving] = useState(false);
     const [preparedBy, setPreparedBy] = useState('');
     const [checkedBy, setCheckedBy] = useState('');
+    const [showPreview, setShowPreview] = useState(false);
+    const [selectedMicroteam, setSelectedMicroteam] = useState<'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null>(null);
+    const [allSelectedEmployees, setAllSelectedEmployees] = useState<Set<string>>(new Set());
+    const [loadingMicroteam, setLoadingMicroteam] = useState(false);
 
     // Initialize assignment data structure
     useEffect(() => {
@@ -157,6 +178,146 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         fetchPackingPlantEmployees(startDate, endDate);
     }, [date]);
 
+    // Update global selected employees when date changes
+    useEffect(() => {
+        if (!date) return;
+
+        const fetchGlobalSelectedEmployees = async () => {
+            try {
+                const days = getDaysOfWeek();
+                const weekStartDate = days[0].toISOString().split('T')[0];
+
+                // Fetch all assignments for this week to get globally selected employees
+                const response = await axios.get('/api/daily-checking/for-date', {
+                    params: { date: weekStartDate },
+                });
+
+                // Build set of all selected employees across all microteams (including Add Crew)
+                const globalSelected = new Set<string>();
+                if (response.data.microteams) {
+                    Object.values(response.data.microteams).forEach((microteam: any) => {
+                        if (Array.isArray(microteam)) {
+                            microteam.forEach((emp: any) => {
+                                if (emp.employee_name) {
+                                    globalSelected.add(emp.employee_name);
+                                }
+                            });
+                        }
+                    });
+                }
+                // Also include Add Crew employees (handle both old array format and new grouped format)
+                if (response.data.add_crew) {
+                    if (Array.isArray(response.data.add_crew)) {
+                        // Old format: array
+                        response.data.add_crew.forEach((emp: any) => {
+                            if (emp.employee_name) {
+                                globalSelected.add(emp.employee_name);
+                            }
+                        });
+                    } else {
+                        // New format: grouped by microteam
+                        Object.values(response.data.add_crew).forEach((microteamAddCrew: any) => {
+                            if (Array.isArray(microteamAddCrew)) {
+                                microteamAddCrew.forEach((emp: any) => {
+                                    if (emp.employee_name) {
+                                        globalSelected.add(emp.employee_name);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+                setAllSelectedEmployees(globalSelected);
+            } catch (error) {
+                console.error('Error fetching existing assignments:', error);
+            }
+        };
+
+        fetchGlobalSelectedEmployees();
+    }, [date]);
+
+    // Reload form data when date changes and microteam is selected
+    useEffect(() => {
+        if (selectedMicroteam && date) {
+            // Only reload if we have a microteam selected
+            const loadData = async () => {
+                const days = getDaysOfWeek();
+                const weekStartDate = days[0].toISOString().split('T')[0];
+
+                // Initialize structures
+                const initialData: { [key: string]: string[] } = {};
+                const initialTimeData: typeof timeData = {};
+                positions.forEach((position) => {
+                    initialData[position.field] = Array(position.slots).fill('');
+                    initialTimeData[position.field] = {};
+                    for (let i = 0; i < position.slots; i++) {
+                        initialTimeData[position.field][i] = {};
+                        for (let j = 0; j < 7; j++) {
+                            initialTimeData[position.field][i][j] = { time_in: '', time_out: '' };
+                        }
+                    }
+                });
+
+                // Load microteam data (includes Add Crew if it was saved with this microteam)
+                try {
+                    const microteamResponse = await axios.get('/api/daily-checking/by-microteam', {
+                        params: { week_start_date: weekStartDate, microteam: selectedMicroteam },
+                    });
+
+                    if (microteamResponse.data.assignment_data) {
+                        // Merge microteam data (including SUPPORT: ABSENT - it's saved per microteam)
+                        Object.keys(microteamResponse.data.assignment_data).forEach((positionField) => {
+                            if (initialData[positionField]) {
+                                const savedAssignments = microteamResponse.data.assignment_data[positionField];
+                                savedAssignments.forEach((emp: string, index: number) => {
+                                    if (emp && index < initialData[positionField].length) {
+                                        initialData[positionField][index] = emp;
+                                    }
+                                });
+                            }
+                        });
+
+                        if (microteamResponse.data.time_data) {
+                            // Merge microteam time data (including SUPPORT: ABSENT)
+                            Object.keys(microteamResponse.data.time_data).forEach((positionField) => {
+                                if (initialTimeData[positionField]) {
+                                    const savedTimeData = microteamResponse.data.time_data[positionField];
+                                    Object.keys(savedTimeData).forEach((slotIndex) => {
+                                        const slot = parseInt(slotIndex);
+                                        Object.keys(savedTimeData[slotIndex]).forEach((dayIndex) => {
+                                            const day = parseInt(dayIndex);
+                                            if (savedTimeData[slotIndex][dayIndex]) {
+                                                initialTimeData[positionField][slot][day] = {
+                                                    time_in: savedTimeData[slotIndex][dayIndex].time_in || '',
+                                                    time_out: savedTimeData[slotIndex][dayIndex].time_out || '',
+                                                };
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                        }
+
+                        if (microteamResponse.data.prepared_by) {
+                            setPreparedBy(microteamResponse.data.prepared_by);
+                        }
+                        if (microteamResponse.data.checked_by) {
+                            setCheckedBy(microteamResponse.data.checked_by);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading microteam data:', error);
+                }
+
+                setAssignmentData(initialData);
+                setTimeData(initialTimeData);
+            };
+
+            loadData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [date, selectedMicroteam]);
+
     const fetchPackingPlantEmployees = async (startDate?: string, endDate?: string) => {
         setLoading(true);
         try {
@@ -175,10 +336,25 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     };
 
     const handleAssignmentChange = (field: string, slotIndex: number, value: string) => {
+        const previousValue = assignmentData[field]?.[slotIndex] || '';
+
         setAssignmentData((prev) => ({
             ...prev,
             [field]: prev[field].map((item, i) => (i === slotIndex ? value : item)),
         }));
+
+        // Update global selected employees set (including Add Crew)
+        // All employees should be tracked globally to prevent duplicate selection across microteams
+        setAllSelectedEmployees((prev) => {
+            const newSet = new Set(prev);
+            if (previousValue) {
+                newSet.delete(previousValue);
+            }
+            if (value) {
+                newSet.add(value);
+            }
+            return newSet;
+        });
 
         // Auto-populate time_in and time_out when employee is selected
         if (value) {
@@ -241,23 +417,157 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         }
     };
 
-    const handleTimeChange = (field: string, slotIndex: number, dayIndex: number, type: 'time_in' | 'time_out', value: string) => {
-        setTimeData((prev) => ({
-            ...prev,
-            [field]: {
-                ...prev[field],
-                [slotIndex]: {
-                    ...prev[field]?.[slotIndex],
-                    [dayIndex]: {
-                        ...prev[field]?.[slotIndex]?.[dayIndex],
-                        [type]: value,
-                    },
-                },
-            },
-        }));
+    // Handle microteam change - load saved data or reset form
+    const handleMicroteamChange = async (microteam: 'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null) => {
+        setSelectedMicroteam(microteam);
+        setLoadingMicroteam(true);
+
+        try {
+            const days = getDaysOfWeek();
+            const weekStartDate = days[0].toISOString().split('T')[0];
+
+            // Initialize assignment data and time data structures
+            const initialData: { [key: string]: string[] } = {};
+            const initialTimeData: typeof timeData = {};
+            positions.forEach((position) => {
+                initialData[position.field] = Array(position.slots).fill('');
+                initialTimeData[position.field] = {};
+                for (let i = 0; i < position.slots; i++) {
+                    initialTimeData[position.field][i] = {};
+                    for (let j = 0; j < 7; j++) {
+                        initialTimeData[position.field][i][j] = { time_in: '', time_out: '' };
+                    }
+                }
+            });
+
+            // Load microteam data if microteam is selected
+            // Add Crew will be loaded as part of the microteam data loading (it's saved separately but loaded together)
+            if (microteam) {
+                try {
+                    const microteamResponse = await axios.get('/api/daily-checking/by-microteam', {
+                        params: {
+                            week_start_date: weekStartDate,
+                            microteam: microteam,
+                        },
+                    });
+
+                    if (microteamResponse.data.assignment_data) {
+                        // Merge microteam data into initial data (including SUPPORT: ABSENT - it's saved per microteam)
+                        Object.keys(microteamResponse.data.assignment_data).forEach((positionField) => {
+                            if (initialData[positionField]) {
+                                const savedAssignments = microteamResponse.data.assignment_data[positionField];
+                                savedAssignments.forEach((emp: string, index: number) => {
+                                    if (emp && index < initialData[positionField].length) {
+                                        initialData[positionField][index] = emp;
+                                    }
+                                });
+                            }
+                        });
+
+                        // Merge microteam time data (including SUPPORT: ABSENT)
+                        if (microteamResponse.data.time_data) {
+                            Object.keys(microteamResponse.data.time_data).forEach((positionField) => {
+                                if (initialTimeData[positionField]) {
+                                    const savedTimeData = microteamResponse.data.time_data[positionField];
+                                    Object.keys(savedTimeData).forEach((slotIndex) => {
+                                        const slot = parseInt(slotIndex);
+                                        if (initialTimeData[positionField][slot]) {
+                                            Object.keys(savedTimeData[slotIndex]).forEach((dayIndex) => {
+                                                const day = parseInt(dayIndex);
+                                                if (savedTimeData[slotIndex][dayIndex]) {
+                                                    initialTimeData[positionField][slot][day] = {
+                                                        time_in: savedTimeData[slotIndex][dayIndex].time_in || '',
+                                                        time_out: savedTimeData[slotIndex][dayIndex].time_out || '',
+                                                    };
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        // Load prepared_by and checked_by if available
+                        if (microteamResponse.data.prepared_by) {
+                            setPreparedBy(microteamResponse.data.prepared_by);
+                        }
+                        if (microteamResponse.data.checked_by) {
+                            setCheckedBy(microteamResponse.data.checked_by);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading microteam data:', error);
+                    // If error, just use empty form
+                }
+            }
+
+            // Update state with loaded data
+            setAssignmentData(initialData);
+            setTimeData(initialTimeData);
+
+            // Update global selected employees from all microteams (including Add Crew)
+            try {
+                const globalResponse = await axios.get('/api/daily-checking/for-date', {
+                    params: { date: weekStartDate },
+                });
+
+                const globalSelected = new Set<string>();
+                if (globalResponse.data.microteams) {
+                    Object.values(globalResponse.data.microteams).forEach((microteam: any) => {
+                        if (Array.isArray(microteam)) {
+                            microteam.forEach((emp: any) => {
+                                if (emp.employee_name) {
+                                    globalSelected.add(emp.employee_name);
+                                }
+                            });
+                        }
+                    });
+                }
+                // Also include Add Crew employees (handle both old array format and new grouped format)
+                if (globalResponse.data.add_crew) {
+                    if (Array.isArray(globalResponse.data.add_crew)) {
+                        // Old format: array
+                        globalResponse.data.add_crew.forEach((emp: any) => {
+                            if (emp.employee_name) {
+                                globalSelected.add(emp.employee_name);
+                            }
+                        });
+                    } else {
+                        // New format: grouped by microteam
+                        Object.values(globalResponse.data.add_crew).forEach((microteamAddCrew: any) => {
+                            if (Array.isArray(microteamAddCrew)) {
+                                microteamAddCrew.forEach((emp: any) => {
+                                    if (emp.employee_name) {
+                                        globalSelected.add(emp.employee_name);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+                setAllSelectedEmployees(globalSelected);
+            } catch (error) {
+                console.error('Error loading global selected employees:', error);
+                // Fallback to current microteam selection
+                const selectedEmps = new Set<string>();
+                Object.values(initialData).forEach((slots) => {
+                    slots.forEach((emp) => {
+                        if (emp) {
+                            selectedEmps.add(emp);
+                        }
+                    });
+                });
+                setAllSelectedEmployees(selectedEmps);
+            }
+        } catch (error) {
+            console.error('Error loading microteam data:', error);
+            toast.error('Failed to load microteam data');
+        } finally {
+            setLoadingMicroteam(false);
+        }
     };
 
-    // Get all currently selected employees across all positions
+    // Get all currently selected employees across all positions in current microteam
     const getSelectedEmployees = () => {
         const selected: string[] = [];
         Object.values(assignmentData).forEach((slots) => {
@@ -270,6 +580,22 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         return selected;
     };
 
+    // Check if employee is selected in any microteam
+    const isEmployeeSelectedGlobally = (employeeName: string): boolean => {
+        return allSelectedEmployees.has(employeeName);
+    };
+
+    // Filter employees based on position field
+    const getFilteredEmployees = (positionField: string): Employee[] => {
+        if (positionField === 'supportAbsent') {
+            // SUPPORT: ABSENT - Only show Add Crew employees
+            return employees.filter((emp) => emp.work_status === 'Add Crew');
+        } else {
+            // All other positions - Exclude Add Crew employees
+            return employees.filter((emp) => emp.work_status !== 'Add Crew');
+        }
+    };
+
     const handleLeaveChange = (type: string, value: string) => {
         setLeaveData((prev) => ({
             ...prev,
@@ -278,11 +604,34 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     };
 
     const handleSave = async () => {
+        // Check if there are any assignments to save
+        const hasAssignments = Object.values(assignmentData).some((slots) => slots.some((emp) => emp));
+        if (!hasAssignments) {
+            toast.error('Cannot Save', {
+                description: 'Please assign at least one employee before saving.',
+                duration: 4000,
+            });
+            return;
+        }
+
+        // Check if we have any assignments without microteam selected
+        if (hasAssignments && !selectedMicroteam) {
+            toast.error('Microteam Required', {
+                description: 'Please select a Microteam first before assigning employees.',
+                duration: 4000,
+            });
+            return;
+        }
+
         try {
             setSaving(true);
             // Calculate Monday of the week
             const days = getDaysOfWeek();
             const weekStartDate = days[0].toISOString().split('T')[0];
+
+            // Count assignments for better messaging
+            let addCrewCount = 0;
+            let regularCount = 0;
 
             // Transform assignmentData and timeData into the format expected by API
             const assignments: any[] = [];
@@ -291,6 +640,16 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                 const slots = assignmentData[positionField];
                 slots.forEach((employeeName, slotIndex) => {
                     if (employeeName) {
+                        // Get employee to check if Add Crew
+                        const employee = employees.find((emp) => emp.employee_name === employeeName);
+                        const isAddCrew = employee?.work_status === 'Add Crew' || positionField === 'supportAbsent';
+
+                        if (isAddCrew) {
+                            addCrewCount++;
+                        } else {
+                            regularCount++;
+                        }
+
                         // Get time data for this position, slot, and all days
                         const slotTimeData = timeData[positionField]?.[slotIndex] || {};
 
@@ -298,6 +657,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                             employee_name: employeeName,
                             position_field: positionField,
                             slot_index: slotIndex,
+                            microteam: selectedMicroteam, // Add Crew is saved with the microteam it was selected in
+                            is_add_crew: isAddCrew,
                             time_data: Array.from({ length: 7 }, (_, dayIndex) => {
                                 const dayTime = slotTimeData[dayIndex] || { time_in: '', time_out: '' };
                                 return {
@@ -310,8 +671,21 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                 });
             });
 
-            // Show loading toast
-            toast.loading('Saving daily checking assignments...', { id: 'save-daily-checking' });
+            // Build descriptive message
+            let saveMessage = 'Saving daily checking assignments';
+            if (selectedMicroteam && regularCount > 0) {
+                saveMessage += ` for ${selectedMicroteam}`;
+            }
+            if (addCrewCount > 0) {
+                saveMessage += ` and ${addCrewCount} Add Crew employee${addCrewCount > 1 ? 's' : ''}`;
+            }
+            saveMessage += '...';
+
+            // Show loading toast with descriptive message
+            toast.loading(saveMessage, {
+                id: 'save-daily-checking',
+                duration: Infinity, // Keep loading until dismissed
+            });
 
             const response = await axios.post('/api/daily-checking/store', {
                 week_start_date: weekStartDate,
@@ -323,16 +697,142 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             toast.dismiss('save-daily-checking');
 
             if (response.data.success) {
-                toast.success('Daily checking saved successfully!');
+                // Build success message with details
+                const details: string[] = [];
+
+                if (selectedMicroteam && regularCount > 0) {
+                    details.push(`${regularCount} employee${regularCount > 1 ? 's' : ''} saved to ${selectedMicroteam}`);
+                }
+                if (addCrewCount > 0) {
+                    details.push(`${addCrewCount} Add Crew employee${addCrewCount > 1 ? 's' : ''} saved`);
+                }
+
+                // Show success toast with details
+                const description =
+                    details.length > 0 ? details.join('. ') : `Total: ${assignments.length} assignment${assignments.length > 1 ? 's' : ''} saved`;
+
+                toast.success('Save Successful', {
+                    description: description,
+                    duration: 5000,
+                });
+
+                // Refresh global selected employees from API after successful save (including Add Crew)
+                try {
+                    const refreshResponse = await axios.get('/api/daily-checking/for-date', {
+                        params: { date: weekStartDate },
+                    });
+
+                    const globalSelected = new Set<string>();
+                    if (refreshResponse.data.microteams) {
+                        Object.values(refreshResponse.data.microteams).forEach((microteam: any) => {
+                            if (Array.isArray(microteam)) {
+                                microteam.forEach((emp: any) => {
+                                    if (emp.employee_name) {
+                                        globalSelected.add(emp.employee_name);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    // Also include Add Crew employees (handle both old array format and new grouped format)
+                    if (refreshResponse.data.add_crew) {
+                        if (Array.isArray(refreshResponse.data.add_crew)) {
+                            // Old format: array
+                            refreshResponse.data.add_crew.forEach((emp: any) => {
+                                if (emp.employee_name) {
+                                    globalSelected.add(emp.employee_name);
+                                }
+                            });
+                        } else {
+                            // New format: grouped by microteam
+                            Object.values(refreshResponse.data.add_crew).forEach((microteamAddCrew: any) => {
+                                if (Array.isArray(microteamAddCrew)) {
+                                    microteamAddCrew.forEach((emp: any) => {
+                                        if (emp.employee_name) {
+                                            globalSelected.add(emp.employee_name);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    setAllSelectedEmployees(globalSelected);
+                } catch (error) {
+                    console.error('Error refreshing global selected employees:', error);
+                    // Fallback to current selection if API call fails
+                    const currentSelected = getSelectedEmployees();
+                    setAllSelectedEmployees((prev) => {
+                        const newSet = new Set(prev);
+                        currentSelected.forEach((empName) => {
+                            newSet.add(empName);
+                        });
+                        return newSet;
+                    });
+                }
             } else {
-                toast.error(response.data.message || 'Failed to save daily checking');
+                const errorMsg = response.data.message || 'Failed to save daily checking assignments. Please try again.';
+                toast.error('Save Failed', {
+                    description: errorMsg,
+                    duration: 5000,
+                });
             }
         } catch (error: any) {
             toast.dismiss('save-daily-checking');
             console.error('Error saving daily checking:', error);
-            toast.error(error.response?.data?.message || 'Failed to save daily checking assignments');
+
+            const errorMessage = error.response?.data?.message || 'An unexpected error occurred';
+            const errorDetails = error.response?.data?.errors
+                ? Object.values(error.response.data.errors).flat().join(', ')
+                : 'Please check your connection and try again.';
+
+            toast.error('Save Failed', {
+                description: `${errorMessage}. ${errorDetails}`,
+                duration: 5000,
+            });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            // Show loading toast
+            toast.loading('Generating PDF...', { id: 'pdf-export' });
+
+            // Import the PDF component dynamically
+            const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+            const PackingPlantDocument = PackingPlantPDF({
+                weekStart: new Date(date),
+                workers: assignmentData,
+                timeData: timeData,
+                employees: employees,
+                leaveData: leaveData,
+            });
+
+            // Generate PDF blob
+            const instance = pdf(PackingPlantDocument());
+            const blob = await instance.toBlob();
+
+            // Dismiss loading toast
+            toast.dismiss('pdf-export');
+
+            // Create download link
+            const dateStr = date ? new Date(date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+            const filename = `Daily_Checking_PP_Crew_${dateStr}.pdf`;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast.success('PDF exported successfully');
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            toast.dismiss('pdf-export');
+            toast.error('Failed to export PDF. Please try again.');
         }
     };
 
@@ -345,7 +845,13 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
             // Import the PDF component dynamically
             const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
-            const PackingPlantDocument = PackingPlantPDF({ weekStart: new Date(date), workers: assignmentData });
+            const PackingPlantDocument = PackingPlantPDF({
+                weekStart: new Date(date),
+                workers: assignmentData,
+                timeData: timeData,
+                employees: employees,
+                leaveData: leaveData,
+            });
 
             // Generate PDF blob
             const instance = pdf(PackingPlantDocument());
@@ -439,6 +945,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     return (
         <SidebarProvider>
             <Head title="Daily Checking of PP Crew" />
+            <Toaster position="top-center" richColors />
             <SidebarHoverLogic>
                 <SidebarInset>
                     <SiteHeader breadcrumbs={breadcrumbs} title={''} />
@@ -454,6 +961,30 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                         <p className="text-lg font-semibold text-gray-700">DAILY CHECKING OF PP CREW</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Microteam Selection */}
+                            <div className="mb-4 print:hidden">
+                                <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                    Select Microteam:
+                                    {loadingMicroteam && <span className="ml-2 text-xs text-gray-500">Loading...</span>}
+                                </label>
+                                <Select
+                                    value={selectedMicroteam || ''}
+                                    onValueChange={(value) =>
+                                        handleMicroteamChange(value as 'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null)
+                                    }
+                                    disabled={loadingMicroteam}
+                                >
+                                    <SelectTrigger className="w-64 border-gray-300">
+                                        <SelectValue placeholder="Select Microteam..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MICROTEAM - 01">Microteam 1</SelectItem>
+                                        <SelectItem value="MICROTEAM - 02">Microteam 2</SelectItem>
+                                        <SelectItem value="MICROTEAM - 03">Microteam 3</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {/* Date Selection */}
@@ -518,23 +1049,38 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                             <Select
                                                                 value={assignmentData[position.field]?.[slotIndex] || ''}
                                                                 onValueChange={(value) => handleAssignmentChange(position.field, slotIndex, value)}
+                                                                disabled={!selectedMicroteam}
                                                             >
                                                                 <SelectTrigger className="h-8 border-0 text-xs">
-                                                                    <SelectValue placeholder="Select..." />
+                                                                    <SelectValue
+                                                                        placeholder={
+                                                                            selectedMicroteam
+                                                                                ? position.field === 'supportAbsent'
+                                                                                    ? 'Select Add Crew...'
+                                                                                    : 'Select...'
+                                                                                : 'Select Microteam first'
+                                                                        }
+                                                                    />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    {employees.map((emp) => {
+                                                                    {getFilteredEmployees(position.field).map((emp) => {
                                                                         const selectedEmployees = getSelectedEmployees();
-                                                                        const isSelected = selectedEmployees.includes(emp.employee_name);
+                                                                        const isSelectedInCurrent = selectedEmployees.includes(emp.employee_name);
+                                                                        const isSelectedGlobally = isEmployeeSelectedGlobally(emp.employee_name);
                                                                         const isCurrentSelection =
                                                                             assignmentData[position.field]?.[slotIndex] === emp.employee_name;
+
+                                                                        // For all positions (including SUPPORT: ABSENT), disable if selected in current form or in other microteams
+                                                                        const shouldDisable =
+                                                                            (isSelectedInCurrent && !isCurrentSelection) ||
+                                                                            (isSelectedGlobally && !isCurrentSelection && !isSelectedInCurrent);
 
                                                                         return (
                                                                             <SelectItem
                                                                                 key={emp.id}
                                                                                 value={emp.employee_name}
                                                                                 className="text-xs"
-                                                                                disabled={isSelected && !isCurrentSelection}
+                                                                                disabled={shouldDisable}
                                                                             >
                                                                                 {formatEmployeeDisplayName(emp)}
                                                                             </SelectItem>
@@ -546,37 +1092,11 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                         {/* Days of week IN/OUT columns */}
                                                         {daysOfWeek.map((_, dayIndex) => (
                                                             <React.Fragment key={dayIndex}>
-                                                                <td className="border-2 border-black p-0">
-                                                                    <Input
-                                                                        type="time"
-                                                                        className="h-8 rounded-none border-0 text-center text-xs"
-                                                                        value={timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_in || ''}
-                                                                        onChange={(e) =>
-                                                                            handleTimeChange(
-                                                                                position.field,
-                                                                                slotIndex,
-                                                                                dayIndex,
-                                                                                'time_in',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
+                                                                <td className="border-2 border-black p-1 text-center text-xs">
+                                                                    {formatTimeWithAMPM(timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_in)}
                                                                 </td>
-                                                                <td className="border-2 border-black p-0">
-                                                                    <Input
-                                                                        type="time"
-                                                                        className="h-8 rounded-none border-0 text-center text-xs"
-                                                                        value={timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_out || ''}
-                                                                        onChange={(e) =>
-                                                                            handleTimeChange(
-                                                                                position.field,
-                                                                                slotIndex,
-                                                                                dayIndex,
-                                                                                'time_out',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
+                                                                <td className="border-2 border-black p-1 text-center text-xs">
+                                                                    {formatTimeWithAMPM(timeData[position.field]?.[slotIndex]?.[dayIndex]?.time_out)}
                                                                 </td>
                                                             </React.Fragment>
                                                         ))}
@@ -642,10 +1162,18 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                 </div>
                             </div>
                             <div className="mt-4 flex justify-start gap-2 print:hidden">
-                                {/* <Button variant="outline" onClick={viewPPPdf} className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View
-                                    </Button> */}
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowPreview(true)}
+                                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                                >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View
+                                </Button>
+                                <Button variant="outline" onClick={handleExport} className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Export PDF
+                                </Button>
                                 <Button variant="outline" onClick={handlePrint} className="border-blue-300 text-blue-600 hover:bg-blue-50">
                                     <Printer className="mr-2 h-4 w-4" />
                                     Print
@@ -655,15 +1183,122 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                     disabled={saving}
                                     className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
                                 >
-                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Save
+                                    {saving ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="mr-2 h-4 w-4" />
+                                            Save
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </div>
                     </Main>
                 </SidebarInset>
             </SidebarHoverLogic>
+
+            {/* PDF Preview Dialog */}
+            <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                <DialogContent className="h-[90vh] w-full min-w-[70vw] p-0">
+                    <DialogHeader className="px-6 pt-6 pb-4">
+                        <DialogTitle>Daily Checking PP Crew Preview</DialogTitle>
+                    </DialogHeader>
+                    <div className="h-[calc(90vh-80px)] w-full overflow-auto bg-gray-100">
+                        <style>
+                            {`
+                                .react-pdf__Page {
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    max-width: 100% !important;
+                                }
+                                .react-pdf__Page__canvas {
+                                    margin: 0 !important;
+                                    display: block !important;
+                                    max-width: 100% !important;
+                                    width: 100% !important;
+                                    height: auto !important;
+                                }
+                                .react-pdf__Document {
+                                    display: flex !important;
+                                    flex-direction: column !important;
+                                    align-items: stretch !important;
+                                    width: 100% !important;
+                                }
+                                .react-pdf__Page__textContent {
+                                    width: 100% !important;
+                                }
+                            `}
+                        </style>
+                        {showPreview && (
+                            <PDFViewerWrapper
+                                date={date}
+                                assignmentData={assignmentData}
+                                timeData={timeData}
+                                employees={employees}
+                                leaveData={leaveData}
+                            />
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </SidebarProvider>
+    );
+}
+
+// PDF Viewer Wrapper Component
+function PDFViewerWrapper({
+    date,
+    assignmentData,
+    timeData,
+    employees,
+    leaveData,
+}: {
+    date: string;
+    assignmentData: { [key: string]: string[] };
+    timeData: {
+        [key: string]: { [slotIndex: number]: { [dayIndex: number]: { time_in: string; time_out: string } } };
+    };
+    employees: Employee[];
+    leaveData: { [key: string]: string };
+}) {
+    const [PackingPlantPDFComponent, setPackingPlantPDFComponent] = useState<React.ComponentType<any> | null>(null);
+
+    useEffect(() => {
+        import('./components/packing-plant-pdf').then((module) => {
+            const PackingPlantPDF = module.default;
+            const PackingPlantDocument = PackingPlantPDF({
+                weekStart: new Date(date),
+                workers: assignmentData,
+                timeData: timeData,
+                employees: employees,
+                leaveData: leaveData,
+            });
+            // Create a component that renders the document
+            const PDFComponent = () => PackingPlantDocument();
+            setPackingPlantPDFComponent(() => PDFComponent);
+        });
+    }, [date, assignmentData, timeData, employees, leaveData]);
+
+    if (!PackingPlantPDFComponent) {
+        return <div>Loading PDF...</div>;
+    }
+
+    return (
+        <PDFViewer
+            width="100%"
+            height="100%"
+            style={{
+                borderRadius: '0',
+                border: 'none',
+            }}
+            showToolbar={true}
+        >
+            <PackingPlantPDFComponent />
+        </PDFViewer>
     );
 }
 

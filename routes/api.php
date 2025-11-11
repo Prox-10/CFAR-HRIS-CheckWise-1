@@ -42,7 +42,11 @@ Route::get('/employees/packing-plant', function (Request $request) {
             ->distinct()
             ->pluck('employee_id');
 
-        $employees = Employee::where('department', 'Packing Plant')
+        // Include Packing Plant department employees AND Add Crew employees
+        $employees = Employee::where(function ($query) {
+            $query->where('department', 'Packing Plant')
+                ->orWhere('work_status', 'Add Crew');
+        })
             ->whereIn('id', $employeeIds)
             ->select('id', 'employeeid', 'employee_name', 'firstname', 'middlename', 'lastname', 'department', 'position', 'work_status')
             ->orderBy('employee_name', 'asc')
@@ -79,8 +83,11 @@ Route::get('/employees/packing-plant', function (Request $request) {
         return response()->json($employeesWithAttendance);
     }
 
-    // If no date range, return all Packing Plant employees
-    $employees = Employee::where('department', 'Packing Plant')
+    // If no date range, return all Packing Plant employees AND Add Crew employees
+    $employees = Employee::where(function ($query) {
+        $query->where('department', 'Packing Plant')
+            ->orWhere('work_status', 'Add Crew');
+    })
         ->select('id', 'employeeid', 'employee_name', 'firstname', 'middlename', 'lastname', 'department', 'position', 'work_status')
         ->orderBy('employee_name', 'asc')
         ->get();
@@ -97,6 +104,7 @@ Route::put('/attendance-sessions/{attendanceSession}', [AttendanceSessionControl
 // Daily Checking API
 Route::post('/daily-checking/store', [DailyCheckingController::class, 'store']);
 Route::get('/daily-checking/for-date', [DailyCheckingController::class, 'getForDate']);
+Route::get('/daily-checking/by-microteam', [DailyCheckingController::class, 'getByMicroteam']);
 
 Route::get('/employee/by-employeeid', function (Request $request) {
     $employeeid = $request->query('employeeid');

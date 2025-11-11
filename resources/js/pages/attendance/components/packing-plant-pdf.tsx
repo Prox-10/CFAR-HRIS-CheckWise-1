@@ -1,5 +1,33 @@
 import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 
+// Helper function to format employee name as "Lastname FirstInitial."
+const formatEmployeeDisplayName = (employeeName: string, employees?: any[]): string => {
+    if (!employees || employees.length === 0) return employeeName;
+
+    const employee = employees.find((emp) => emp.employee_name === employeeName);
+    if (employee && employee.lastname && employee.firstname) {
+        const firstInitial = employee.firstname.trim().charAt(0).toUpperCase();
+        return `${employee.lastname} ${firstInitial}.`;
+    }
+    return employeeName;
+};
+
+// Helper function to format time from HH:mm:ss to HH:mm with AM/PM
+const formatTimeForPDF = (time: string | undefined | null): string => {
+    if (!time) return '';
+
+    // Handle HH:mm:ss or HH:mm format
+    const timeStr = time.includes(':') ? time.split(':').slice(0, 2).join(':') : time;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+
+    if (isNaN(hours) || isNaN(minutes)) return '';
+
+    const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const ampm = hours < 12 ? 'AM' : 'PM';
+
+    return `${String(hour12).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+};
+
 // --- Styles matching the uploaded form ---
 const styles = StyleSheet.create({
     page: {
@@ -50,12 +78,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         borderBottomWidth: 0.8,
         borderColor: '#000',
+        minHeight: 10,
     },
     cell: {
         borderRightWidth: 0.8,
         borderColor: '#000',
         justifyContent: 'center',
-        textAlign: 'center',
         paddingVertical: 1,
     },
     text: {
@@ -65,6 +93,11 @@ const styles = StyleSheet.create({
         fontSize: 6,
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    leftAlignText: {
+        fontSize: 6,
+        textAlign: 'left',
+        paddingLeft: 2,
     },
 
     // --- Column Widths ---
@@ -103,11 +136,35 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     },
+    timeCell: {
+        flex: 1,
+        borderRightWidth: 0.8,
+        borderColor: '#000',
+        paddingVertical: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    timeCellLast: {
+        flex: 1,
+        paddingVertical: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    timeText: {
+        fontSize: 5,
+        textAlign: 'center',
+    },
     emptyCell: {
         minHeight: 8,
     },
     leaveCell: {
         width: '23.5%',
+        borderRightWidth: 0.8,
+        borderColor: '#000',
+        paddingLeft: 1,
+    },
+    leaveCellTotal: {
+        width: '23.5%', // Spans schedule + number + worker columns
         borderRightWidth: 0.8,
         borderColor: '#000',
         paddingLeft: 1,
@@ -137,7 +194,7 @@ const positions = [
     { name: 'LABELLER', slots: 4 },
     { name: 'WEIGHER', slots: 4 },
     { name: 'SELECTOR', slots: 6 },
-    { name: 'SUPPORT: ABSENT', slots: 9 },
+    { name: 'SUPPORT: ABSENT', slots: 8 },
 ];
 
 const leaveTypes = ['CW', 'ML', 'AWP', 'AWOP', 'SICK LEAVE', 'EMERGENCY LEAVE', 'CUT-OFF'];
@@ -147,10 +204,42 @@ const daysOfWeek = ['MON', 'TUES', 'WEDS', 'THURS', 'FRI', 'SAT', 'SUN'];
 interface PackingPlantPDFProps {
     weekStart?: Date;
     workers?: { [key: string]: string[] };
+    timeData?: {
+        [key: string]: { [slotIndex: number]: { [dayIndex: number]: { time_in: string; time_out: string } } };
+    };
+    employees?: any[];
+    leaveData?: { [key: string]: string };
 }
 
-export default function PackingPlantPDF({ weekStart = new Date(), workers = {} }: PackingPlantPDFProps = {}) {
+export default function PackingPlantPDF({
+    weekStart = new Date(),
+    workers = {},
+    timeData = {},
+    employees = [],
+    leaveData = {},
+}: PackingPlantPDFProps = {}) {
     const PackingPlantDocument = () => {
+        // Get position field names
+        const positionFields = [
+            'boxFormer',
+            'palletizer',
+            'stevedor',
+            'topper',
+            'palletizerTopper',
+            'utility',
+            'dehander',
+            'bugSpray',
+            'switchman',
+            'qi',
+            'stalkFiller',
+            'cp',
+            'packer',
+            'labeller',
+            'weigher',
+            'selector',
+            'supportAbsent',
+        ];
+
         return (
             <Document>
                 <Page size="LEGAL" orientation="portrait" style={styles.page}>
@@ -172,7 +261,7 @@ export default function PackingPlantPDF({ weekStart = new Date(), workers = {} }
                                 <Text style={styles.headerText}>DAILY WEEK SCHEDULE</Text>
                             </View>
                             <View style={[styles.cell, styles.colNumber]}>
-                                <Text style={styles.headerText}>NO.</Text>
+                                <Text style={styles.headerText}></Text>
                             </View>
                             <View style={[styles.cell, styles.colWorker]}>
                                 <Text style={styles.headerText}>NAME OF WORKERS</Text>
@@ -199,78 +288,93 @@ export default function PackingPlantPDF({ weekStart = new Date(), workers = {} }
                         </View>
 
                         {/* --- Worker Rows --- */}
-                        {positions.map((p, pIndex) =>
-                            Array.from({ length: p.slots }).map((_, i) => (
-                                <View key={`${pIndex}-${i}`} style={styles.tableRow}>
-                                    {i === 0 ? (
-                                        <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 3 }]}>
-                                            <Text>{p.name}</Text>
-                                        </View>
-                                    ) : (
-                                        <View style={[styles.cell, styles.colSchedule]} />
-                                    )}
-                                    <View style={[styles.cell, styles.colNumber]}>
-                                        <Text>{i + 1}</Text>
-                                    </View>
-                                    <View style={[styles.cell, styles.colWorker]} />
-                                    {daysOfWeek.map((_, dIndex) => (
-                                        <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
-                                            <View style={{ flexDirection: 'row', minHeight: 14 }}>
-                                                <View
-                                                    style={{
-                                                        flex: 1,
-                                                        borderRightWidth: 0.8,
-                                                        borderColor: '#000',
-                                                    }}
-                                                />
-                                                <View style={{ flex: 1 }} />
+                        {positions.map((p, pIndex) => {
+                            const fieldName = positionFields[pIndex];
+                            const workerSlots = workers[fieldName] || [];
+
+                            return Array.from({ length: p.slots }).map((_, i) => {
+                                const workerName = workerSlots[i] || '';
+                                const slotTimeData = timeData[fieldName]?.[i] || {};
+                                const formattedName = workerName ? formatEmployeeDisplayName(workerName, employees) : '';
+
+                                return (
+                                    <View key={`${pIndex}-${i}`} style={styles.tableRow}>
+                                        {i === 0 ? (
+                                            <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 3 }]}>
+                                                <Text style={styles.leftAlignText}>{p.name}</Text>
                                             </View>
+                                        ) : (
+                                            <View style={[styles.cell, styles.colSchedule]} />
+                                        )}
+                                        <View style={[styles.cell, styles.colNumber]}>
+                                            <Text style={styles.text}>{i + 1}</Text>
                                         </View>
-                                    ))}
-                                </View>
-                            )),
-                        )}
+                                        <View style={[styles.cell, styles.colWorker]}>
+                                            <Text style={styles.leftAlignText}>{formattedName}</Text>
+                                        </View>
+                                        {daysOfWeek.map((_, dIndex) => {
+                                            const dayTime = slotTimeData[dIndex] || { time_in: '', time_out: '' };
+                                            const timeIn = formatTimeForPDF(dayTime.time_in);
+                                            const timeOut = formatTimeForPDF(dayTime.time_out);
+
+                                            return (
+                                                <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
+                                                    <View style={{ flexDirection: 'row', minHeight: 10 }}>
+                                                        <View style={styles.timeCell}>
+                                                            <Text style={styles.timeText}>{timeIn}</Text>
+                                                        </View>
+                                                        <View style={styles.timeCellLast}>
+                                                            <Text style={styles.timeText}>{timeOut}</Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                );
+                            });
+                        })}
 
                         {/* --- Leave Rows --- */}
                         {leaveTypes.map((leave, i) => (
                             <View key={i} style={styles.tableRow}>
-                                <View style={[styles.cell, styles.leaveCell]}>
-                                    <Text>{leave}</Text>
+                                <View style={[styles.cell, styles.colSchedule]} />
+                                <View style={[styles.cell, styles.colNumber]} />
+                                <View style={[styles.cell, styles.colWorker]}>
+                                    <Text style={styles.leftAlignText}>{leave}</Text>
                                 </View>
-                                {daysOfWeek.map((_, dIndex) => (
-                                    <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
-                                        <View style={{ flexDirection: 'row', minHeight: 14 }}>
-                                            <View
-                                                style={{
-                                                    flex: 1,
-                                                    borderRightWidth: 0.8,
-                                                    borderColor: '#000',
-                                                }}
-                                            />
-                                            <View style={{ flex: 1 }} />
+                                {daysOfWeek.map((_, dIndex) => {
+                                    const leaveValue = leaveData[`${leave}_${dIndex}`] || '';
+                                    return (
+                                        <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
+                                            <View style={{ flexDirection: 'row', minHeight: 10 }}>
+                                                <View style={[styles.timeCell, { borderRightWidth: 0.8 }]}>
+                                                    <Text style={styles.timeText}></Text>
+                                                </View>
+                                                <View style={styles.timeCellLast}>
+                                                    <Text style={styles.timeText}></Text>
+                                                </View>
+                                            </View>
                                         </View>
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </View>
                         ))}
 
                         {/* --- Total Row --- */}
                         <View style={[styles.tableRow, styles.totalRow]}>
-                            <View style={[styles.cell, styles.leaveCell]}>
-                                <Text>TOTAL</Text>
+                            <View style={[styles.cell, styles.leaveCellTotal]}>
+                                <Text style={styles.leftAlignText}>TOTAL</Text>
                             </View>
                             {daysOfWeek.map((_, i) => (
                                 <View key={i} style={[styles.colDay, styles.cell, { padding: 0 }]}>
-                                    <View style={{ flexDirection: 'row', minHeight: 14 }}>
-                                        <View
-                                            style={{
-                                                flex: 1,
-                                                borderRightWidth: 0.8,
-                                                borderColor: '#000',
-                                                backgroundColor: '#f0f0f0',
-                                            }}
-                                        />
-                                        <View style={{ flex: 1, backgroundColor: '#f0f0f0' }} />
+                                    <View style={{ flexDirection: 'row', minHeight: 10 }}>
+                                        <View style={[styles.timeCell, { backgroundColor: '#f0f0f0' }]}>
+                                            <Text style={styles.timeText}></Text>
+                                        </View>
+                                        <View style={[styles.timeCellLast, { backgroundColor: '#f0f0f0' }]}>
+                                            <Text style={styles.timeText}></Text>
+                                        </View>
                                     </View>
                                 </View>
                             ))}

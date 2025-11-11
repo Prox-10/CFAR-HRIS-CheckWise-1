@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, CalendarDays, ClipboardList, Clock, Download, FileText, Filter, Users } from 'lucide-react';
+import { Calendar, CalendarDays, ClipboardList, Clock, Download, EyeIcon, FileText, Filter, Users } from 'lucide-react';
 import { Toaster } from 'sonner';
 // import { format } from 'path';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -48,7 +48,7 @@ const ReportCard = ({
             <CardHeader
                 className={cn(
                     'pb-2',
-                    variant === 'attendance' && 'border-cfarbempco-green border-l-4',
+                    variant === 'attendance' && 'border-green-500 border-l-4',
                     variant === 'employee' && 'border-l-4 border-blue-500',
                     variant === 'leave' && 'border-l-4 border-yellow-500',
                     variant === 'evaluation' && 'border-l-4 border-purple-500',
@@ -59,8 +59,8 @@ const ReportCard = ({
                     <Icon
                         className={cn(
                             'mr-2 h-5 w-5',
-                            variant === 'default' && 'text-cfarbempco-green',
-                            variant === 'attendance' && 'text-cfarbempco-green',
+                            variant === 'default' && 'text-green-500',
+                            variant === 'attendance' && 'text-green-500',
                             variant === 'employee' && 'text-blue-500',
                             variant === 'leave' && 'text-yellow-500',
                             variant === 'evaluation' && 'text-purple-500',
@@ -73,7 +73,7 @@ const ReportCard = ({
             </CardHeader>
             <CardContent className="pt-4">
                 <Button variant="outline" className="flex w-full items-center justify-center" onClick={onClick}>
-                    <Download className="mr-2 h-4 w-4" />
+                    <EyeIcon className="mr-2 h-4 w-4" />
                     {buttonText}
                 </Button>
             </CardContent>
@@ -108,7 +108,7 @@ const performanceData = [
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'];
 
-type ReportTab = 'attendance' | 'employee' | 'leave' | 'evaluation' | 'analytics';
+type ReportTab = 'attendance' | 'employee' | 'leave' | 'evaluation' | 'absenteeism';
 
 const ReportPage = () => {
     // const [date, setDate] = useState<Date | undefined>(new Date());
@@ -123,7 +123,7 @@ const ReportPage = () => {
             try {
                 const params = new URLSearchParams(window.location.search);
                 const tab = (params.get('tab') || '').toLowerCase();
-                if (tab === 'attendance' || tab === 'employee' || tab === 'leave' || tab === 'evaluation' || tab === 'analytics') {
+                if (tab === 'attendance' || tab === 'employee' || tab === 'leave' || tab === 'evaluation' || tab === 'absenteeism') {
                     return tab as ReportTab;
                 }
                 return 'attendance';
@@ -167,83 +167,17 @@ const ReportPage = () => {
                                     <ClipboardList className="text-cfarbempco-green mr-2 h-5 w-5" />
                                     Report Generation
                                 </CardTitle>
-                                <CardDescription>Select the report type and filters before generating</CardDescription>
+                                <CardDescription></CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-6">
-                                    <div className="grid grid-cols-1 gap-4 rounded-lg bg-green-50 p-4 md:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <h3 className="text-sm font-medium">Report Period</h3>
-                                            <div className="flex flex-col gap-2 sm:flex-row">
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                'w-35 justify-start text-left font-normal',
-                                                                !startDate && 'text-muted-foreground',
-                                                            )}
-                                                        >
-                                                            <Calendar className="mr-2 h-4 w-4" />
-                                                            {startDate ? format(startDate, 'MMM dd, yyyy') : <span>Start date</span>}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <CalendarComponent
-                                                            mode="single"
-                                                            selected={startDate}
-                                                            onSelect={setStartDate}
-                                                            initialFocus
-                                                            className="pointer-events-auto"
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                'w-35 justify-start text-left font-normal',
-                                                                !endDate && 'text-muted-foreground',
-                                                            )}
-                                                        >
-                                                            <Calendar className="mr-2 h-4 w-4" />
-                                                            {endDate ? format(endDate, 'MMM dd, yyyy') : <span>End date</span>}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="end">
-                                                        <CalendarComponent
-                                                            mode="single"
-                                                            selected={endDate}
-                                                            onSelect={setEndDate}
-                                                            initialFocus
-                                                            className="pointer-events-auto"
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-                                        </div>
-                                        <div className="ml-auto md:w-40">
-                                            <h3 className="text-sm font-medium">Export Format</h3>
-                                            <Select defaultValue="pdf">
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="pdf">PDF Document</SelectItem>
-                                                    <SelectItem value="xlsx">Excel Spreadsheet</SelectItem>
-                                                    <SelectItem value="csv">CSV File</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
                                     <SidebarSeparator />
                                     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 p-5">
                                         <TabsList className="bg-main mb-4 grid grid-cols-2 py-[5px] md:grid-cols-5">
                                             <TabsTrigger
                                                 className="hover:bg-main-600 mx-3 mb-5"
                                                 value="attendance"
-                                                onClick={() => router.visit('/report/daily-attendance')}
+                                                // onClick={() => router.visit('/report/daily-attendance')}
                                             >
                                                 Attendance
                                             </TabsTrigger>
@@ -256,40 +190,40 @@ const ReportPage = () => {
                                             <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="evaluation">
                                                 Evaluation
                                             </TabsTrigger>
-                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="analytics">
-                                                Analytics
+                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="absenteeism">
+                                                Absenteeism
                                             </TabsTrigger>
                                         </TabsList>
                                         <TabsContent value="attendance" className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                                 <ReportCard
-                                                    title="Daily Attendance Summary"
-                                                    description="Summary of daily attendance across all departments"
+                                                    title="PP CREW DAILY TIME RECORD "
+                                                    description="Record of daily attendance across Packing Plant Department"
                                                     icon={Clock}
                                                     variant="attendance"
                                                     buttonText="View"
                                                     onClick={() => router.visit('/report/daily-attendance')}
                                                 />
                                                 <ReportCard
-                                                    title="Monthly Attendance Report"
-                                                    description="Complete monthly attendance records by employee"
-                                                    icon={Calendar}
+                                                    title="COOP AREA DAILY TIME RECORD "
+                                                    description="Record of daily attendance across Coop Area Department"
+                                                    icon={Clock}
                                                     variant="attendance"
-                                                    buttonText="Generate Monthly Report"
+                                                    buttonText="View"
                                                 />
                                                 <ReportCard
-                                                    title="Attendance By Area"
-                                                    description="Breakdown of attendance by packing, field, and office areas"
-                                                    icon={Users}
+                                                    title="PEST & DISEASE DAILY TIME RECORD "
+                                                    description="Record of daily attendance across Pest & Disease Department"
+                                                    icon={Clock}
                                                     variant="attendance"
-                                                    buttonText="Generate Area Report"
+                                                    buttonText="View"
                                                 />
                                                 <ReportCard
-                                                    title="Custom Attendance Filter"
-                                                    description="Create custom attendance report with specific filters"
-                                                    icon={Filter}
+                                                    title="COOP HARVESTER MAINTENANCE DAILY TIME RECORD "
+                                                    description="Record of daily attendance across Coop Harvester Maintenance Department"
+                                                    icon={Clock}
                                                     variant="attendance"
-                                                    buttonText="Generate Custom Report"
+                                                    buttonText="View"
                                                 />
                                             </div>
                                         </TabsContent>
@@ -375,7 +309,7 @@ const ReportPage = () => {
                                                 />
                                             </div>
                                         </TabsContent>
-                                        <TabsContent value="analytics" className="space-y-4">
+                                        <TabsContent value="absenteeism" className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                                 <Card>
                                                     <CardHeader>

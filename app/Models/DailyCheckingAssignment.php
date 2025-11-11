@@ -14,6 +14,8 @@ class DailyCheckingAssignment extends Model
         'employee_id',
         'position_field',
         'slot_index',
+        'microteam',
+        'is_add_crew',
         'day_index',
         'time_in',
         'time_out',
@@ -25,6 +27,7 @@ class DailyCheckingAssignment extends Model
         'week_start_date' => 'date',
         'slot_index' => 'integer',
         'day_index' => 'integer',
+        'is_add_crew' => 'boolean',
     ];
 
     public function employee()

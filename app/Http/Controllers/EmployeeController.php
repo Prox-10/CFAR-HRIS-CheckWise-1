@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Auth;
 class EmployeeController extends Controller
 {
     /**
-     * Generate a unique 6-digit employee ID for Add Crew employees
-     * Format: 6 digits (000001 to 999999)
+     * Generate a unique employee ID for Add Crew employees
+     * Format: AC + 6 digits (AC000001 to AC999999)
      */
     private function generateAddCrewEmployeeId(): string
     {
@@ -24,17 +24,20 @@ class EmployeeController extends Controller
 
         do {
             // Generate a random 6-digit number
-            $employeeId = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $randomDigits = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $employeeId = 'AC' . $randomDigits;
             $exists = Employee::where('employeeid', $employeeId)->exists();
             $attempts++;
         } while ($exists && $attempts < $maxAttempts);
 
         if ($attempts >= $maxAttempts) {
             // Fallback: use timestamp-based ID if too many collisions
-            $employeeId = str_pad(substr(time(), -6), 6, '0', STR_PAD_LEFT);
+            $timestampDigits = str_pad(substr(time(), -6), 6, '0', STR_PAD_LEFT);
+            $employeeId = 'AC' . $timestampDigits;
             // Still check if this exists, if so append random digit
             if (Employee::where('employeeid', $employeeId)->exists()) {
-                $employeeId = str_pad(substr(time(), -5) . rand(0, 9), 6, '0', STR_PAD_LEFT);
+                $fallbackDigits = str_pad(substr(time(), -5) . rand(0, 9), 6, '0', STR_PAD_LEFT);
+                $employeeId = 'AC' . $fallbackDigits;
             }
         }
 
