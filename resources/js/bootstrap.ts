@@ -36,8 +36,8 @@ try {
         },
     });
 
-    console.log('Echo initialized successfully with Reverb');
-    console.log('Echo config:', {
+    console.log('[Echo Bootstrap] Initialized successfully with Reverb');
+    console.log('[Echo Bootstrap] Config:', {
         broadcaster: 'reverb',
         key: import.meta.env.VITE_REVERB_APP_KEY || 'your-reverb-key',
         wsHost: reverbHost,
@@ -45,7 +45,31 @@ try {
         forceTLS: !isLocalhost,
         enabledTransports: isLocalhost ? ['ws'] : ['ws', 'wss'],
         isLocalhost,
+        authEndpoint: '/broadcasting/auth',
     });
+
+    // Monitor connection state
+    const connector = window.Echo.connector;
+    if (connector && connector.pusher && connector.pusher.connection) {
+        connector.pusher.connection.bind('connected', () => {
+            console.log('[Echo Bootstrap] Connection established');
+        });
+
+        connector.pusher.connection.bind('disconnected', () => {
+            console.warn('[Echo Bootstrap] Connection disconnected');
+        });
+
+        connector.pusher.connection.bind('error', (error: any) => {
+            console.error('[Echo Bootstrap] Connection error:', error);
+        });
+
+        connector.pusher.connection.bind('state_change', (states: any) => {
+            console.log('[Echo Bootstrap] Connection state changed:', states.previous, '->', states.current);
+        });
+
+        // Log initial state
+        console.log('[Echo Bootstrap] Initial connection state:', connector.pusher.connection.state);
+    }
 } catch (error) {
     console.error('Failed to initialize Echo:', error);
 }

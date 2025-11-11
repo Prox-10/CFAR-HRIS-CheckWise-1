@@ -912,9 +912,24 @@ class AuthEmployeeController extends Controller
 
             // Get employee info for notification
             $employee = Employee::find($request->employee_id);
+            $supervisor = \App\Models\User::getSupervisorForDepartment($employee->department);
+
+            Log::info('Return work submission - Supervisor lookup:', [
+                'employee_id' => $request->employee_id,
+                'employee_name' => $employee ? $employee->employee_name : 'N/A',
+                'department' => $employee->department,
+                'supervisor_id' => $supervisor ? $supervisor->id : 'NONE',
+                'supervisor_name' => $supervisor ? $supervisor->name : 'NONE',
+            ]);
 
             // Broadcast return to work notification using Laravel Echo Reverb
             try {
+                Log::info('Broadcasting ReturnWorkRequested event...', [
+                    'return_work_id' => $returnWork->id,
+                    'department' => $employee->department,
+                    'supervisor_id' => $supervisor ? $supervisor->id : null,
+                ]);
+
                 broadcast(new \App\Events\ReturnWorkRequested([
                     'return_work_id' => $returnWork->id,
                     'employee_name' => $employee->employee_name,
@@ -925,9 +940,13 @@ class AuthEmployeeController extends Controller
                     'reason' => $returnWork->reason,
                     'return_date_reported' => $returnWork->return_date_reported,
                 ]));
+
+                Log::info('ReturnWorkRequested event broadcasted successfully');
             } catch (\Exception $broadcastError) {
-                Log::warning('Failed to broadcast return work notification: ' . $broadcastError->getMessage());
-                // Continue execution even if broadcast fails
+                Log::error('Failed to broadcast return work notification:', [
+                    'error' => $broadcastError->getMessage(),
+                    'trace' => $broadcastError->getTraceAsString(),
+                ]);
             }
 
             return response()->json([
@@ -935,7 +954,6 @@ class AuthEmployeeController extends Controller
                 'message' => 'Return to work notification submitted successfully!',
                 'data' => $returnWork
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error storing return to work notification: ' . $e->getMessage());
             return response()->json([

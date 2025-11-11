@@ -45,7 +45,7 @@ class LeaveController extends Controller
 
         $leaveList = $leave->map(function ($leave) {
             $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee_id);
-            
+
             return [
                 'id'                  => $leave->id,
                 'leave_type'          => $leave->leave_type,
@@ -172,10 +172,20 @@ class LeaveController extends Controller
 
             $leave->save();
 
+            Log::info('Leave created successfully:', ['id' => $leave->id, 'employee_id' => $leave->employee_id]);
+
             // Create notification for the supervisor of the employee's department
             $employee = Employee::find($request->employee_id);
             $supervisor = \App\Models\User::getSupervisorForDepartment($employee->department);
-            
+
+            Log::info('Leave submission - Supervisor lookup:', [
+                'employee_id' => $request->employee_id,
+                'employee_name' => $employee ? $employee->employee_name : 'N/A',
+                'department' => $employee->department,
+                'supervisor_id' => $supervisor ? $supervisor->id : 'NONE',
+                'supervisor_name' => $supervisor ? $supervisor->name : 'NONE',
+            ]);
+
             if ($supervisor) {
                 Notification::create([
                     'type' => 'leave_request',
@@ -189,10 +199,37 @@ class LeaveController extends Controller
                         'department' => $employee->department,
                     ],
                 ]);
+                Log::info('Notification created for supervisor:', ['supervisor_id' => $supervisor->id]);
+            } else {
+                Log::warning('No supervisor found for department:', ['department' => $employee->department]);
             }
 
             // Broadcast to managers/HR/supervisors
-            event(new LeaveRequested($leave));
+            try {
+                Log::info('Broadcasting LeaveRequested event...', [
+                    'leave_id' => $leave->id,
+                    'department' => $employee->department,
+                    'supervisor_id' => $supervisor ? $supervisor->id : null,
+                ]);
+
+                event(new LeaveRequested($leave));
+
+                Log::info('LeaveRequested event broadcasted successfully');
+            } catch (\Exception $broadcastError) {
+                Log::error('Failed to broadcast LeaveRequested event:', [
+                    'error' => $broadcastError->getMessage(),
+                    'trace' => $broadcastError->getTraceAsString(),
+                ]);
+            }
+
+            // Return JSON for axios requests, redirect for form submissions
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Leave request submitted successfully!',
+                    'leave_id' => $leave->id,
+                ]);
+            }
 
             // Redirect based on context (employee portal vs admin)
             if ($request->routeIs('employee-view.leave.store')) {
@@ -319,7 +356,7 @@ class LeaveController extends Controller
     public function employeeIndex()
     {
         $employee = Employee::where('employeeid', Session::get('employee_id'))->first();
-        
+
         if (!$employee) {
             Session::forget(['employee_id', 'employee_name']);
             return redirect()->route('employeelogin');

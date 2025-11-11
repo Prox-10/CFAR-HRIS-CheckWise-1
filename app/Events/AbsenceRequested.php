@@ -89,6 +89,15 @@ class AbsenceRequested implements ShouldBroadcastNow
 
   public function broadcastWith(): array
   {
+    Log::info('AbsenceRequested event payload being broadcast:', [
+      'payload' => $this->payload,
+      'channels' => array_map(function ($channel) {
+        if ($channel instanceof PrivateChannel) {
+          return 'private-' . $channel->name;
+        }
+        return $channel->name;
+      }, $this->broadcastOn()),
+    ]);
     return $this->payload;
   }
 }

@@ -177,16 +177,38 @@ class AbsenceController extends Controller
 
             Log::info('Absence created successfully:', ['id' => $absence->id, 'days' => $absence->days]);
 
-            // Broadcast to managers/HR/supervisors
-            event(new AbsenceRequested($absence));
+            // Get employee and supervisor info for debugging
+            $employee = Employee::find($validated['employee_id']);
+            $supervisor = \App\Models\User::getSupervisorForDepartment($validated['department']);
             
-            Log::info('AbsenceRequested event broadcasted');
+            Log::info('Absence submission - Supervisor lookup:', [
+                'employee_id' => $validated['employee_id'],
+                'employee_name' => $employee ? $employee->employee_name : 'N/A',
+                'department' => $validated['department'],
+                'supervisor_id' => $supervisor ? $supervisor->id : 'NONE',
+                'supervisor_name' => $supervisor ? $supervisor->name : 'NONE',
+            ]);
+
+            // Broadcast to managers/HR/supervisors
+            try {
+                Log::info('Broadcasting AbsenceRequested event...', [
+                    'absence_id' => $absence->id,
+                    'department' => $validated['department'],
+                    'supervisor_id' => $supervisor ? $supervisor->id : null,
+                ]);
+                
+                event(new AbsenceRequested($absence));
+                
+                Log::info('AbsenceRequested event broadcasted successfully');
+            } catch (\Exception $broadcastError) {
+                Log::error('Failed to broadcast AbsenceRequested event:', [
+                    'error' => $broadcastError->getMessage(),
+                    'trace' => $broadcastError->getTraceAsString(),
+                ]);
+            }
 
             // Create notification for the supervisor of the employee's department
             try {
-                $employee = Employee::find($validated['employee_id']);
-                $supervisor = \App\Models\User::getSupervisorForDepartment($validated['department']);
-                
                 if ($supervisor) {
                     Notification::create([
                         'type' => 'absence_request',
@@ -207,6 +229,15 @@ class AbsenceController extends Controller
             } catch (Exception $notificationError) {
                 Log::error('Failed to create notification:', ['error' => $notificationError->getMessage()]);
                 // Don't fail the entire request if notification creation fails
+            }
+
+            // Return JSON for axios requests, redirect for form submissions
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Absence request submitted successfully!',
+                    'absence_id' => $absence->id,
+                ]);
             }
 
             if ($request->routeIs('employee-view.absence.store')) {

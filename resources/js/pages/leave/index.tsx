@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Tabs, TabsContent } from '@radix-ui/react-tabs';
 import { Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -67,6 +67,8 @@ export default function Index({ leave, employees, leaveStats, leavesPerMonth, le
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [viewLeave, setViewLeave] = useState<Leave | null>(null);
     const [loading, setLoading] = useState(true);
+    const { props } = usePage<{ auth?: any }>();
+    const currentUser = props.auth?.user;
 
     useEffect(() => {
         setTimeout(() => {
@@ -85,45 +87,54 @@ export default function Index({ leave, employees, leaveStats, leavesPerMonth, le
 
         console.log('Setting up real-time listeners for leave index');
 
-        // Listen on notifications channel for general leave requests
+        const handleNewLeave = (e: any) => {
+            console.log('Received LeaveRequested event:', e);
+            if (e && e.leave_id) {
+                const newLeave: Leave = {
+                    id: String(e.leave_id),
+                    leave_start_date: e.leave_start_date,
+                    employee_name: e.employee_name || 'Employee',
+                    leave_type: e.leave_type,
+                    leave_end_date: e.leave_end_date,
+                    leave_days: e.leave_days || 1,
+                    status: 'Pending',
+                    leave_reason: '',
+                    leave_date_reported: new Date().toISOString().split('T')[0],
+                    leave_date_approved: '',
+                    leave_comments: '',
+                    picture: '',
+                    department: e.department || '',
+                    position: '',
+                    employeeid: '',
+                    // include credits from event payload if present
+                    remaining_credits: typeof e.remaining_credits === 'number' ? e.remaining_credits : undefined,
+                    used_credits: typeof e.used_credits === 'number' ? e.used_credits : undefined,
+                    total_credits: typeof e.total_credits === 'number' ? e.total_credits : undefined,
+                };
+
+                // Check if this leave already exists to avoid duplicates
+                setData((prev) => {
+                    const exists = prev.some((r) => r.id === newLeave.id);
+                    if (exists) {
+                        console.log('Leave already exists, not adding duplicate');
+                        return prev;
+                    }
+                    console.log('Adding new leave request to index list');
+                    toast.success(`New leave request from ${newLeave.employee_name}`);
+                    return [newLeave, ...prev];
+                });
+            }
+        };
+
+        // Listen on notifications channel for general leave requests (SuperAdmin only)
         const notificationsChannel = echo.channel('notifications');
         notificationsChannel
             .listen('.LeaveRequested', (e: any) => {
-                console.log('Received LeaveRequested event on leave index:', e);
-                if (e && e.leave_id) {
-                    const newLeave: Leave = {
-                        id: String(e.leave_id),
-                        leave_start_date: e.leave_start_date,
-                        employee_name: e.employee_name || 'Employee',
-                        leave_type: e.leave_type,
-                        leave_end_date: e.leave_end_date,
-                        leave_days: e.leave_days || 1,
-                        status: 'Pending',
-                        leave_reason: '',
-                        leave_date_reported: new Date().toISOString().split('T')[0],
-                        leave_date_approved: '',
-                        leave_comments: '',
-                        picture: '',
-                        department: e.department || '',
-                        position: '',
-                        employeeid: '',
-                        // include credits from event payload if present
-                        remaining_credits: typeof e.remaining_credits === 'number' ? e.remaining_credits : undefined,
-                        used_credits: typeof e.used_credits === 'number' ? e.used_credits : undefined,
-                        total_credits: typeof e.total_credits === 'number' ? e.total_credits : undefined,
-                    };
-
-                    // Check if this leave already exists to avoid duplicates
-                    setData((prev) => {
-                        const exists = prev.some((r) => r.id === newLeave.id);
-                        if (exists) {
-                            console.log('Leave already exists, not adding duplicate');
-                            return prev;
-                        }
-                        console.log('Adding new leave request to index list');
-                        return [newLeave, ...prev];
-                    });
+                // Only process if user is SuperAdmin (supervisors get it via their private channel)
+                if (!user_permissions?.is_super_admin && user_permissions?.is_supervisor) {
+                    return; // Supervisors should only receive via their private channel
                 }
+                handleNewLeave(e);
             })
             .listen('.RequestStatusUpdated', (e: any) => {
                 console.log('Received RequestStatusUpdated event on leave index:', e);
@@ -138,12 +149,35 @@ export default function Index({ leave, employees, leaveStats, leavesPerMonth, le
                 }
             });
 
+        // Also listen on private supervisor channel if user is supervisor
+        let supervisorChannel: any = null;
+        if (user_permissions && user_permissions.is_supervisor && currentUser?.id) {
+            const currentUserId = currentUser.id;
+            console.log('Setting up supervisor channel for user:', currentUserId);
+            supervisorChannel = echo.private(`supervisor.${currentUserId}`);
+
+            supervisorChannel.subscribed(() => {
+                console.log('Successfully subscribed to supervisor channel for leave');
+            });
+
+            supervisorChannel.error((error: any) => {
+                console.error('Error subscribing to supervisor channel:', error);
+            });
+
+            supervisorChannel.listen('.LeaveRequested', handleNewLeave);
+        }
+
         return () => {
             console.log('Cleaning up Echo listeners on leave index');
             notificationsChannel.stopListening('.LeaveRequested');
             notificationsChannel.stopListening('.RequestStatusUpdated');
+            if (supervisorChannel) {
+                supervisorChannel.stopListening('.LeaveRequested');
+                echo.leave(`supervisor.${currentUser?.id}`);
+            }
+            echo.leave('notifications');
         };
-    }, []);
+    }, [user_permissions, currentUser?.id]);
 
     const handleUpdate = (updatedEmployee: Leave) => {
         setData((prevData) => prevData.map((leave) => (leave.id === updatedEmployee.id ? updatedEmployee : leave)));

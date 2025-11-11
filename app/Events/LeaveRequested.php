@@ -10,6 +10,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class LeaveRequested implements ShouldBroadcastNow
 {
@@ -41,22 +42,22 @@ class LeaveRequested implements ShouldBroadcastNow
   public function broadcastOn(): array
   {
     $supervisor = \App\Models\User::getSupervisorForDepartment($this->leave->employee->department);
-    
-    \Log::info('LeaveRequested event broadcasting', [
+
+    Log::info('LeaveRequested event broadcasting', [
       'leave_id' => $this->leave->id,
       'department' => $this->leave->employee->department,
       'supervisor_found' => $supervisor ? $supervisor->id : 'none',
       'channels' => $supervisor ? ['supervisor.' . $supervisor->id, 'notifications'] : ['notifications']
     ]);
-    
+
     // Always broadcast to notifications channel for general access
     $channels = [new Channel('notifications')];
-    
+
     // Also broadcast to supervisor's private channel if supervisor exists
     if ($supervisor) {
       $channels[] = new PrivateChannel('supervisor.' . $supervisor->id);
     }
-    
+
     return $channels;
   }
 
@@ -67,6 +68,15 @@ class LeaveRequested implements ShouldBroadcastNow
 
   public function broadcastWith(): array
   {
+    Log::info('LeaveRequested event payload being broadcast:', [
+      'payload' => $this->payload,
+      'channels' => array_map(function ($channel) {
+        if ($channel instanceof PrivateChannel) {
+          return 'private-' . $channel->name;
+        }
+        return $channel->name;
+      }, $this->broadcastOn()),
+    ]);
     return $this->payload;
   }
 }

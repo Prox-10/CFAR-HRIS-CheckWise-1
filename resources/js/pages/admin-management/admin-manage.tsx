@@ -378,7 +378,7 @@ export default function SupervisorManagement({
                                                             setNewAssignment((prev) => ({ ...prev, can_evaluate: checked }))
                                                         }
                                                     />
-                                                    <Label htmlFor="can_evaluate">Can Evaluate</Label>
+                                                    <Label htmlFor="can_evaluate">Can Supervise</Label>
                                                 </div>
                                             </div>
                                             <Button onClick={handleCreateAssignment} className="mt-4">

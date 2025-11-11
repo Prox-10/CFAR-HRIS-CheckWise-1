@@ -69,7 +69,8 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
     const [requests, setRequests] = useState<AbsenceRequestItem[]>(initialRequests);
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<AbsenceType | 'All'>('All');
-    const { props } = usePage<{ initialRequests?: AbsenceRequestItem[] }>();
+    const { props } = usePage<{ initialRequests?: AbsenceRequestItem[]; auth?: any }>();
+    const currentUser = props.auth?.user;
 
     // Update local state when server data changes
     useEffect(() => {
@@ -136,23 +137,30 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
         notificationsChannel
             .listen('.AbsenceRequested', (e: any) => {
                 console.log('Received AbsenceRequested event on notifications channel:', e);
-                if (e && e.absence) {
+                // Only process if user is SuperAdmin (supervisors get it via their private channel)
+                if (!user_permissions?.is_super_admin && user_permissions?.is_supervisor) {
+                    return; // Supervisors should only receive via their private channel
+                }
+
+                // Handle both flat structure and nested structure
+                const absenceData = e.absence || e;
+                if (absenceData && absenceData.id) {
                     const newAbsence: AbsenceRequestItem = {
-                        id: String(e.absence.id),
-                        full_name: e.absence.full_name || e.absence.employee_name || 'Employee',
-                        employee_id_number: e.absence.employee_id_number || '',
-                        department: e.absence.department || '',
-                        position: e.absence.position || '',
-                        absence_type: e.absence.absence_type,
-                        from_date: e.absence.from_date,
-                        to_date: e.absence.to_date,
-                        submitted_at: e.absence.submitted_at || new Date().toISOString(),
-                        days: e.absence.days || 1,
-                        reason: e.absence.reason || '',
-                        is_partial_day: !!e.absence.is_partial_day,
-                        status: e.absence.status || 'pending',
-                        picture: e.absence.picture || '',
-                        employee_name: e.absence.employee_name || '',
+                        id: String(absenceData.id),
+                        full_name: absenceData.full_name || absenceData.employee_name || 'Employee',
+                        employee_id_number: absenceData.employee_id_number || '',
+                        department: absenceData.department || '',
+                        position: absenceData.position || '',
+                        absence_type: absenceData.absence_type,
+                        from_date: absenceData.from_date,
+                        to_date: absenceData.to_date,
+                        submitted_at: absenceData.submitted_at || new Date().toISOString(),
+                        days: absenceData.days || 1,
+                        reason: absenceData.reason || '',
+                        is_partial_day: !!absenceData.is_partial_day,
+                        status: absenceData.status || 'pending',
+                        picture: absenceData.picture || '',
+                        employee_name: absenceData.employee_name || '',
                     };
 
                     // Check if this absence already exists to avoid duplicates
@@ -163,11 +171,9 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                             return prev;
                         }
                         console.log('Adding new absence request to list');
+                        toast.success(`New absence request from ${newAbsence.full_name}`);
                         return [newAbsence, ...prev];
                     });
-
-                    // Show toast notification
-                    toast.success(`New absence request from ${newAbsence.full_name}`);
                 }
             })
             .listen('.RequestStatusUpdated', (e: any) => {
@@ -177,71 +183,68 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
             });
 
         // Also listen on private supervisor channel if user is supervisor
-        if (user_permissions && user_permissions.is_supervisor) {
-            // Get current user ID from the page props or auth
-            const currentUserId = (window as any).user?.id || (window as any).auth?.user?.id;
-            if (currentUserId) {
-                console.log('Setting up supervisor channel for user:', currentUserId);
-                const supervisorChannel = echo.private(`supervisor.${currentUserId}`);
+        if (user_permissions && user_permissions.is_supervisor && currentUser?.id) {
+            const currentUserId = currentUser.id;
+            console.log('Setting up supervisor channel for user:', currentUserId);
+            const supervisorChannel = echo.private(`supervisor.${currentUserId}`);
 
-                supervisorChannel.subscribed(() => {
-                    console.log('Successfully subscribed to supervisor channel');
-                });
+            supervisorChannel.subscribed(() => {
+                console.log('Successfully subscribed to supervisor channel');
+            });
 
-                supervisorChannel.error((error: any) => {
-                    console.error('Error subscribing to supervisor channel:', error);
-                });
+            supervisorChannel.error((error: any) => {
+                console.error('Error subscribing to supervisor channel:', error);
+            });
 
-                supervisorChannel.listen('.AbsenceRequested', (e: any) => {
-                    console.log('Received AbsenceRequested on supervisor channel:', e);
-                    if (e && e.absence) {
-                        const newAbsence: AbsenceRequestItem = {
-                            id: String(e.absence.id),
-                            full_name: e.absence.full_name || e.absence.employee_name || 'Employee',
-                            employee_id_number: e.absence.employee_id_number || '',
-                            department: e.absence.department || '',
-                            position: e.absence.position || '',
-                            absence_type: e.absence.absence_type,
-                            from_date: e.absence.from_date,
-                            to_date: e.absence.to_date,
-                            submitted_at: e.absence.submitted_at || new Date().toISOString(),
-                            days: e.absence.days || 1,
-                            reason: e.absence.reason || '',
-                            is_partial_day: !!e.absence.is_partial_day,
-                            status: e.absence.status || 'pending',
-                            picture: e.absence.picture || '',
-                            employee_name: e.absence.employee_name || '',
-                        };
+            supervisorChannel.listen('.AbsenceRequested', (e: any) => {
+                console.log('Received AbsenceRequested on supervisor channel:', e);
+                // Handle both flat structure and nested structure
+                const absenceData = e.absence || e;
+                if (absenceData && absenceData.id) {
+                    const newAbsence: AbsenceRequestItem = {
+                        id: String(absenceData.id),
+                        full_name: absenceData.full_name || absenceData.employee_name || 'Employee',
+                        employee_id_number: absenceData.employee_id_number || '',
+                        department: absenceData.department || '',
+                        position: absenceData.position || '',
+                        absence_type: absenceData.absence_type,
+                        from_date: absenceData.from_date,
+                        to_date: absenceData.to_date,
+                        submitted_at: absenceData.submitted_at || new Date().toISOString(),
+                        days: absenceData.days || 1,
+                        reason: absenceData.reason || '',
+                        is_partial_day: !!absenceData.is_partial_day,
+                        status: absenceData.status || 'pending',
+                        picture: absenceData.picture || '',
+                        employee_name: absenceData.employee_name || '',
+                    };
 
-                        setRequests((prev) => {
-                            const exists = prev.some((r) => r.id === newAbsence.id);
-                            if (exists) {
-                                console.log('Absence already exists, not adding duplicate');
-                                return prev;
-                            }
-                            console.log('Adding new absence request to supervisor list');
-                            return [newAbsence, ...prev];
-                        });
-
+                    setRequests((prev) => {
+                        const exists = prev.some((r) => r.id === newAbsence.id);
+                        if (exists) {
+                            console.log('Absence already exists, not adding duplicate');
+                            return prev;
+                        }
+                        console.log('Adding new absence request to supervisor list');
                         toast.success(`New absence request from ${newAbsence.full_name}`);
-                    }
-                });
-            }
+                        return [newAbsence, ...prev];
+                    });
+                }
+            });
         }
 
         return () => {
             console.log('Cleaning up Echo listeners');
             notificationsChannel.stopListening('.AbsenceRequested');
             notificationsChannel.stopListening('.RequestStatusUpdated');
-            if (user_permissions && user_permissions.is_supervisor) {
-                const currentUserId = (window as any).user?.id || (window as any).auth?.user?.id;
-                if (currentUserId) {
-                    const supervisorChannel = echo.private(`supervisor.${currentUserId}`);
-                    supervisorChannel.stopListening('.AbsenceRequested');
-                }
+            if (user_permissions && user_permissions.is_supervisor && currentUser?.id) {
+                const supervisorChannel = echo.private(`supervisor.${currentUser.id}`);
+                supervisorChannel.stopListening('.AbsenceRequested');
+                echo.leave(`supervisor.${currentUser.id}`);
             }
+            echo.leave('notifications');
         };
-    }, []);
+    }, [user_permissions, currentUser?.id]);
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();

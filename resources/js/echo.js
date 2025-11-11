@@ -40,16 +40,50 @@ try {
         },
     });
 
-    console.log('Echo initialized successfully with Reverb');
-    console.log('Echo config:', {
+    console.log('[Echo] Initialized successfully with Reverb');
+    console.log('[Echo] Config:', {
         broadcaster: 'reverb',
-        key: import.meta.env.VITE_REVERB_APP_KEY || 'your-reverb-key',
+        key: import.meta.env.VITE_REVERB_APP_KEY || 'bnk0okcdap7wqruy1xp1',
         wsHost: reverbHost,
         wsPort: reverbPort,
         forceTLS: !isLocalhost,
         enabledTransports: isLocalhost ? ['ws'] : ['ws', 'wss'],
         isLocalhost,
+        authEndpoint: '/broadcasting/auth',
     });
+
+    // Monitor connection state
+    const connector = window.Echo.connector;
+    if (connector && connector.pusher && connector.pusher.connection) {
+        connector.pusher.connection.bind('connected', () => {
+            console.log('[Echo] Connection established');
+        });
+
+        connector.pusher.connection.bind('disconnected', () => {
+            console.warn('[Echo] Connection disconnected');
+        });
+
+        connector.pusher.connection.bind('error', (error) => {
+            console.error('[Echo] Connection error:', error);
+            console.error('[Echo] Make sure Reverb server is running: php artisan reverb:start');
+        });
+        
+        connector.pusher.connection.bind('state_change', (states) => {
+            console.log('[Echo] Connection state changed:', states.previous, '->', states.current);
+            if (states.current === 'unavailable') {
+                console.warn('[Echo] ⚠️ Reverb server is not available. Start it with: php artisan reverb:start');
+            } else if (states.current === 'connected') {
+                console.log('[Echo] ✅ Successfully connected to Reverb server');
+            }
+        });
+        
+        // Log initial state
+        const initialState = connector.pusher.connection.state;
+        console.log('[Echo] Initial connection state:', initialState);
+        if (initialState === 'unavailable') {
+            console.warn('[Echo] ⚠️ Reverb server is not running. Start it with: php artisan reverb:start');
+        }
+    }
 } catch (error) {
     console.error('Failed to initialize Echo:', error);
 }

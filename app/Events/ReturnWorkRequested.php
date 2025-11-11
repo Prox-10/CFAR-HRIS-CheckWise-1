@@ -8,6 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ReturnWorkRequested implements ShouldBroadcastNow
 {
@@ -32,9 +33,23 @@ class ReturnWorkRequested implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        // For now, broadcast to general notifications channel
-        // You can implement supervisor-specific channels later if needed
-        return [new Channel('notifications')];
+        $supervisor = \App\Models\User::getSupervisorForDepartment($this->payload['department']);
+
+        Log::info('ReturnWorkRequested event broadcasting', [
+            'department' => $this->payload['department'],
+            'supervisor_found' => $supervisor ? $supervisor->id : 'none',
+            'channels' => $supervisor ? ['supervisor.' . $supervisor->id, 'notifications'] : ['notifications']
+        ]);
+
+        // Always broadcast to notifications channel for general access
+        $channels = [new Channel('notifications')];
+
+        // Also broadcast to supervisor's private channel if supervisor exists
+        if ($supervisor) {
+            $channels[] = new PrivateChannel('supervisor.' . $supervisor->id);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string
@@ -44,6 +59,15 @@ class ReturnWorkRequested implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        Log::info('ReturnWorkRequested event payload being broadcast:', [
+            'payload' => $this->payload,
+            'channels' => array_map(function ($channel) {
+                if ($channel instanceof PrivateChannel) {
+                    return 'private-' . $channel->name;
+                }
+                return $channel->name;
+            }, $this->broadcastOn()),
+        ]);
         return $this->payload;
     }
 }

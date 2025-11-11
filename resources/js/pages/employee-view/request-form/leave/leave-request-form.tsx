@@ -61,16 +61,42 @@ export default function LeaveRequestForm() {
         }
         try {
             setSubmitting(true);
-            await axios.post('/employee-view/leave', {
-                employee_id: employee?.id,
-                leave_type: leaveType,
-                leave_start_date: fromDate.toISOString().slice(0, 10),
-                leave_end_date: toDate.toISOString().slice(0, 10),
-                leave_days: Math.max(1, Math.ceil((+toDate - +fromDate) / (1000 * 60 * 60 * 24)) + 1),
-                leave_reason: reason,
-                leave_date_reported: new Date().toISOString().slice(0, 10),
-            });
+            const response = await axios.post(
+                '/employee-view/leave',
+                {
+                    employee_id: employee?.id,
+                    leave_type: leaveType,
+                    leave_start_date: fromDate.toISOString().slice(0, 10),
+                    leave_end_date: toDate.toISOString().slice(0, 10),
+                    leave_days: Math.max(1, Math.ceil((+toDate - +fromDate) / (1000 * 60 * 60 * 24)) + 1),
+                    leave_reason: reason,
+                    leave_date_reported: new Date().toISOString().slice(0, 10),
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                },
+            );
+
+            console.log('[Leave Form] Request submitted successfully:', response.data);
+            console.log('[Leave Form] Response status:', response.status);
             toast.success('Leave request submitted successfully!');
+
+            // Log Echo connection status
+            const echo: any = (window as any).Echo;
+            if (echo) {
+                console.log('[Leave Form] Echo is available');
+                const connector = echo.connector;
+                if (connector && connector.pusher && connector.pusher.connection) {
+                    const state = connector.pusher.connection.state;
+                    console.log('[Leave Form] Echo connection state:', state);
+                }
+            } else {
+                console.warn('[Leave Form] Echo is not available');
+            }
             // Clear form after successful submission
             setFromDate(undefined);
             setToDate(undefined);

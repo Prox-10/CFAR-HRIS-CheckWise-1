@@ -80,6 +80,8 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
             return;
         }
 
+        const currentUser = auth?.user;
+
         // Handlers to avoid duplication across channels
         const handleProcessed = (e: any) => {
             console.log('Received ReturnWorkProcessed event:', e);
@@ -122,8 +124,15 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
                 source: 'employee',
             } as any;
 
-            setRequests((prev) => [newRequest, ...prev]);
-            toast.info(`New return to work request from ${e.employee_name}`);
+            setRequests((prev) => {
+                const exists = prev.some((r) => r.id === newRequest.id);
+                if (exists) {
+                    console.log('Return work request already exists, not adding duplicate');
+                    return prev;
+                }
+                toast.info(`New return to work request from ${e.employee_name}`);
+                return [newRequest, ...prev];
+            });
         };
 
         const handleStatusUpdated = (e: any) => {
@@ -142,50 +151,53 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
             );
         };
 
-        let privateNotifications: any = null;
-        let publicNotifications: any = null;
+        // Set up public notifications channel
+        const publicNotifications = echo.channel('notifications');
+        publicNotifications
+            .listen('.ReturnWorkRequested', (e: any) => {
+                // Only process if user is SuperAdmin (supervisors get it via their private channel)
+                if (!userRole?.is_super_admin && userRole?.is_supervisor) {
+                    return; // Supervisors should only receive via their private channel
+                }
+                handleRequested(e);
+            })
+            .listen('.ReturnWorkProcessed', handleProcessed)
+            .listen('.RequestStatusUpdated', handleStatusUpdated);
 
-        // Check if user is authenticated before trying private channels
-        const isAuthenticated = () => {
-            const hasAuth = auth?.user?.id;
-            console.log('Authentication check:', {
-                hasAuth,
-                authUser: auth?.user,
-                userId: auth?.user?.id,
+        // Also listen on private supervisor channel if user is supervisor
+        let supervisorChannel: any = null;
+        if (userRole?.is_supervisor && currentUser?.id) {
+            const currentUserId = currentUser.id;
+            console.log('Setting up supervisor channel for return work:', currentUserId);
+            supervisorChannel = echo.private(`supervisor.${currentUserId}`);
+
+            supervisorChannel.subscribed(() => {
+                console.log('Successfully subscribed to supervisor channel for return work');
             });
-            return hasAuth;
-        };
 
-        // For now, skip private channels due to authentication issues
-        // and use only public channels
-        console.log('Skipping private channel setup due to authentication issues');
-        console.log('Using public channels only for now');
+            supervisorChannel.error((error: any) => {
+                console.error('Error subscribing to supervisor channel:', error);
+            });
 
-        try {
-            // Set up public channel as fallback
-            publicNotifications = echo.channel('notifications');
-            publicNotifications.listen('.ReturnWorkRequested', handleRequested);
-            console.log('Public notifications channel set up successfully');
-        } catch (error) {
-            console.warn('Failed to set up public notifications channel:', error);
+            supervisorChannel.listen('.ReturnWorkRequested', handleRequested);
         }
 
         return () => {
             console.log('Cleaning up Echo listeners (resume-to-work)');
             try {
-                if (privateNotifications && typeof privateNotifications.stopListening === 'function') {
-                    privateNotifications.stopListening('.ReturnWorkProcessed');
-                    privateNotifications.stopListening('.ReturnWorkRequested');
-                    privateNotifications.stopListening('.RequestStatusUpdated');
+                publicNotifications.stopListening('.ReturnWorkRequested');
+                publicNotifications.stopListening('.ReturnWorkProcessed');
+                publicNotifications.stopListening('.RequestStatusUpdated');
+                if (supervisorChannel) {
+                    supervisorChannel.stopListening('.ReturnWorkRequested');
+                    echo.leave(`supervisor.${currentUser?.id}`);
                 }
-                if (publicNotifications && typeof publicNotifications.stopListening === 'function') {
-                    publicNotifications.stopListening('.ReturnWorkRequested');
-                }
+                echo.leave('notifications');
             } catch (error) {
                 console.warn('Error cleaning up Echo listeners:', error);
             }
         };
-    }, []);
+    }, [userRole, auth?.user?.id]);
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();

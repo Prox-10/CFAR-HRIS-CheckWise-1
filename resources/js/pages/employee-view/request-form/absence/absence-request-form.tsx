@@ -45,33 +45,45 @@ export default function AbsenceRequestForm() {
                 reason,
             });
 
-            const response = await axios.post('/employee-view/absence', {
-                employee_id: employee?.id ?? null,
-                full_name: employee?.employee_name ?? '',
-                employee_id_number: employee?.employeeid ?? '',
-                department: employee?.department ?? '',
-                position: employee?.position ?? '',
-                absence_type: 'Other',
-                from_date: date.toISOString().slice(0, 10),
-                to_date: date.toISOString().slice(0, 10),
-                is_partial_day: false,
-                reason,
-            });
+            const response = await axios.post(
+                '/employee-view/absence',
+                {
+                    employee_id: employee?.id ?? null,
+                    full_name: employee?.employee_name ?? '',
+                    employee_id_number: employee?.employeeid ?? '',
+                    department: employee?.department ?? '',
+                    position: employee?.position ?? '',
+                    absence_type: 'Other',
+                    from_date: date.toISOString().slice(0, 10),
+                    to_date: date.toISOString().slice(0, 10),
+                    is_partial_day: false,
+                    reason,
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                },
+            );
 
-            console.log('Absence request submitted successfully:', response.data);
+            console.log('[Absence Form] Request submitted successfully:', response.data);
+            console.log('[Absence Form] Response status:', response.status);
+            console.log('[Absence Form] Response headers:', response.headers);
             toast.success('Absence request submitted successfully!');
 
-            // Test Echo connection
+            // Log Echo connection status
             const echo: any = (window as any).Echo;
             if (echo) {
-                console.log('Echo is available, testing connection...');
-                // Listen for a test event to verify connection
-                const testChannel = echo.channel('notifications');
-                testChannel.listen('.AbsenceRequested', (e: any) => {
-                    console.log('Received AbsenceRequested event on employee form:', e);
-                });
+                console.log('[Absence Form] Echo is available');
+                const connector = echo.connector;
+                if (connector && connector.pusher && connector.pusher.connection) {
+                    const state = connector.pusher.connection.state;
+                    console.log('[Absence Form] Echo connection state:', state);
+                }
             } else {
-                console.warn('Echo is not available');
+                console.warn('[Absence Form] Echo is not available');
             }
 
             // Clear form after successful submission

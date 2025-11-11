@@ -35,107 +35,213 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
 
         // Check Echo connection state
         const connector = echo.connector;
-        if (connector && connector.pusher && connector.pusher.connection) {
-            const state = connector.pusher.connection.state;
-            console.log('Echo connection state:', state);
-
-            if (state !== 'connected' && state !== 'connecting') {
-                console.warn('Echo is not connected. State:', state);
-                console.warn('Make sure Reverb server is running: php artisan reverb:start');
-            }
+        if (!connector || !connector.pusher || !connector.pusher.connection) {
+            console.error('[Bell Notification] Echo connector not available');
+            return;
         }
 
-        // Use supervisor-specific channel or general notifications channel based on user role
-        const notificationChannel = isSupervisor && currentUser?.id ? echo.private(`supervisor.${currentUser.id}`) : echo.channel('notifications');
+        const connection = connector.pusher.connection;
+        const currentState = connection.state;
+        console.log('[Bell Notification] Echo connection state:', currentState);
 
-        // Test connection with timeout
-        const subscriptionTimeout = setTimeout(() => {
-            console.warn('Subscription timeout: Channel subscription took too long. Check if Reverb server is running.');
-        }, 5000);
+        // Store channel reference for cleanup
+        let notificationChannel: any = null;
 
-        notificationChannel.subscribed(() => {
-            clearTimeout(subscriptionTimeout);
-            console.log('Successfully subscribed to notification channel');
-        });
+        // Function to set up channel subscription and listeners
+        const setupChannelSubscription = () => {
+            // Use supervisor-specific channel or general notifications channel based on user role
+            const channelName = isSupervisor && currentUser?.id ? `supervisor.${currentUser.id}` : 'notifications';
+            const isPrivate = isSupervisor && currentUser?.id;
+            notificationChannel = isPrivate ? echo.private(channelName) : echo.channel(channelName);
 
-        notificationChannel.error((error: any) => {
-            clearTimeout(subscriptionTimeout);
-            console.error('Error with notification channel:', error);
-            console.error('Full error details:', JSON.stringify(error, null, 2));
-        });
+            console.log(`[Bell Notification] Attempting to subscribe to ${isPrivate ? 'private' : 'public'} channel:`, channelName);
 
-        notificationChannel
-            .listen('.LeaveRequested', (e: any) => {
-                console.log('Received LeaveRequested event:', e);
-                // Create a new notification object
-                const newNotification = {
-                    id: Date.now(), // Temporary ID
-                    type: 'leave_request',
-                    data: {
-                        leave_id: e.leave_id,
-                        employee_name: e.employee_name || 'Employee',
-                        leave_type: e.leave_type,
-                        leave_start_date: e.leave_start_date,
-                        leave_end_date: e.leave_end_date,
-                    },
-                    read_at: null,
-                    created_at: new Date().toISOString(),
-                };
+            // Test connection with timeout
+            const subscriptionTimeout = setTimeout(() => {
+                console.warn('[Bell Notification] Subscription timeout: Channel subscription took too long.');
+                console.warn('[Bell Notification] Current connection state:', connection.state);
+            }, 10000); // Increased to 10 seconds
 
-                // Add to notification list and increment count
-                setNotificationList((prev) => [newNotification, ...prev]);
-                setUnreadCount((prev) => prev + 1);
-            })
-            .listen('.AbsenceRequested', (e: any) => {
-                console.log('Received AbsenceRequested event:', e);
-                // Create a new notification object
-                const newNotification = {
-                    id: Date.now(), // Temporary ID
-                    type: 'absence_request',
-                    data: {
-                        absence_id: e.absence_id,
-                        employee_name: e.employee_name || 'Employee',
-                        absence_type: e.absence_type,
-                        from_date: e.from_date,
-                        to_date: e.to_date,
-                    },
-                    read_at: null,
-                    created_at: new Date().toISOString(),
-                };
-
-                // Add to notification list and increment count
-                setNotificationList((prev) => [newNotification, ...prev]);
-                setUnreadCount((prev) => prev + 1);
-            })
-            .listen('.ReturnWorkRequested', (e: any) => {
-                console.log('Received ReturnWorkRequested event:', e);
-                // Create a new notification object
-                const newNotification = {
-                    id: Date.now(), // Temporary ID
-                    type: 'return_work_request',
-                    data: {
-                        return_work_id: e.return_work_id,
-                        employee_name: e.employee_name || 'Employee',
-                        employee_id_number: e.employee_id_number,
-                        department: e.department,
-                        return_date: e.return_date,
-                        absence_type: e.absence_type,
-                        reason: e.reason,
-                    },
-                    read_at: null,
-                    created_at: new Date().toISOString(),
-                };
-
-                // Add to notification list and increment count
-                setNotificationList((prev) => [newNotification, ...prev]);
-                setUnreadCount((prev) => prev + 1);
+            notificationChannel.subscribed(() => {
+                clearTimeout(subscriptionTimeout);
+                console.log('[Bell Notification] ✅ Successfully subscribed to notification channel:', channelName);
+                console.log('[Bell Notification] User info:', {
+                    isSupervisor,
+                    isSuperAdmin,
+                    userId: currentUser?.id,
+                    userName: currentUser?.name,
+                });
             });
 
+            notificationChannel.error((error: any) => {
+                clearTimeout(subscriptionTimeout);
+                console.error('[Bell Notification] ❌ Error with notification channel:', error);
+                console.error('[Bell Notification] Error details:', JSON.stringify(error, null, 2));
+                if (error.status === 403) {
+                    console.error('[Bell Notification] Authentication failed. Check if user is properly authenticated.');
+                }
+            });
+
+            // Set up event listeners
+            notificationChannel
+                .listen('.LeaveRequested', (e: any) => {
+                    console.log('[Bell Notification] Received LeaveRequested event:', e);
+                    console.log('[Bell Notification] Event payload:', JSON.stringify(e, null, 2));
+                    // Handle both flat and nested structures
+                    const leaveData = e.leave || e;
+
+                    // Check if notification already exists to avoid duplicates
+                    const existingId = leaveData.leave_id || leaveData.id;
+                    setNotificationList((prev) => {
+                        const exists = prev.some((n) => n.data?.leave_id === existingId);
+                        if (exists) {
+                            console.log('Leave notification already exists, skipping');
+                            return prev;
+                        }
+
+                        const newNotification = {
+                            id: Date.now(), // Temporary ID
+                            type: 'leave_request',
+                            data: {
+                                leave_id: leaveData.leave_id || leaveData.id,
+                                employee_name: leaveData.employee_name || 'Employee',
+                                leave_type: leaveData.leave_type,
+                                leave_start_date: leaveData.leave_start_date,
+                                leave_end_date: leaveData.leave_end_date,
+                                department: leaveData.department,
+                            },
+                            read_at: null,
+                            created_at: new Date().toISOString(),
+                        };
+
+                        setUnreadCount((prev) => prev + 1);
+                        return [newNotification, ...prev];
+                    });
+                })
+                .listen('.AbsenceRequested', (e: any) => {
+                    console.log('[Bell Notification] Received AbsenceRequested event:', e);
+                    console.log('[Bell Notification] Event payload:', JSON.stringify(e, null, 2));
+                    // Handle both flat and nested structures
+                    const absenceData = e.absence || e;
+
+                    // Check if notification already exists to avoid duplicates
+                    const existingId = absenceData.absence_id || absenceData.id;
+                    setNotificationList((prev) => {
+                        const exists = prev.some((n) => n.data?.absence_id === existingId);
+                        if (exists) {
+                            console.log('Absence notification already exists, skipping');
+                            return prev;
+                        }
+
+                        const newNotification = {
+                            id: Date.now(), // Temporary ID
+                            type: 'absence_request',
+                            data: {
+                                absence_id: absenceData.absence_id || absenceData.id,
+                                employee_name: absenceData.employee_name || absenceData.full_name || 'Employee',
+                                absence_type: absenceData.absence_type,
+                                from_date: absenceData.from_date,
+                                to_date: absenceData.to_date,
+                                department: absenceData.department,
+                            },
+                            read_at: null,
+                            created_at: new Date().toISOString(),
+                        };
+
+                        setUnreadCount((prev) => prev + 1);
+                        return [newNotification, ...prev];
+                    });
+                })
+                .listen('.ReturnWorkRequested', (e: any) => {
+                    console.log('[Bell Notification] Received ReturnWorkRequested event:', e);
+                    console.log('[Bell Notification] Event payload:', JSON.stringify(e, null, 2));
+                    // Handle flat structure (ReturnWorkRequested broadcasts flat payload)
+                    const returnWorkData = e;
+
+                    // Check if notification already exists to avoid duplicates
+                    const existingId = returnWorkData.return_work_id;
+                    setNotificationList((prev) => {
+                        const exists = prev.some((n) => n.data?.return_work_id === existingId || n.data?.resume_id === existingId);
+                        if (exists) {
+                            console.log('Return work notification already exists, skipping');
+                            return prev;
+                        }
+
+                        const newNotification = {
+                            id: Date.now(), // Temporary ID
+                            type: 'resume_to_work', // Match the type expected by bell-notification component
+                            data: {
+                                resume_id: returnWorkData.return_work_id, // Map to resume_id for bell component
+                                return_work_id: returnWorkData.return_work_id,
+                                employee_name: returnWorkData.employee_name || 'Employee',
+                                employee_id_number: returnWorkData.employee_id_number,
+                                department: returnWorkData.department,
+                                return_date: returnWorkData.return_date,
+                                absence_type: returnWorkData.absence_type,
+                                reason: returnWorkData.reason,
+                            },
+                            read_at: null,
+                            created_at: new Date().toISOString(),
+                        };
+
+                        setUnreadCount((prev) => prev + 1);
+                        return [newNotification, ...prev];
+                    });
+                });
+        };
+
+        // Wait for connection if not already connected
+        if (currentState === 'connected') {
+            console.log('[Bell Notification] Connection already established, subscribing immediately');
+            setupChannelSubscription();
+        } else if (currentState === 'connecting') {
+            console.log('[Bell Notification] Connection in progress, waiting for connection...');
+            connection.bind('connected', () => {
+                console.log('[Bell Notification] Connection established, now subscribing to channels');
+                setupChannelSubscription();
+            });
+        } else {
+            console.warn('[Bell Notification] Connection state is:', currentState);
+            console.warn('[Bell Notification] Attempting to connect...');
+
+            // Try to connect
+            connection.connect();
+
+            // Wait for connection
+            connection.bind('connected', () => {
+                console.log('[Bell Notification] Connection established, now subscribing to channels');
+                setupChannelSubscription();
+            });
+
+            connection.bind('error', (error: any) => {
+                console.error('[Bell Notification] Connection error:', error);
+            });
+        }
+
         return () => {
-            console.log('Cleaning up Echo listeners');
-            notificationChannel.stopListening('.LeaveRequested');
-            notificationChannel.stopListening('.AbsenceRequested');
-            notificationChannel.stopListening('.ReturnWorkRequested');
+            console.log('[Bell Notification] Cleaning up Echo listeners');
+            if (notificationChannel) {
+                try {
+                    notificationChannel.stopListening('.LeaveRequested');
+                    notificationChannel.stopListening('.AbsenceRequested');
+                    notificationChannel.stopListening('.ReturnWorkRequested');
+                } catch (e) {
+                    console.warn('[Bell Notification] Error stopping listeners:', e);
+                }
+            }
+            if (isSupervisor && currentUser?.id) {
+                try {
+                    echo.leave(`supervisor.${currentUser.id}`);
+                } catch (e) {
+                    console.warn('[Bell Notification] Error leaving supervisor channel:', e);
+                }
+            } else {
+                try {
+                    echo.leave('notifications');
+                } catch (e) {
+                    console.warn('[Bell Notification] Error leaving notifications channel:', e);
+                }
+            }
         };
     }, [currentUser?.id, isSupervisor]);
 
