@@ -76,6 +76,7 @@ class AbsenceRequested implements ShouldBroadcastNow
 
     // Also broadcast to supervisor's private channel if supervisor exists
     if ($supervisor) {
+      // Use just the identifier - Laravel will handle the 'supervisor.' prefix from channels.php
       $channels[] = new PrivateChannel('supervisor.' . $supervisor->id);
     }
 
@@ -89,14 +90,10 @@ class AbsenceRequested implements ShouldBroadcastNow
 
   public function broadcastWith(): array
   {
+    // Log payload being broadcast (channels are logged in broadcastOn())
     Log::info('AbsenceRequested event payload being broadcast:', [
-      'payload' => $this->payload,
-      'channels' => array_map(function ($channel) {
-        if ($channel instanceof PrivateChannel) {
-          return 'private-' . $channel->name;
-        }
-        return $channel->name;
-      }, $this->broadcastOn()),
+      'payload_keys' => array_keys($this->payload),
+      'absence_id' => $this->payload['absence_id'] ?? null,
     ]);
     return $this->payload;
   }

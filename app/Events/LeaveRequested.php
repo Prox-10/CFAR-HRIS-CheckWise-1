@@ -68,14 +68,10 @@ class LeaveRequested implements ShouldBroadcastNow
 
   public function broadcastWith(): array
   {
+    // Log payload being broadcast (channels are logged in broadcastOn())
     Log::info('LeaveRequested event payload being broadcast:', [
-      'payload' => $this->payload,
-      'channels' => array_map(function ($channel) {
-        if ($channel instanceof PrivateChannel) {
-          return 'private-' . $channel->name;
-        }
-        return $channel->name;
-      }, $this->broadcastOn()),
+      'payload_keys' => array_keys($this->payload),
+      'leave_id' => $this->payload['leave_id'] ?? null,
     ]);
     return $this->payload;
   }

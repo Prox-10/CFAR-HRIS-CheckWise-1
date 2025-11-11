@@ -59,14 +59,10 @@ class ReturnWorkRequested implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        // Log payload being broadcast (channels are logged in broadcastOn())
         Log::info('ReturnWorkRequested event payload being broadcast:', [
-            'payload' => $this->payload,
-            'channels' => array_map(function ($channel) {
-                if ($channel instanceof PrivateChannel) {
-                    return 'private-' . $channel->name;
-                }
-                return $channel->name;
-            }, $this->broadcastOn()),
+            'payload_keys' => array_keys($this->payload),
+            'return_work_id' => $this->payload['return_work_id'] ?? null,
         ]);
         return $this->payload;
     }

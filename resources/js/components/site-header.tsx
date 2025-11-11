@@ -6,6 +6,7 @@ import { ProfileDropdown } from './customize/profile-dropdown';
 // Add BreadcrumbItem type import if not present
 import { type BreadcrumbItem } from '@/types';
 import { useEffect, useState } from 'react';
+import { toast, Toaster } from 'sonner';
 import { SidebarTrigger } from './ui/sidebar';
 
 interface Props {
@@ -24,17 +25,24 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
     const isSuperAdmin = currentUser?.isSuperAdmin;
 
     useEffect(() => {
-        // Listen on user-specific notification channels
-        const echo: any = (window as any).Echo;
+        setUnreadCount(unreadNotificationCount);
+        setNotificationList(notifications);
+    }, [notifications, unreadNotificationCount]);
+
+    useEffect(() => {
+        // Get Echo from window object
+        const echo = (window as any).Echo;
+
+        // Ensure Echo is available
         if (!echo) {
-            console.error('Echo not found in window object');
+            console.error('[Bell Notification] Echo not available yet');
             return;
         }
 
-        console.log('Setting up Echo listeners for user-specific notifications');
+        console.log('[Bell Notification] Setting up Echo listeners for user-specific notifications');
 
         // Check Echo connection state
-        const connector = echo.connector;
+        const connector = (echo as any).connector;
         if (!connector || !connector.pusher || !connector.pusher.connection) {
             console.error('[Bell Notification] Echo connector not available');
             return;
@@ -77,8 +85,39 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                 clearTimeout(subscriptionTimeout);
                 console.error('[Bell Notification] ❌ Error with notification channel:', error);
                 console.error('[Bell Notification] Error details:', JSON.stringify(error, null, 2));
+                console.error('[Bell Notification] Error type:', error.type);
+                console.error('[Bell Notification] Error status:', error.status);
+                console.error('[Bell Notification] Error response:', error.response);
+                console.error('[Bell Notification] Full error object keys:', Object.keys(error));
+
                 if (error.status === 403) {
-                    console.error('[Bell Notification] Authentication failed. Check if user is properly authenticated.');
+                    console.error('[Bell Notification] 🔒 403 Authentication failed!');
+                    console.error('[Bell Notification] Channel name:', channelName);
+                    console.error('[Bell Notification] Is private:', isPrivate);
+                    console.error('[Bell Notification] Current user:', {
+                        id: currentUser?.id,
+                        name: currentUser?.name,
+                        isSupervisor,
+                        isSuperAdmin,
+                    });
+
+                    // Try to get the actual error response from Laravel
+                    fetch('/broadcasting/auth', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            Accept: 'application/json',
+                        },
+                        body: JSON.stringify({
+                            socket_id: (echo.connector as any)?.pusher?.connection?.socket_id,
+                            channel_name: `private-${channelName}`,
+                        }),
+                    })
+                        .then((res) => res.json())
+                        .then((data) => console.error('[Bell Notification] Manual auth test response:', data))
+                        .catch((err) => console.error('[Bell Notification] Manual auth test error:', err));
                 }
             });
 
@@ -114,6 +153,12 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                             created_at: new Date().toISOString(),
                         };
 
+                        // Show toast notification
+                        toast.info('New Leave Request', {
+                            description: `${leaveData.employee_name || 'Employee'} requested ${leaveData.leave_type}`,
+                            duration: 5000,
+                        });
+
                         setUnreadCount((prev) => prev + 1);
                         return [newNotification, ...prev];
                     });
@@ -129,7 +174,7 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                     setNotificationList((prev) => {
                         const exists = prev.some((n) => n.data?.absence_id === existingId);
                         if (exists) {
-                            console.log('Absence notification already exists, skipping');
+                            console.log('[Bell Notification] Absence notification already exists, skipping');
                             return prev;
                         }
 
@@ -147,6 +192,20 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                             read_at: null,
                             created_at: new Date().toISOString(),
                         };
+
+                        // Show toast notification
+                        console.log('[Bell Notification] 🍞 About to call toast.success...');
+                        console.log('[Bell Notification] 🍞 Toast function available:', typeof toast, typeof toast.success);
+                        
+                        try {
+                            const toastResult = toast.success('New Absence Request', {
+                                description: `${absenceData.employee_name || absenceData.full_name || 'Employee'} requested ${absenceData.absence_type} absence`,
+                                duration: 5000,
+                            });
+                            console.log('[Bell Notification] 🍞 Toast called successfully, result:', toastResult);
+                        } catch (error) {
+                            console.error('[Bell Notification] ❌ Toast failed:', error);
+                        }
 
                         setUnreadCount((prev) => prev + 1);
                         return [newNotification, ...prev];
@@ -184,6 +243,12 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                             created_at: new Date().toISOString(),
                         };
 
+                        // Show toast notification
+                        toast.info('Return to Work Request', {
+                            description: `${returnWorkData.employee_name || 'Employee'} submitted return to work form`,
+                            duration: 5000,
+                        });
+
                         setUnreadCount((prev) => prev + 1);
                         return [newNotification, ...prev];
                     });
@@ -220,6 +285,9 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
 
         return () => {
             console.log('[Bell Notification] Cleaning up Echo listeners');
+            const echo = (window as any).Echo;
+            if (!echo) return;
+
             if (notificationChannel) {
                 try {
                     notificationChannel.stopListening('.LeaveRequested');
@@ -245,6 +313,23 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
         };
     }, [currentUser?.id, isSupervisor]);
 
+    const handleNotificationRead = (id: number) => {
+        setNotificationList((prev) => {
+            const next = prev.map((notification) =>
+                id === -1 || notification.id === id ? { ...notification, read_at: new Date().toISOString() } : notification,
+            );
+
+            const unreadTotal = next.filter((notification) => !notification.read_at).length;
+            setUnreadCount(unreadTotal);
+
+            return next;
+        });
+    };
+
+    const handleUnreadCountChange = (next: number) => {
+        setUnreadCount(next);
+    };
+
     return (
         <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
             <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -269,11 +354,17 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                 <div className="ml-auto flex items-center gap-2">
                     <div className="mr-auto flex items-center space-x-4">
                         {/* <ModeToggle/> */}
-                        <BellNotification notifications={notificationList} unreadCount={unreadCount} />
+                        <BellNotification
+                            notifications={notificationList}
+                            unreadCount={unreadCount}
+                            onNotificationRead={handleNotificationRead}
+                            onUnreadCountChange={handleUnreadCountChange}
+                        />
                         <ProfileDropdown />
                     </div>
                 </div>
             </div>
+            <Toaster position="top-right" richColors />
         </header>
     );
 }

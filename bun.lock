@@ -69,14 +69,14 @@
       },
       "devDependencies": {
         "@eslint/js": "^9.19.0",
-        "@laravel/echo-react": "^2.2.0",
+        "@laravel/echo-react": "^2.2.6",
         "@types/bun": "latest",
         "@types/node": "^22.13.5",
         "eslint": "^9.17.0",
         "eslint-config-prettier": "^10.0.1",
         "eslint-plugin-react": "^7.37.3",
         "eslint-plugin-react-hooks": "^5.1.0",
-        "laravel-echo": "^2.2.0",
+        "laravel-echo": "^2.2.6",
         "prettier": "^3.4.2",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.6.11",
@@ -242,7 +242,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.25", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ=="],
 
-    "@laravel/echo-react": ["@laravel/echo-react@2.2.0", "", { "peerDependencies": { "pusher-js": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "socket.io-client": "*" } }, "sha512-JSWw+IZhwMh0BHe3/vDZ1XhsKKwTN6KzNH4nk9KTX610W6edH260l2q44O/KuLbAoSUjWdepRrF3kRvVE51aMg=="],
+    "@laravel/echo-react": ["@laravel/echo-react@2.2.6", "", { "peerDependencies": { "pusher-js": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "socket.io-client": "*" } }, "sha512-xI5ekwEBhxKfSu/qIv9efXPLoM9RrszI51llWpNY4o71C1l5R7teMV8BbXA+1UbI0ijSyAI7MHxlkP6Cy3AVLw=="],
 
     "@napi-rs/canvas": ["@napi-rs/canvas@0.1.73", "", { "optionalDependencies": { "@napi-rs/canvas-android-arm64": "0.1.73", "@napi-rs/canvas-darwin-arm64": "0.1.73", "@napi-rs/canvas-darwin-x64": "0.1.73", "@napi-rs/canvas-linux-arm-gnueabihf": "0.1.73", "@napi-rs/canvas-linux-arm64-gnu": "0.1.73", "@napi-rs/canvas-linux-arm64-musl": "0.1.73", "@napi-rs/canvas-linux-riscv64-gnu": "0.1.73", "@napi-rs/canvas-linux-x64-gnu": "0.1.73", "@napi-rs/canvas-linux-x64-musl": "0.1.73", "@napi-rs/canvas-win32-x64-msvc": "0.1.73" } }, "sha512-9iwPZrNlCK4rG+vWyDvyvGeYjck9MoP0NVQP6N60gqJNFA1GsN0imG05pzNsqfCvFxUxgiTYlR8ff0HC1HXJiw=="],
 
@@ -1000,7 +1000,7 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
-    "laravel-echo": ["laravel-echo@2.2.0", "", { "peerDependencies": { "pusher-js": "*", "socket.io-client": "*" } }, "sha512-pmlAT34FiUMk3B1bntXZ6ownqfRXwHrWdeSW5pWJYolbcfn/ILBA8+E4ZRUmbG0iSvBmwsVOxahTjVU6T0AgEg=="],
+    "laravel-echo": ["laravel-echo@2.2.6", "", { "peerDependencies": { "pusher-js": "*", "socket.io-client": "*" } }, "sha512-KuCldOrE8qbm0CVDBgc6FiX3VuReDu1C1xaS891KqwEUg9NT/Op03iiZqTWeVd0/WJ4H95q2pe9QEDJlwb/FPw=="],
 
     "laravel-vite-plugin": ["laravel-vite-plugin@1.2.0", "", { "dependencies": { "picocolors": "^1.0.0", "vite-plugin-full-reload": "^1.1.0" }, "peerDependencies": { "vite": "^5.0.0 || ^6.0.0" }, "bin": { "clean-orphaned-assets": "bin/clean.js" } }, "sha512-R0pJ+IcTVeqEMoKz/B2Ij57QVq3sFTABiFmb06gAwFdivbOgsUtuhX6N2MGLEArajrS3U5JbberzwOe7uXHMHQ=="],
 

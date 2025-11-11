@@ -20,6 +20,8 @@ use App\Http\Controllers\AdminManagementController;
 use App\Http\Controllers\SupervisorDepartmentController;
 use App\Http\Controllers\ResumeToWorkController;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -81,7 +83,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware(['permission:View Evaluation'])->group(function () {
         Route::resource('evaluation', EvaluationController::class)->names('evaluation');
-
     });
 
     Route::middleware(['permission:View Dashboard'])->group(function () {
@@ -168,11 +169,52 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-// Broadcasting routes
-Broadcast::routes(['middleware' => ['web', 'auth']]);
+// Broadcasting routes - Manual route with full debugging
+Route::match(['get', 'post'], '/broadcasting/auth', function (\Illuminate\Http\Request $request) {
+    Log::info('🎯 BROADCASTING AUTH ROUTE HIT!', [
+        'url' => $request->fullUrl(),
+        'method' => $request->method(),
+        'channel_name' => $request->input('channel_name'),
+        'socket_id' => $request->input('socket_id'),
+        'headers' => [
+            'x-csrf-token' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing',
+            'x-requested-with' => $request->header('X-Requested-With'),
+            'cookie' => $request->header('Cookie') ? 'present' : 'missing',
+        ],
+        'auth_check' => Auth::check(),
+        'auth_id' => Auth::id(),
+        'auth_user' => Auth::user() ? [
+            'id' => Auth::user()->id,
+            'email' => Auth::user()->email ?? null,
+        ] : null,
+    ]);
 
-// Broadcasting routes for employees
-Broadcast::routes(['middleware' => ['web', 'employee.auth']]);
+    try {
+        Log::info('📡 Calling BroadcastManager::auth()...');
+
+        // Call the broadcasting authenticator
+        $response = app(\Illuminate\Broadcasting\BroadcastManager::class)->auth($request);
+
+        Log::info('📡 BroadcastManager::auth() response', [
+            'status' => $response->getStatusCode(),
+            'content' => $response->getContent(),
+        ]);
+
+        return $response;
+    } catch (\Exception $e) {
+        Log::error('❌ BroadcastManager::auth() EXCEPTION', [
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'error' => $e->getMessage(),
+            'message' => 'Broadcasting authorization failed'
+        ], 403);
+    }
+})->middleware('web');
 
 
 
