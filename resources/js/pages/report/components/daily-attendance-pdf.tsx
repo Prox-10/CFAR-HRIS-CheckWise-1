@@ -260,7 +260,7 @@ export default function DailyAttendancePDF({ reportDate, microteams, addCrew, ph
     const renderTableRow = (index: number, employee?: MicroteamEmployee) => {
         const no = String(index + 1).padStart(2, '0');
         const name = employee?.employee_name ? formatEmployeeName(employee.employee_name) : '';
-        const remarks = employee?.time_in && employee?.time_out ? `${formatTime(employee.time_in)} - ${formatTime(employee.time_out)}` : '';
+        const remarks = employee?.time_in && employee?.time_out ? 'Present' : '';
 
         return (
             <View key={index} style={styles.tableRow}>

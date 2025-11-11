@@ -416,9 +416,7 @@ export default function DailyAttendancePage() {
                                                                                         {employee ? formatEmployeeName(employee.employee_name) : ''}
                                                                                     </TableCell>
                                                                                     <TableCell className="text-[10px]">
-                                                                                        {employee?.time_in && employee?.time_out
-                                                                                            ? `${formatTime(employee.time_in)} - ${formatTime(employee.time_out)}`
-                                                                                            : ''}
+                                                                                        {employee?.time_in && employee?.time_out ? 'Present' : ''}
                                                                                     </TableCell>
                                                                                 </TableRow>
                                                                             );
@@ -478,9 +476,7 @@ export default function DailyAttendancePage() {
                                                                                         {employee ? formatEmployeeName(employee.employee_name) : ''}
                                                                                     </TableCell>
                                                                                     <TableCell className="text-[10px]">
-                                                                                        {employee?.time_in && employee?.time_out
-                                                                                            ? `${formatTime(employee.time_in)} - ${formatTime(employee.time_out)}`
-                                                                                            : ''}
+                                                                                        {employee?.time_in && employee?.time_out ? 'Present' : ''}
                                                                                     </TableCell>
                                                                                 </TableRow>
                                                                             );

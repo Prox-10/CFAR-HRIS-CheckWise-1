@@ -15,14 +15,19 @@ const getCSRFToken = () => {
 
 // Initialize Echo with Reverb
 try {
+    const reverbHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
+    const reverbPort = import.meta.env.VITE_REVERB_PORT || 8080;
+    const isLocalhost =
+        reverbHost === 'localhost' || reverbHost === '127.0.0.1' || reverbHost.startsWith('192.168.') || reverbHost.startsWith('10.0.');
+
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key: import.meta.env.VITE_REVERB_APP_KEY || 'your-reverb-key',
-        wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
-        wsPort: import.meta.env.VITE_REVERB_PORT || 8080,
-        wssPort: import.meta.env.VITE_REVERB_PORT || 8080,
-        forceTLS: false,
-        enabledTransports: ['ws', 'wss'],
+        wsHost: reverbHost,
+        wsPort: reverbPort,
+        wssPort: reverbPort,
+        forceTLS: !isLocalhost, // Force TLS only for non-localhost connections
+        enabledTransports: isLocalhost ? ['ws'] : ['ws', 'wss'], // Only use ws:// for localhost
         disableStats: true,
         authEndpoint: '/broadcasting/auth',
         withCredentials: true,
@@ -39,8 +44,11 @@ try {
     console.log('Echo config:', {
         broadcaster: 'reverb',
         key: import.meta.env.VITE_REVERB_APP_KEY || 'your-reverb-key',
-        wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
-        wsPort: import.meta.env.VITE_REVERB_PORT || 8080,
+        wsHost: reverbHost,
+        wsPort: reverbPort,
+        forceTLS: !isLocalhost,
+        enabledTransports: isLocalhost ? ['ws'] : ['ws', 'wss'],
+        isLocalhost,
     });
 } catch (error) {
     console.error('Failed to initialize Echo:', error);
