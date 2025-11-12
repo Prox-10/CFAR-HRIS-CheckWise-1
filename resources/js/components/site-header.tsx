@@ -364,7 +364,7 @@ export function SiteHeader({ title, breadcrumbs }: Props) {
                     </div>
                 </div>
             </div>
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
         </header>
     );
 }

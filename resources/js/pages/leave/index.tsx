@@ -213,7 +213,7 @@ export default function Index({ leave, employees, leaveStats, leavesPerMonth, le
     return (
         <SidebarProvider>
             <Head title="Leave" />
-            <Toaster position="top-center" richColors />
+            {/* <Toaster position="top-right" richColors swipeDirections={['right', 'left']} /> */}
 
             <SidebarHoverLogic>
                 <SidebarInset>

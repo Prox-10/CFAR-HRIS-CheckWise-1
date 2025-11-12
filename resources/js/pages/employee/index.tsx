@@ -161,7 +161,7 @@ export default function Employee({
     return (
         <SidebarProvider>
             <Head title="Employees" />
-            <Toaster position="top-center" richColors />
+            {/* <Toaster position="top-center" richColors /> */}
             {/* Sidebar hover logic */}
             <SidebarHoverLogic>
                 <SidebarInset>

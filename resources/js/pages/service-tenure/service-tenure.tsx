@@ -74,7 +74,7 @@ export default function Index({ employees_all }: Props) {
     return (
         <SidebarProvider>
             <Head title="Evaluation" />
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
                     {/* <HeaderShrink/> */}

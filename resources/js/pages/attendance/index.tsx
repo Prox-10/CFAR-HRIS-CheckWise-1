@@ -114,7 +114,7 @@ export default function Index({
     return (
         <SidebarProvider>
             <Head title="Attendance" />
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
             {/* Sidebar hover logic */}
             <SidebarHoverLogic>
                 <SidebarInset>

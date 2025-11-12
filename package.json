@@ -13,7 +13,7 @@
         "route": "php artisan route:cache && php artisan route:clear && php artisan route:list",
         "migrate": "php artisan migrate:fresh --seed",
         "optimize": "php artisan optimize:clear && php artisan optimize",
-        "serve": "concurrently \"php artisan serve\" \"bun run dev\"",
+        "serve": "concurrently \"php artisan serve\" \"bun run dev\" \"php artisan reverb:start\" ",
         "pin": "php artisan make:command GenerateEmployeePins",
         "push-kyle": "bun run scripts/push.js",
         "push-main": "git merge kyle && git push -u origin main",

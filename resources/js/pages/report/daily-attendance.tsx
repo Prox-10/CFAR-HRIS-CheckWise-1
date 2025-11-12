@@ -269,7 +269,7 @@ export default function DailyAttendancePage() {
     return (
         <SidebarProvider>
             <Head title="Daily Attendance Report" />
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
                     <SiteHeader

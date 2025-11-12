@@ -945,7 +945,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     return (
         <SidebarProvider>
             <Head title="Daily Checking of PP Crew" />
-            <Toaster position="top-center" richColors />
+            {/* <Toaster position="top-center" richColors /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
                     <SiteHeader breadcrumbs={breadcrumbs} title={''} />

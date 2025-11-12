@@ -98,7 +98,7 @@ export default function Index({ leave }: Props) {
 
     return (
         <SidebarProvider>
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
             <AppSidebar />
             <Head title="Leave" />
             <SidebarInset>

@@ -149,7 +149,7 @@ export default function SettingsIndex() {
       
         <SidebarProvider>
            
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
            
             <SidebarHoverLogic>
                 <SidebarInset>

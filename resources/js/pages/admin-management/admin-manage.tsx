@@ -282,7 +282,7 @@ export default function SupervisorManagement({
     return (
         <SidebarProvider>
             <Head title="Supervisor Management" />
-            <Toaster position="top-right" richColors closeButton />
+            {/* <Toaster position="top-right" richColors closeButton /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
                     <SiteHeader breadcrumbs={breadcrumbs} title={''} />

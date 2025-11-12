@@ -739,7 +739,7 @@ export default function DepartmentEvaluation({
     return (
         <SidebarProvider>
             <Head title="Department Evaluation" />
-            <Toaster position="top-center" richColors />
+            {/* <Toaster position="top-center" richColors /> */}
 
             {/* Sidebar hover logic */}
             <SidebarHoverLogic>
