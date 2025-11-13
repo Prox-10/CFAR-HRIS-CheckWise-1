@@ -2,20 +2,23 @@ import { AppSidebar } from '@/components/app-sidebar';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
+import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import { pdf, PDFViewer } from '@react-pdf/renderer';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { ArrowLeft, ClipboardList, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Calendar, ClipboardList, Eye, Save } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import DailyAttendancePDF from './components/daily-attendance-pdf';
 
 // Mock data for preview
@@ -92,9 +95,20 @@ export default function DailyAttendancePage() {
     const [addCrewSort, setAddCrewSort] = useState<'none' | 'asc' | 'desc'>('none');
     const reportCardRef = useRef<HTMLDivElement>(null);
     const phInputRef = useRef<HTMLInputElement>(null);
+    const currentFetchDateRef = useRef<string | null>(null);
 
     const titleDate = useMemo(() => (reportDate ? format(reportDate, 'MMMM dd, yyyy') : ''), [reportDate]);
     const titleDay = useMemo(() => (reportDate ? format(reportDate, 'EEEE') : ''), [reportDate]);
+
+    // Function to disable future dates (tomorrow and beyond)
+    const isDateDisabled = (date: Date): boolean => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        // Disable if date is after today (tomorrow and future dates)
+        return checkDate > today;
+    };
 
     // Fetch microteam data when reportDate changes
     useEffect(() => {
@@ -106,50 +120,171 @@ export default function DailyAttendancePage() {
     const fetchMicroteamData = async () => {
         if (!reportDate) return;
 
+        const dateStr = format(reportDate, 'yyyy-MM-dd');
+
+        // Track the current fetch date to ignore stale responses
+        currentFetchDateRef.current = dateStr;
+
         setLoading(true);
+        // Reset data immediately when date changes to prevent showing stale data
+        setMicroteams({
+            'MICROTEAM - 01': [],
+            'MICROTEAM - 02': [],
+            'MICROTEAM - 03': [],
+        });
+        setAddCrew({
+            'ADD CREW - 01': [],
+            'ADD CREW - 02': [],
+            'ADD CREW - 03': [],
+        });
+
         try {
-            const dateStr = format(reportDate, 'yyyy-MM-dd');
             const response = await axios.get('/api/daily-checking/for-date', {
                 params: { date: dateStr },
             });
 
-            if (response.data.microteams) {
-                setMicroteams(response.data.microteams);
+            // Check if this response is still for the current selected date
+            // (ignore if user changed date while request was in flight)
+            if (currentFetchDateRef.current !== dateStr) {
+                console.log(`Ignoring stale response for date: ${dateStr}, current date is: ${currentFetchDateRef.current}`);
+                return;
             }
 
-            // Handle Add Crew employees grouped by microteam
-            // Microteam 1 → ADD CREW - 01, Microteam 2 → ADD CREW - 02, Microteam 3 → ADD CREW - 03
-            const addCrewData: AddCrewData = {
+            // Verify the response is for the correct date
+            // Check if response has actual data (not just empty arrays)
+            // Also verify that employees have time_in OR time_out for this specific date
+            const hasMicroteamData =
+                response.data?.microteams &&
+                (response.data.microteams['MICROTEAM - 01']?.length > 0 ||
+                    response.data.microteams['MICROTEAM - 02']?.length > 0 ||
+                    response.data.microteams['MICROTEAM - 03']?.length > 0);
+
+            const hasAddCrewData =
+                response.data?.add_crew &&
+                ((Array.isArray(response.data.add_crew) && response.data.add_crew.length > 0) ||
+                    response.data.add_crew['MICROTEAM - 01']?.length > 0 ||
+                    response.data.add_crew['MICROTEAM - 02']?.length > 0 ||
+                    response.data.add_crew['MICROTEAM - 03']?.length > 0);
+
+            const hasData = hasMicroteamData || hasAddCrewData;
+
+            // Verify the response date matches the requested date
+            if (response.data?.date && response.data.date !== dateStr) {
+                console.log(`Date mismatch: requested ${dateStr}, got ${response.data.date}`);
+                // Still proceed if data exists, but log the mismatch
+            }
+
+            // Double-check we're still fetching for the same date
+            if (currentFetchDateRef.current !== dateStr) {
+                console.log(`Date changed during fetch, ignoring response for: ${dateStr}`);
+                return;
+            }
+
+            if (hasData) {
+                // Only set data if we have actual data for the selected date
+                if (hasMicroteamData && response.data.microteams) {
+                    // Verify microteams have actual employees with time_in OR time_out for this specific date
+                    const verifiedMicroteams: MicroteamData = {
+                        'MICROTEAM - 01': (response.data.microteams['MICROTEAM - 01'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        ),
+                        'MICROTEAM - 02': (response.data.microteams['MICROTEAM - 02'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        ),
+                        'MICROTEAM - 03': (response.data.microteams['MICROTEAM - 03'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        ),
+                    };
+
+                    // Only set if at least one microteam has data
+                    if (
+                        verifiedMicroteams['MICROTEAM - 01'].length > 0 ||
+                        verifiedMicroteams['MICROTEAM - 02'].length > 0 ||
+                        verifiedMicroteams['MICROTEAM - 03'].length > 0
+                    ) {
+                        setMicroteams(verifiedMicroteams);
+                    }
+                }
+
+                // Handle Add Crew employees grouped by microteam
+                if (hasAddCrewData && response.data.add_crew) {
+                    const addCrewData: AddCrewData = {
+                        'ADD CREW - 01': [],
+                        'ADD CREW - 02': [],
+                        'ADD CREW - 03': [],
+                    };
+
+                    // Check if it's the new format (grouped by microteam) or old format (array)
+                    if (
+                        response.data.add_crew['MICROTEAM - 01'] ||
+                        response.data.add_crew['MICROTEAM - 02'] ||
+                        response.data.add_crew['MICROTEAM - 03']
+                    ) {
+                        // New format: grouped by microteam
+                        // Only include employees with time_in OR time_out for this specific date
+                        addCrewData['ADD CREW - 01'] = (response.data.add_crew['MICROTEAM - 01'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        );
+                        addCrewData['ADD CREW - 02'] = (response.data.add_crew['MICROTEAM - 02'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        );
+                        addCrewData['ADD CREW - 03'] = (response.data.add_crew['MICROTEAM - 03'] || []).filter(
+                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
+                        );
+                    } else if (Array.isArray(response.data.add_crew) && response.data.add_crew.length > 0) {
+                        // Old format: array (fallback for backward compatibility)
+                        response.data.add_crew.forEach((employee: MicroteamEmployee, index: number) => {
+                            if (employee) {
+                                const crewIndex = index % 3;
+                                const crewKey = `ADD CREW - ${String(crewIndex + 1).padStart(2, '0')}` as keyof AddCrewData;
+                                addCrewData[crewKey].push(employee);
+                            }
+                        });
+                    }
+
+                    // Only set if at least one add crew has data
+                    if (
+                        addCrewData['ADD CREW - 01'].length > 0 ||
+                        addCrewData['ADD CREW - 02'].length > 0 ||
+                        addCrewData['ADD CREW - 03'].length > 0
+                    ) {
+                        setAddCrew(addCrewData);
+                    }
+                }
+            } else {
+                // No data for selected date - ensure arrays stay empty
+                console.log(`No data found for date: ${dateStr}`);
+                // Data is already reset above, but ensure it stays empty
+                setMicroteams({
+                    'MICROTEAM - 01': [],
+                    'MICROTEAM - 02': [],
+                    'MICROTEAM - 03': [],
+                });
+                setAddCrew({
+                    'ADD CREW - 01': [],
+                    'ADD CREW - 02': [],
+                    'ADD CREW - 03': [],
+                });
+            }
+        } catch (error: any) {
+            console.error('Error fetching microteam data:', error);
+            // If it's a 404 or no data error, keep empty state
+            if (error.response?.status === 404 || error.response?.status === 204) {
+                console.log(`No records found for selected date: ${dateStr}`);
+            } else {
+                toast.error('Failed to load microteam data');
+            }
+            // Ensure data is cleared on error
+            setMicroteams({
+                'MICROTEAM - 01': [],
+                'MICROTEAM - 02': [],
+                'MICROTEAM - 03': [],
+            });
+            setAddCrew({
                 'ADD CREW - 01': [],
                 'ADD CREW - 02': [],
                 'ADD CREW - 03': [],
-            };
-
-            if (response.data.add_crew) {
-                // Check if it's the new format (grouped by microteam) or old format (array)
-                if (
-                    response.data.add_crew['MICROTEAM - 01'] ||
-                    response.data.add_crew['MICROTEAM - 02'] ||
-                    response.data.add_crew['MICROTEAM - 03']
-                ) {
-                    // New format: grouped by microteam
-                    addCrewData['ADD CREW - 01'] = response.data.add_crew['MICROTEAM - 01'] || [];
-                    addCrewData['ADD CREW - 02'] = response.data.add_crew['MICROTEAM - 02'] || [];
-                    addCrewData['ADD CREW - 03'] = response.data.add_crew['MICROTEAM - 03'] || [];
-                } else if (Array.isArray(response.data.add_crew)) {
-                    // Old format: array (fallback for backward compatibility)
-                    response.data.add_crew.forEach((employee: MicroteamEmployee, index: number) => {
-                        const crewIndex = index % 3;
-                        const crewKey = `ADD CREW - ${String(crewIndex + 1).padStart(2, '0')}` as keyof AddCrewData;
-                        addCrewData[crewKey].push(employee);
-                    });
-                }
-            }
-
-            setAddCrew(addCrewData);
-        } catch (error) {
-            console.error('Error fetching microteam data:', error);
-            toast.error('Failed to load microteam data');
+            });
         } finally {
             setLoading(false);
         }
@@ -198,6 +333,14 @@ export default function DailyAttendancePage() {
                 URL.revokeObjectURL(url);
 
                 toast.success('PDF exported successfully');
+
+                // After PDF export, refresh data to be ready for next date
+                // Clear current data and fetch fresh data for the selected date
+                setTimeout(() => {
+                    if (reportDate) {
+                        fetchMicroteamData();
+                    }
+                }, 500);
             } catch (error) {
                 console.error('Error exporting PDF:', error);
                 toast.error('Failed to export PDF');
@@ -288,50 +431,36 @@ export default function DailyAttendancePage() {
                             <CardDescription>Generate and export the daily attendance record.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                                <div className="md:col-span-2">
+                            {/* Date Selection */}
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium">Select Date:</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className={cn('w-full justify-start text-left font-normal', !reportDate && 'text-muted-foreground')}
+                                                className={cn(
+                                                    'w-[240px] justify-start text-left font-normal',
+                                                    !reportDate && 'text-muted-foreground',
+                                                )}
                                             >
                                                 <Calendar className="mr-2 h-4 w-4" />
-                                                {reportDate ? titleDate : <span>Select date</span>}
+                                                {reportDate ? titleDate : <span>Pick a date</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <CalendarComponent mode="single" selected={reportDate} onSelect={setReportDate} initialFocus />
+                                            <CalendarComponent
+                                                mode="single"
+                                                selected={reportDate}
+                                                onSelect={setReportDate}
+                                                disabled={isDateDisabled}
+                                                initialFocus
+                                            />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div>
-                                    <Select value={area} onValueChange={setArea}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Department" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Departments</SelectItem>
-                                            {departments.map((dep) => (
-                                                <SelectItem key={dep} value={dep}>
-                                                    {dep}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Select value={exportFormat} onValueChange={(v: 'pdf' | 'xlsx') => setExportFormat(v)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Export" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pdf">PDF</SelectItem>
-                                            <SelectItem value="xlsx">Excel</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div> */}
+                                {reportDate && <div className="text-sm text-muted-foreground">{titleDay}</div>}
+                            </div>
 
                             {/* Report body matching provided structure */}
                             <Card>
@@ -360,7 +489,7 @@ export default function DailyAttendancePage() {
                                                     <div className="text-sm">
                                                         <span className="font-bold">Date:</span> {titleDate}
                                                     </div>
-                                                    <div className="mr-[66px] text-sm">
+                                                    <div className="mr-[55px] text-sm">
                                                         <span className="font-bold">Day:</span> {titleDay}
                                                     </div>
                                                 </div>

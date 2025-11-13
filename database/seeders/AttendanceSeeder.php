@@ -11,9 +11,99 @@ class AttendanceSeeder extends Seeder
 {
   public function run()
   {
-    // Attendance seeder is disabled - no attendance records will be created
-    $this->output("Attendance seeder is disabled - no records will be created");
-    return;
+    $departments = [
+      'Packing Plant' => 10,
+      'Management & Staff(Admin)' => 5,
+      'Harvesting' => 5,
+      'Pest & Decease' => 5,
+      'Miscellaneous' => 5,
+      'Coop Area' => 5,
+      'Security Forces' => 5,
+      'Engineering' => 5,
+      'Utility' => 5,
+    ];
+
+    $totalCreated = 0;
+
+    // Department-specific positions from data.ts
+    $departmentPositions = [
+      'Packing Plant' => ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal'],
+      'Management & Staff(Admin)' => ['Manager', 'Farm Superintendent', 'HR', 'Packing Plant Supervisor', 'Harvesting Supervisor', 'P&D Supervisor', 'M&S Supervisor', 'Accounting Supervisor', 'Cashier', 'Office Employees Main', 'Packing Plant Assistant', 'Packing Plant Maintenance', 'Driver', 'M&S Aide', 'Security Supervisor', 'Coop Area/Manage Coop Supervisor', 'Probationary Office Staff'],
+      'Harvesting' => ['Regular Hired Workers', 'Probitionary', 'Spare'],
+      'Pest & Decease' => ['Regular Hired Workers', 'Footbath Maintenance', 'Probitionary PDC', 'PDC Seasonal'],
+      'Coop Area' => ['Regular Hired Workers', 'Probitionary'],
+      'Miscellaneous' => ['Utility/Janitorial', 'Field Surveyor', 'Field Surveyor/Spare', 'Miscellaneous - Probitionary', 'Sigatoka Deleafer', 'Sigatoka Monitoring'],
+      'Security Forces' => ['Security Guard: Agency-MINVITS', 'Security Guard: SECURUS', 'Spray Man (Main Gate)'],
+      'Engineering' => ['N/A'],
+      'Utility' => ['N/A'],
+    ];
+
+    foreach ($departments as $department => $count) {
+      // Get or create employees for this department
+      $employees = Employee::where('department', $department)->get();
+
+      // If no employees exist for this department, create them
+      if ($employees->isEmpty()) {
+        $this->output("No employees found for {$department}, creating {$count} employees...");
+        $positions = $departmentPositions[$department] ?? ['N/A'];
+
+        $employees = collect();
+        for ($i = 0; $i < $count; $i++) {
+          $employees->push(Employee::factory()->create([
+            'department' => $department,
+            'position' => $positions[array_rand($positions)],
+          ]));
+        }
+      } else {
+        // Use existing employees, but limit to the required count
+        $employees = $employees->take($count);
+
+        // If we need more employees, create them
+        if ($employees->count() < $count) {
+          $needed = $count - $employees->count();
+          $positions = $departmentPositions[$department] ?? ['N/A'];
+
+          $newEmployees = collect();
+          for ($i = 0; $i < $needed; $i++) {
+            $newEmployees->push(Employee::factory()->create([
+              'department' => $department,
+              'position' => $positions[array_rand($positions)],
+            ]));
+          }
+          $employees = $employees->merge($newEmployees);
+        }
+      }
+
+      // Create attendance records for each employee
+      foreach ($employees as $employee) {
+        $session = $this->getRandomSession();
+        $attendanceDate = Carbon::now()->subDays(rand(0, 30))->format('Y-m-d');
+
+        // Check if attendance already exists for this employee and date
+        $existing = Attendance::where('employee_id', $employee->id)
+          ->where('attendance_date', $attendanceDate)
+          ->first();
+
+        if (!$existing) {
+          Attendance::create([
+            'employee_id' => $employee->id,
+            'time_in' => $this->generateTimeIn($session),
+            'time_out' => $this->generateTimeOut($session),
+            'break_time' => $this->generateBreakTime($session),
+            'attendance_status' => $this->generateAttendanceStatus(),
+            'actual_attendance_status' => null,
+            'attendance_date' => $attendanceDate,
+            'session' => $session,
+          ]);
+          $totalCreated++;
+        }
+      }
+
+      $this->output("Created attendance records for {$department}: {$employees->count()} employees");
+    }
+
+    $this->output("\nTotal attendance records created: {$totalCreated}");
+    $this->displayStatistics();
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 
 // Helper function to format employee name as "Lastname FirstInitial."
 const formatEmployeeDisplayName = (employeeName: string, employees?: any[]): string => {
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 8,
         fontFamily: 'Helvetica',
-        fontSize: 6,
+        fontSize: 30,
     },
     headerContainer: {
         flexDirection: 'row',
@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
     header: {
         flex: 1,
         textAlign: 'center',
+        marginTop: 10,
     },
     companyName: {
         fontSize: 9,
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
         width: '100%',
         borderWidth: 0.8,
         borderColor: '#000',
+        marginTop: 10,
     },
     tableRow: {
         flexDirection: 'row',
@@ -199,7 +201,7 @@ const positions = [
 
 const leaveTypes = ['CW', 'ML', 'AWP', 'AWOP', 'SICK LEAVE', 'EMERGENCY LEAVE', 'CUT-OFF'];
 
-const daysOfWeek = ['MON', 'TUES', 'WEDS', 'THURS', 'FRI', 'SAT', 'SUN'];
+const daysOfWeek = ['MON', 'TUES', 'WED', 'THURS', 'FRI', 'SAT', 'SUN'];
 
 interface PackingPlantPDFProps {
     weekStart?: Date;
@@ -245,7 +247,7 @@ export default function PackingPlantPDF({
                 <Page size="LEGAL" orientation="portrait" style={styles.page}>
                     {/* Header */}
                     <View style={styles.headerContainer}>
-                        <Image src="/Logo.png" style={styles.logo} />
+                        {/* <Image src="/Logo.png" style={styles.logo} /> */}
                         <View style={styles.header}>
                             <Text style={styles.companyName}>CFARBEMPCO</Text>
                             <Text style={styles.code}>PP-2701</Text>
@@ -288,11 +290,12 @@ export default function PackingPlantPDF({
                         </View>
 
                         {/* --- Worker Rows --- */}
-                        {positions.map((p, pIndex) => {
+                        {positions.flatMap((p, pIndex) => {
                             const fieldName = positionFields[pIndex];
                             const workerSlots = workers[fieldName] || [];
+                            const isSupportAbsent = p.name === 'SUPPORT: ABSENT';
 
-                            return Array.from({ length: p.slots }).map((_, i) => {
+                            const workerRows = Array.from({ length: p.slots }).map((_, i) => {
                                 const workerName = workerSlots[i] || '';
                                 const slotTimeData = timeData[fieldName]?.[i] || {};
                                 const formattedName = workerName ? formatEmployeeDisplayName(workerName, employees) : '';
@@ -333,33 +336,38 @@ export default function PackingPlantPDF({
                                     </View>
                                 );
                             });
-                        })}
 
-                        {/* --- Leave Rows --- */}
-                        {leaveTypes.map((leave, i) => (
-                            <View key={i} style={styles.tableRow}>
-                                <View style={[styles.cell, styles.colSchedule]} />
-                                <View style={[styles.cell, styles.colNumber]} />
-                                <View style={[styles.cell, styles.colWorker]}>
-                                    <Text style={styles.leftAlignText}>{leave}</Text>
-                                </View>
-                                {daysOfWeek.map((_, dIndex) => {
-                                    const leaveValue = leaveData[`${leave}_${dIndex}`] || '';
-                                    return (
-                                        <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
-                                            <View style={{ flexDirection: 'row', minHeight: 10 }}>
-                                                <View style={[styles.timeCell, { borderRightWidth: 0.8 }]}>
-                                                    <Text style={styles.timeText}></Text>
-                                                </View>
-                                                <View style={styles.timeCellLast}>
-                                                    <Text style={styles.timeText}></Text>
-                                                </View>
-                                            </View>
+                            // Add leave types right after SUPPORT: ABSENT rows
+                            if (isSupportAbsent) {
+                                const leaveRows = leaveTypes.map((leave, leaveIndex) => (
+                                    <View key={`leave-${leaveIndex}`} style={styles.tableRow}>
+                                        <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 3 }]}>
+                                            <Text style={styles.leftAlignText}>{leave}</Text>
                                         </View>
-                                    );
-                                })}
-                            </View>
-                        ))}
+                                        <View style={[styles.cell, styles.colNumber]} />
+                                        <View style={[styles.cell, styles.colWorker]} />
+                                        {daysOfWeek.map((_, dIndex) => {
+                                            const leaveValue = leaveData[`${leave}_${dIndex}`] || '';
+                                            return (
+                                                <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
+                                                    <View style={{ flexDirection: 'row', minHeight: 10 }}>
+                                                        <View style={[styles.timeCell, { borderRightWidth: 0.8 }]}>
+                                                            <Text style={styles.timeText}>{leaveValue}</Text>
+                                                        </View>
+                                                        <View style={styles.timeCellLast}>
+                                                            <Text style={styles.timeText}></Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                ));
+                                return [...workerRows, ...leaveRows];
+                            }
+
+                            return workerRows;
+                        })}
 
                         {/* --- Total Row --- */}
                         <View style={[styles.tableRow, styles.totalRow]}>

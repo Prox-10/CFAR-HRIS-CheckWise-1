@@ -1,22 +1,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, SidebarSeparator, useSidebar } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, CalendarDays, ClipboardList, Clock, Download, EyeIcon, FileText, Filter, Users } from 'lucide-react';
-import { Toaster } from 'sonner';
+import { Calendar, CalendarDays, ClipboardList, Clock, EyeIcon, FileText, Users } from 'lucide-react';
 // import { format } from 'path';
 import { AppSidebar } from '@/components/app-sidebar';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ContentLoading } from '@/components/ui/loading';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
-import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 // Daily attendance now uses a dedicated page
@@ -48,7 +43,7 @@ const ReportCard = ({
             <CardHeader
                 className={cn(
                     'pb-2',
-                    variant === 'attendance' && 'border-green-500 border-l-4',
+                    variant === 'attendance' && 'border-l-4 border-green-500',
                     variant === 'employee' && 'border-l-4 border-blue-500',
                     variant === 'leave' && 'border-l-4 border-yellow-500',
                     variant === 'evaluation' && 'border-l-4 border-purple-500',
@@ -152,7 +147,7 @@ const ReportPage = () => {
     return (
         <SidebarProvider>
             <Head title="Report" />
-            <Toaster position="top-right" richColors />
+            {/* <Toaster position="top-right" richColors /> */}
             {/* Sidebar hover logic */}
             <SidebarHoverLogic>
                 <SidebarInset>
@@ -205,11 +200,12 @@ const ReportPage = () => {
                                                     onClick={() => router.visit('/report/daily-attendance')}
                                                 />
                                                 <ReportCard
-                                                    title="COOP AREA DAILY TIME RECORD "
+                                                    title="COOP AREA DAILY TIME RECORD"
                                                     description="Record of daily attendance across Coop Area Department"
                                                     icon={Clock}
                                                     variant="attendance"
                                                     buttonText="View"
+                                                    onClick={() => router.visit('/report/coop-area-dtr')}
                                                 />
                                                 <ReportCard
                                                     title="PEST & DISEASE DAILY TIME RECORD "
@@ -217,6 +213,7 @@ const ReportPage = () => {
                                                     icon={Clock}
                                                     variant="attendance"
                                                     buttonText="View"
+                                                    onClick={() => router.visit('/report/pest-disease-dtr')}
                                                 />
                                                 <ReportCard
                                                     title="COOP HARVESTER MAINTENANCE DAILY TIME RECORD "
@@ -224,6 +221,7 @@ const ReportPage = () => {
                                                     icon={Clock}
                                                     variant="attendance"
                                                     buttonText="View"
+                                                    onClick={() => router.visit('/report/coop-harvester-maintenance')}
                                                 />
                                             </div>
                                         </TabsContent>

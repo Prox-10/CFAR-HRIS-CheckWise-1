@@ -44,6 +44,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('report/daily-attendance/edit', function () {
             return Inertia::render('report/daily-attendance-edit');
         })->name('report.daily-attendance.edit');
+        Route::get('report/coop-area-dtr', function () {
+            return Inertia::render('report/coop-area-dtr');
+        })->name('report.coop-area-dtr');
+        Route::get('report/coop-harvester-maintenance', function () {
+            return Inertia::render('report/coop-harvester-maintenance');
+        })->name('report.coop-harvester-maintenance');
+        Route::get('report/pest-disease-dtr', function () {
+            return Inertia::render('report/pest-disease');
+        })->name('report.pest-disease-dtr');
     });
 
     // Explicit routes for all service-tenure subpages

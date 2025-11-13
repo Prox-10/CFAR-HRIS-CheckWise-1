@@ -17,6 +17,7 @@ class DailyCheckingAssignment extends Model
         'microteam',
         'is_add_crew',
         'day_index',
+        'day_of_save',
         'time_in',
         'time_out',
         'prepared_by',
@@ -25,6 +26,7 @@ class DailyCheckingAssignment extends Model
 
     protected $casts = [
         'week_start_date' => 'date',
+        'day_of_save' => 'date',
         'slot_index' => 'integer',
         'day_index' => 'integer',
         'is_add_crew' => 'boolean',

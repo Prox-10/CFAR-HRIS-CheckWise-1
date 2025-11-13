@@ -7,6 +7,7 @@ use App\Models\DailyCheckingAssignment;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DailyCheckingController extends Controller
 {
@@ -20,21 +21,42 @@ class DailyCheckingController extends Controller
             'assignments' => 'required|array',
             'prepared_by' => 'nullable|string',
             'checked_by' => 'nullable|string',
+            'day_of_save' => 'nullable|date', // The actual date when saving (e.g., Nov 12, 2025)
         ]);
 
         $weekStartDate = $request->week_start_date;
         $preparedBy = $request->prepared_by;
         $checkedBy = $request->checked_by;
+        // Use provided day_of_save (selected date from calendar)
+        $dayOfSave = $request->day_of_save ?? now()->format('Y-m-d');
+
+        // Calculate which day_index corresponds to the selected date (day_of_save)
+        $selectedDate = new \DateTime($dayOfSave);
+        $dayOfWeek = (int)$selectedDate->format('w'); // 0 = Sunday, 1 = Monday, etc.
+        $daysToSubtract = $dayOfWeek === 0 ? 6 : $dayOfWeek - 1;
+        $calculatedWeekStart = clone $selectedDate;
+        $calculatedWeekStart->modify("-{$daysToSubtract} days");
+        $calculatedWeekStartStr = $calculatedWeekStart->format('Y-m-d');
+
+        // Calculate day_index (0-6) for the selected date
+        $dayIndex = $dayOfWeek === 0 ? 6 : $dayOfWeek - 1; // Convert to 0-6 (Monday-Sunday)
+
+        // Verify that the calculated week_start_date matches the provided week_start_date
+        if ($calculatedWeekStartStr !== $weekStartDate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected date does not match the week start date',
+            ], 400);
+        }
 
         DB::beginTransaction();
         try {
-            // Delete existing assignments for this week
-            // Check all assignments to determine what to delete
+            // Delete existing assignments ONLY for the specific day_index and microteam
+            // This ensures we only delete records for the selected date, not the whole week
             if (!empty($request->assignments)) {
                 $microteamsToDelete = [];
 
                 // Scan all assignments to find what needs to be deleted
-                // Add Crew is now saved with microteam, so we delete by microteam
                 foreach ($request->assignments as $assignment) {
                     $microteam = $assignment['microteam'] ?? null;
                     if ($microteam && !in_array($microteam, $microteamsToDelete)) {
@@ -42,15 +64,16 @@ class DailyCheckingController extends Controller
                     }
                 }
 
-                // Delete all assignments (regular and Add Crew) for each microteam being saved
+                // Delete only assignments for the specific day_index and microteam
                 foreach ($microteamsToDelete as $microteam) {
                     DailyCheckingAssignment::where('week_start_date', $weekStartDate)
+                        ->where('day_index', $dayIndex)
                         ->where('microteam', $microteam)
                         ->delete();
                 }
             }
 
-            // Save new assignments
+            // Save new assignments ONLY for the selected date (specific day_index)
             foreach ($request->assignments as $assignment) {
                 // Find employee by employee_name
                 $employee = Employee::where('employee_name', $assignment['employee_name'])->first();
@@ -59,24 +82,32 @@ class DailyCheckingController extends Controller
                     continue; // Skip if employee not found
                 }
 
-                // Save assignment for each day
-                for ($dayIndex = 0; $dayIndex < 7; $dayIndex++) {
-                    $timeData = $assignment['time_data'][$dayIndex] ?? null;
+                // Get time data ONLY for the selected day_index
+                $timeData = $assignment['time_data'][$dayIndex] ?? null;
 
-                    DailyCheckingAssignment::create([
-                        'week_start_date' => $weekStartDate,
-                        'employee_id' => $employee->id,
-                        'position_field' => $assignment['position_field'],
-                        'slot_index' => $assignment['slot_index'],
-                        'microteam' => $assignment['microteam'] ?? null,
-                        'is_add_crew' => $assignment['is_add_crew'] ?? false,
-                        'day_index' => $dayIndex,
-                        'time_in' => $timeData['time_in'] ?? null,
-                        'time_out' => $timeData['time_out'] ?? null,
-                        'prepared_by' => $preparedBy,
-                        'checked_by' => $checkedBy,
-                    ]);
-                }
+                // Convert empty strings to null for time_in and time_out
+                $timeIn = $timeData['time_in'] ?? null;
+                $timeOut = $timeData['time_out'] ?? null;
+
+                // If time_in or time_out is an empty string, convert to null
+                $timeIn = ($timeIn === '' || $timeIn === null) ? null : $timeIn;
+                $timeOut = ($timeOut === '' || $timeOut === null) ? null : $timeOut;
+
+                // Save ONLY for the selected date (day_index)
+                DailyCheckingAssignment::create([
+                    'week_start_date' => $weekStartDate,
+                    'employee_id' => $employee->id,
+                    'position_field' => $assignment['position_field'],
+                    'slot_index' => $assignment['slot_index'],
+                    'microteam' => $assignment['microteam'] ?? null,
+                    'is_add_crew' => $assignment['is_add_crew'] ?? false,
+                    'day_index' => $dayIndex, // Only save for the selected date's day_index
+                    'day_of_save' => $dayOfSave, // Store the selected date (e.g., 2025-11-11)
+                    'time_in' => $timeIn,
+                    'time_out' => $timeOut,
+                    'prepared_by' => $preparedBy,
+                    'checked_by' => $checkedBy,
+                ]);
             }
 
             DB::commit();
@@ -106,25 +137,50 @@ class DailyCheckingController extends Controller
 
         $date = $request->date;
         $selectedDate = new \DateTime($date);
+        $dateStr = $selectedDate->format('Y-m-d');
 
-        // Calculate Monday of the week
+        // Calculate Monday of the week (for backward compatibility and reference)
         $dayOfWeek = (int)$selectedDate->format('w'); // 0 = Sunday, 1 = Monday, etc.
         $daysToSubtract = $dayOfWeek === 0 ? 6 : $dayOfWeek - 1;
         $weekStartDate = clone $selectedDate;
         $weekStartDate->modify("-{$daysToSubtract} days");
         $weekStartDateStr = $weekStartDate->format('Y-m-d');
 
-        // Get the day index (0-6) for the selected date
+        // Get the day index (0-6) for the selected date (for reference)
         $dayIndex = (int)$selectedDate->format('w');
         $dayIndex = $dayIndex === 0 ? 6 : $dayIndex - 1; // Convert to 0-6 (Monday-Sunday)
 
-        // Get all assignments for this week
-        $assignments = DailyCheckingAssignment::with(['employee' => function ($query) {
+        // Debug logging (can be removed in production)
+        Log::info('DailyChecking getForDate', [
+            'requested_date' => $date,
+            'calculated_week_start_date' => $weekStartDateStr,
+            'calculated_day_index' => $dayIndex,
+            'day_of_week' => $dayOfWeek,
+            'querying_by_day_of_save' => $dateStr,
+        ]);
+
+        // Query by the actual attendance date (week_start_date + day_index)
+        // day_of_save is the date when saving happened, not the attendance date
+        // We need to calculate the actual attendance date from week_start_date + day_index
+        // This ensures we get records for the EXACT date requested
+        $allAssignments = DailyCheckingAssignment::with(['employee' => function ($query) {
             $query->withTrashed(); // Include soft-deleted employees
         }])
-            ->where('week_start_date', $weekStartDateStr)
-            ->where('day_index', $dayIndex)
+            ->whereRaw("DATE_ADD(week_start_date, INTERVAL day_index DAY) = ?", [$dateStr])
             ->get();
+
+        // Debug: Log how many assignments found
+        Log::info('DailyChecking assignments found', [
+            'total_assignments' => $allAssignments->count(),
+            'assignments_with_time' => $allAssignments->filter(function ($a) {
+                return $a->time_in !== null || $a->time_out !== null;
+            })->count(),
+        ]);
+
+        // Filter to only include assignments with time_in OR time_out
+        $assignments = $allAssignments->filter(function ($assignment) {
+            return ($assignment->time_in !== null || $assignment->time_out !== null);
+        });
 
         // Group employees by microteam using saved microteam field
         $microteams = [
@@ -147,16 +203,20 @@ class DailyCheckingController extends Controller
             }
 
             // Use the saved microteam field
+            // Only include if employee has time_in OR time_out for this specific date
             if ($assignment->microteam && isset($microteams[$assignment->microteam])) {
-                $microteams[$assignment->microteam][] = [
-                    'id' => $assignment->employee->id,
-                    'employee_name' => $assignment->employee->employee_name,
-                    'employeeid' => $assignment->employee->employeeid,
-                    'work_status' => $assignment->employee->work_status,
-                    'position' => $assignment->position_field,
-                    'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
-                    'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
-                ];
+                // Only add if there's actual time data for this specific date
+                if ($assignment->time_in || $assignment->time_out) {
+                    $microteams[$assignment->microteam][] = [
+                        'id' => $assignment->employee->id,
+                        'employee_name' => $assignment->employee->employee_name,
+                        'employeeid' => $assignment->employee->employeeid,
+                        'work_status' => $assignment->employee->work_status,
+                        'position' => $assignment->position_field,
+                        'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
+                        'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
+                    ];
+                }
             }
         }
 
@@ -187,15 +247,18 @@ class DailyCheckingController extends Controller
                     }
 
                     if (!$alreadyAdded) {
-                        $addCrewByMicroteam[$microteam][] = [
-                            'id' => $assignment->employee->id,
-                            'employee_name' => $assignment->employee->employee_name,
-                            'employeeid' => $assignment->employee->employeeid,
-                            'work_status' => $assignment->employee->work_status,
-                            'position' => $assignment->position_field,
-                            'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
-                            'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
-                        ];
+                        // Only add if there's actual time data for this specific date
+                        if ($assignment->time_in || $assignment->time_out) {
+                            $addCrewByMicroteam[$microteam][] = [
+                                'id' => $assignment->employee->id,
+                                'employee_name' => $assignment->employee->employee_name,
+                                'employeeid' => $assignment->employee->employeeid,
+                                'work_status' => $assignment->employee->work_status,
+                                'position' => $assignment->position_field,
+                                'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
+                                'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
+                            ];
+                        }
                     }
                 }
             }

@@ -14,7 +14,7 @@ import { pdf, PDFViewer } from '@react-pdf/renderer';
 import axios from 'axios';
 import { Download, Eye, Loader2, Printer, Save } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface Employee {
     id: string;
@@ -170,13 +170,73 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         return days; // [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
     };
 
-    // Fetch employees when date changes
+    // State to track employees with attendance for the selected week
+    const [employeesWithAttendance, setEmployeesWithAttendance] = useState<Set<string>>(new Set());
+
+    // Fetch employees when date changes - only those with attendance for the selected week
     useEffect(() => {
         const days = getDaysOfWeek();
         const startDate = days[0].toISOString().split('T')[0];
         const endDate = days[6].toISOString().split('T')[0];
+
+        // Fetch employees with attendance for this specific week
         fetchPackingPlantEmployees(startDate, endDate);
+
+        // Also fetch daily checking assignments to get employees assigned for this week
+        fetchEmployeesForWeek(startDate);
     }, [date]);
+
+    // Fetch employees who have daily checking assignments for the selected week
+    const fetchEmployeesForWeek = async (weekStartDate: string) => {
+        try {
+            // Fetch assignments for all microteams for this week
+            const response = await axios.get('/api/daily-checking/for-date', {
+                params: { date: weekStartDate },
+            });
+
+            const employeesWithRecords = new Set<string>();
+
+            // Get employees from microteams
+            if (response.data?.microteams) {
+                Object.values(response.data.microteams).forEach((microteam: any) => {
+                    if (Array.isArray(microteam)) {
+                        microteam.forEach((emp: any) => {
+                            if (emp?.employee_name) {
+                                employeesWithRecords.add(emp.employee_name);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Get employees from Add Crew
+            if (response.data?.add_crew) {
+                if (Array.isArray(response.data.add_crew)) {
+                    response.data.add_crew.forEach((emp: any) => {
+                        if (emp?.employee_name) {
+                            employeesWithRecords.add(emp.employee_name);
+                        }
+                    });
+                } else {
+                    Object.values(response.data.add_crew).forEach((microteamAddCrew: any) => {
+                        if (Array.isArray(microteamAddCrew)) {
+                            microteamAddCrew.forEach((emp: any) => {
+                                if (emp?.employee_name) {
+                                    employeesWithRecords.add(emp.employee_name);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            setEmployeesWithAttendance(employeesWithRecords);
+        } catch (error) {
+            console.error('Error fetching employees for week:', error);
+            // On error, clear the set so all employees can be shown (fallback)
+            setEmployeesWithAttendance(new Set());
+        }
+    };
 
     // Update global selected employees when date changes
     useEffect(() => {
@@ -237,6 +297,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     }, [date]);
 
     // Reload form data when date changes and microteam is selected
+    // NOTE: This only loads data when week/microteam changes, not after saving
+    // This ensures data persists for the whole week after saving
     useEffect(() => {
         if (selectedMicroteam && date) {
             // Only reload if we have a microteam selected
@@ -279,6 +341,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
                         if (microteamResponse.data.time_data) {
                             // Merge microteam time data (including SUPPORT: ABSENT)
+                            // This loads ALL 7 days of time data for the week
                             Object.keys(microteamResponse.data.time_data).forEach((positionField) => {
                                 if (initialTimeData[positionField]) {
                                     const savedTimeData = microteamResponse.data.time_data[positionField];
@@ -309,6 +372,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                     console.error('Error loading microteam data:', error);
                 }
 
+                // Only set data if we're loading a different week/microteam
+                // This preserves unsaved changes when working on the same week
                 setAssignmentData(initialData);
                 setTimeData(initialTimeData);
             };
@@ -585,15 +650,43 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         return allSelectedEmployees.has(employeeName);
     };
 
-    // Filter employees based on position field
+    // Filter employees based on position field and attendance for selected week
     const getFilteredEmployees = (positionField: string): Employee[] => {
+        let filtered = employees;
+
+        // First filter by position field
         if (positionField === 'supportAbsent') {
             // SUPPORT: ABSENT - Only show Add Crew employees
-            return employees.filter((emp) => emp.work_status === 'Add Crew');
+            filtered = employees.filter((emp) => emp.work_status === 'Add Crew');
         } else {
             // All other positions - Exclude Add Crew employees
-            return employees.filter((emp) => emp.work_status !== 'Add Crew');
+            filtered = employees.filter((emp) => emp.work_status !== 'Add Crew');
         }
+
+        // Then filter by attendance records for the selected week
+        // Only show employees who have attendance records for this specific week
+        const days = getDaysOfWeek();
+
+        // Filter to only show employees who have attendance records for any day in the selected week
+        // OR have daily checking assignments for this week (to allow viewing/editing saved data)
+        filtered = filtered.filter((emp) => {
+            // Check if employee has attendance records for any day in the week
+            const hasAttendance = days.some((day) => {
+                const dateStr = day.toISOString().split('T')[0];
+                return emp.attendances?.[dateStr] !== undefined;
+            });
+
+            // Check if employee has daily checking assignment for this week (allows viewing saved data)
+            const hasAssignment = employeesWithAttendance.has(emp.employee_name);
+
+            // Show employee if they have attendance records OR daily checking assignment for this week
+            // This ensures:
+            // 1. Employees with attendance for the week are shown
+            // 2. Employees with saved daily checking data for the week can be viewed/edited
+            return hasAttendance || hasAssignment;
+        });
+
+        return filtered;
     };
 
     const handleLeaveChange = (type: string, value: string) => {
@@ -661,9 +754,12 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                             is_add_crew: isAddCrew,
                             time_data: Array.from({ length: 7 }, (_, dayIndex) => {
                                 const dayTime = slotTimeData[dayIndex] || { time_in: '', time_out: '' };
+                                // Convert empty strings to null explicitly
+                                const timeIn = dayTime.time_in && dayTime.time_in.trim() !== '' ? dayTime.time_in : null;
+                                const timeOut = dayTime.time_out && dayTime.time_out.trim() !== '' ? dayTime.time_out : null;
                                 return {
-                                    time_in: dayTime.time_in || null,
-                                    time_out: dayTime.time_out || null,
+                                    time_in: timeIn,
+                                    time_out: timeOut,
                                 };
                             }),
                         });
@@ -687,11 +783,16 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                 duration: Infinity, // Keep loading until dismissed
             });
 
+            // Use the selected date from the calendar (not current date)
+            // This is the date the user selected in the calendar input
+            const selectedDate = date; // This is already in YYYY-MM-DD format
+
             const response = await axios.post('/api/daily-checking/store', {
                 week_start_date: weekStartDate,
                 assignments: assignments,
                 prepared_by: preparedBy,
                 checked_by: checkedBy,
+                day_of_save: selectedDate, // The date selected in the calendar (e.g., Nov 11, 2025)
             });
 
             toast.dismiss('save-daily-checking');
@@ -717,6 +818,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                 });
 
                 // Refresh global selected employees from API after successful save (including Add Crew)
+                // NOTE: We do NOT clear assignmentData or timeData - they persist for the whole week
+                // This allows users to continue editing the week without losing their work
                 try {
                     const refreshResponse = await axios.get('/api/daily-checking/for-date', {
                         params: { date: weekStartDate },
@@ -757,6 +860,9 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                         }
                     }
                     setAllSelectedEmployees(globalSelected);
+
+                    // Also update employeesWithAttendance to reflect saved data
+                    setEmployeesWithAttendance(globalSelected);
                 } catch (error) {
                     console.error('Error refreshing global selected employees:', error);
                     // Fallback to current selection if API call fails
@@ -769,6 +875,9 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                         return newSet;
                     });
                 }
+
+                // DO NOT clear assignmentData or timeData - they should persist for the whole week
+                // Users can continue editing the week without losing their work
             } else {
                 const errorMsg = response.data.message || 'Failed to save daily checking assignments. Please try again.';
                 toast.error('Save Failed', {
