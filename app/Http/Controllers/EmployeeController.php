@@ -24,7 +24,7 @@ class EmployeeController extends Controller
 
         do {
             // Generate a random 6-digit number
-            $randomDigits = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $randomDigits = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $employeeId = 'AC' . $randomDigits;
             $exists = Employee::where('employeeid', $employeeId)->exists();
             $attempts++;
@@ -32,11 +32,11 @@ class EmployeeController extends Controller
 
         if ($attempts >= $maxAttempts) {
             // Fallback: use timestamp-based ID if too many collisions
-            $timestampDigits = str_pad(substr(time(), -6), 6, '0', STR_PAD_LEFT);
+            $timestampDigits = str_pad(substr(time(), -4), 4, '0', STR_PAD_LEFT);
             $employeeId = 'AC' . $timestampDigits;
             // Still check if this exists, if so append random digit
             if (Employee::where('employeeid', $employeeId)->exists()) {
-                $fallbackDigits = str_pad(substr(time(), -5) . rand(0, 9), 6, '0', STR_PAD_LEFT);
+                $fallbackDigits = str_pad(substr(time(), -4) . rand(0, 9), 4, '0', STR_PAD_LEFT);
                 $employeeId = 'AC' . $fallbackDigits;
             }
         }

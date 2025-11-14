@@ -190,7 +190,7 @@ export function SectionCards({
                             {totalEmployee > 0 ? `${((attendanceCounts.totalAttendance / totalEmployee) * 100).toFixed(1)}%` : '0%'} of{' '}
                             {isSupervisor ? 'your' : 'total'} employees
                         </div>
-                        <div className="text-green-500">{isSupervisor ? 'Your team attendance today' : 'Active attendance today'}</div>
+                        {/* <div className="text-green-500">{isSupervisor ? 'Your team attendance today' : 'Active attendance today'}</div> */}
                     </CardFooter>
                 </Card>
 
@@ -218,7 +218,7 @@ export function SectionCards({
                                 : '0%'}{' '}
                             of {isSupervisor ? 'your' : 'attendees'}
                         </div>
-                        <div className="text-emerald-500">{isSupervisor ? 'Your team on time today' : 'Employees on time today'}</div>
+                        {/* <div className="text-emerald-500">{isSupervisor ? 'Your team on time today' : 'Employees on time today'}</div> */}
                     </CardFooter>
                 </Card>
 
@@ -246,7 +246,7 @@ export function SectionCards({
                                 : '0%'}{' '}
                             of {isSupervisor ? 'your' : 'attendees'}
                         </div>
-                        <div className="text-amber-500">{isSupervisor ? 'Your team arrived late' : 'Employees arrived late'}</div>
+                        {/* <div className="text-amber-500">{isSupervisor ? 'Your team arrived late' : 'Employees arrived late'}</div> */}
                     </CardFooter>
                 </Card>
 
@@ -274,7 +274,7 @@ export function SectionCards({
                                 : '0%'}{' '}
                             of {isSupervisor ? 'your' : 'total'} employees
                         </div>
-                        <div className="text-blue-500">{isSupervisor ? 'Your team on leave or excuse' : 'Employees on leave or excuse'}</div>
+                        {/* <div className="text-blue-500">{isSupervisor ? 'Your team on leave or excuse' : 'Employees on leave or excuse'}</div> */}
                     </CardFooter>
                 </Card>
             </div>

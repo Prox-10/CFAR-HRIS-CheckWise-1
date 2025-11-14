@@ -114,22 +114,23 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Service-Tenure',
-        href: '/service-tenure/index',
+        // href: '/service-tenure/index',
+        href: '/service-tenure/employee',
         icon: Activity,
         permission: 'View Service Tenure Management',
-        items: [
-            {
-                title: 'Service Tenure',
-                href: '/service-tenure/employee',
-                permission: 'View Service Tenure Employee',
-            },
+        // items: [
+        //     {
+        //         title: 'Service Tenure',
+        //         href: '/service-tenure/employee',
+        //         permission: 'View Service Tenure Employee',
+        //     },
 
-            {
-                title: 'Pay Advancement',
-                href: '/service-tenure/pay-advancement',
-                permission: 'View Service Tenure Pay Advancement',
-            },
-        ],
+        //     {
+        //         title: 'Pay Advancement',
+        //         href: '/service-tenure/pay-advancement',
+        //         permission: 'View Service Tenure Pay Advancement',
+        //     },
+        // ],
     },
 
     {
@@ -160,28 +161,6 @@ const mainNavItems: NavItem[] = [
         href: '/report',
         icon: FileText,
         permission: 'View Report',
-        items: [
-            {
-                title: 'Attendance Reports',
-                href: '/report?tab=attendance',
-                permission: 'View Report Attendance',
-            },
-            {
-                title: 'Leave Reports',
-                href: '/report?tab=leave',
-                permission: 'View Report Leave',
-            },
-            {
-                title: 'Performance Reports',
-                href: '/report?tab=evaluation',
-                permission: 'View Report Performance',
-            },
-            {
-                title: 'Analytics',
-                href: '/report?tab=analytics',
-                permission: 'View Report Analytics',
-            },
-        ],
     },
 ];
 

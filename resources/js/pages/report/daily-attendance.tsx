@@ -637,10 +637,10 @@ export default function DailyAttendancePage() {
                                                         'PRESENT REGULAR',
                                                         'ADD CREW',
                                                         'TOTAL',
-                                                        'WWP',
+                                                        'AWP',
                                                         'AWOP/AWOL',
-                                                        'HLF/SL/PL',
-                                                        'OUTSIDE/ONWSAW',
+                                                        'NL/SL/VL/EL',
+                                                        'OUTSIDE/CW/SD/FR',
                                                         'OVERALL TOTAL',
                                                     ].map((row) => (
                                                         <TableRow key={row}>

@@ -18,7 +18,7 @@ class PermissionSeeder extends Seeder
     $permissions = [
       // Dashboard permissions
       'View Dashboard',
-      
+
       'View Admin Management',
       // Employee permissions
       'View Employee Details',
@@ -71,6 +71,10 @@ class PermissionSeeder extends Seeder
 
       // Report permissions
       'View Report',
+      'View Report Attendance',
+      'View Report Leave',
+      'View Report Performance',
+      'View Report Analytics',
       'Add Report',
       'Update Report',
       'Delete Report',
@@ -313,6 +317,13 @@ class PermissionSeeder extends Seeder
         'View Employee Details',
         'View Attendance Details',
         'View Leave',
+
+        // Report permissions
+        'View Report',
+        'View Report Attendance',
+        'View Report Leave',
+        'View Report Performance',
+        'View Report Analytics',
 
       ],
     ];

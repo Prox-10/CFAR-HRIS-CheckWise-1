@@ -80,11 +80,6 @@ const employeeNavItems: EmployeeNavItem[] = [
             },
         ],
     },
-    {
-        title: 'Records',
-        href: '/employee-view/records',
-        icon: FileText,
-    },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

@@ -170,7 +170,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
         input.click(); // Trigger the file input click to open file explorer
     };
 
-    // Generate unique Add Crew employee ID (AC + 6 digits)
+    // Generate unique Add Crew employee ID (AC + 4 digits)
     const generateAddCrewEmployeeId = async (): Promise<string> => {
         const maxAttempts = 100;
         let attempts = 0;
@@ -182,9 +182,9 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
             const existingIds = new Set(employees.map((emp: any) => emp.employeeid).filter(Boolean));
 
             do {
-                // Generate a random 6-digit number
-                const randomDigits = Math.floor(Math.random() * 900000) + 100000; // 100000 to 999999
-                const employeeId = `AC${randomDigits.toString().padStart(6, '0')}`;
+                // Generate a random 4-digit number
+                const randomDigits = Math.floor(Math.random() * 9999) + 1; // 1 to 9999
+                const employeeId = `AC${randomDigits.toString().padStart(4, '0')}`;
 
                 if (!existingIds.has(employeeId)) {
                     return employeeId;
@@ -193,20 +193,20 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
             } while (attempts < maxAttempts);
 
             // Fallback: use timestamp-based ID if too many collisions
-            const timestampDigits = Date.now().toString().slice(-6).padStart(6, '0');
+            const timestampDigits = Date.now().toString().slice(-4).padStart(4, '0');
             const fallbackId = `AC${timestampDigits}`;
             if (!existingIds.has(fallbackId)) {
                 return fallbackId;
             }
 
             // Last resort: timestamp + random digit
-            const lastResortDigits = (Date.now().toString().slice(-5) + Math.floor(Math.random() * 10)).padStart(6, '0');
+            const lastResortDigits = (Date.now().toString().slice(-3) + Math.floor(Math.random() * 10)).padStart(4, '0');
             return `AC${lastResortDigits}`;
         } catch (error) {
             console.error('Error generating employee ID:', error);
             // Fallback to simple random generation if API fails
-            const randomDigits = Math.floor(Math.random() * 900000) + 100000;
-            return `AC${randomDigits.toString().padStart(6, '0')}`;
+            const randomDigits = Math.floor(Math.random() * 9999) + 1;
+            return `AC${randomDigits.toString().padStart(4, '0')}`;
         }
     };
 
@@ -504,7 +504,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                         )}
                         {hasWorkStatus && isAddCrew && (
                             <div className="">
-                                <Label>Employee ID (Auto-generated)</Label>
+                                <Label>Employee ID</Label>
                                 <Input
                                     type="text"
                                     value={data.employeeid || 'Generating...'}
@@ -512,8 +512,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     className="border-green-300 bg-gray-50 focus:border-cfar-500"
                                     aria-invalid={!!errors.employeeid}
                                 />
-                                <InputError message={errors.employeeid} />
-                                {data.employeeid && <p className="mt-1 text-xs text-green-600">Auto-generated ID: {data.employeeid}</p>}
+                                {/* Can  */}
                             </div>
                         )}
                         {hasWorkStatus && (

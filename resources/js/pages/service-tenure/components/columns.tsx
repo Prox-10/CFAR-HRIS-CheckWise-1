@@ -138,22 +138,22 @@ const columns = (
             return filterValue.includes(lengthOfService);
         },
     },
-    {
-        accessorKey: 'years_claim',
-        header: 'Years Claim',
-        cell: ({ row }) => {
-            const years_claim = row.original.years_claim;
+    // {
+    //     accessorKey: 'years_claim',
+    //     header: 'Years Claim',
+    //     cell: ({ row }) => {
+    //         const years_claim = row.original.years_claim;
 
-            return <span className={`rounded px-2 py-1 text-xs font-medium `}>{years_claim}</span>;
-        },
-        filterFn: (row, columnId, filterValue) => {
-            if (!filterValue || filterValue.length === 0) return true;
+    //         return <span className={`rounded px-2 py-1 text-xs font-medium `}>{years_claim}</span>;
+    //     },
+    //     filterFn: (row, columnId, filterValue) => {
+    //         if (!filterValue || filterValue.length === 0) return true;
 
-            const yearsClaim = row.getValue(columnId);
+    //         const yearsClaim = row.getValue(columnId);
 
-            return filterValue.includes(yearsClaim);    
-        },
-    },
+    //         return filterValue.includes(yearsClaim);    
+    //     },
+    // },
     {
         accessorKey: 'status',
         header: 'Status',
