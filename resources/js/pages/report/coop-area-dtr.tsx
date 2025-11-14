@@ -155,7 +155,7 @@ export default function CoopAreaDTRPage() {
         if (employee?.time_in && employee?.time_out) {
             return 'AWP';
         } else if (!employee?.time_in && !employee?.time_out) {
-            return 'AWOP';
+            return '';
         }
         return 'SL';
     };
@@ -185,21 +185,19 @@ export default function CoopAreaDTRPage() {
                             <Card>
                                 <CardContent className="p-4">
                                     <div className="flex flex-col gap-2">
-                                        
                                         <div className="flex w-full flex-row items-center justify-center">
                                             <div className="flex flex-col items-start">
                                                 <div className="text-base font-semibold">COOP AREA Daily Time Record (DTR)</div>
-                                               
                                             </div>
                                         </div>
-                                         <div className="flex w-full flex-row items-center justify-start">
-                                             <div className="flex flex-col items-start">
-                                             <div className="text-sm font-semibold">CFARBEMPCO</div>
+                                        <div className="flex w-full flex-row items-center justify-start">
+                                            <div className="flex flex-col items-start">
+                                                <div className="text-sm font-semibold">CFARBEMPCO</div>
                                                 <div className="mt-2 text-sm">
                                                     <span className="font-bold">DATE:</span> {titleDate}
                                                 </div>
                                             </div>
-                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* COOP AREA Table */}

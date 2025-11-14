@@ -32,16 +32,17 @@ const formatTimeForPDF = (time: string | undefined | null): string => {
 const styles = StyleSheet.create({
     page: {
         backgroundColor: '#fff',
-        padding: 8,
+        padding: 4,
         fontFamily: 'Helvetica',
-        fontSize: 30,
+        fontSize: 10,
     },
     headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 3,
-        paddingHorizontal: 10,
+        marginBottom: 2,
+        paddingHorizontal: 5,
+        marginTop: 20,
     },
     logo: {
         width: 50,
@@ -51,21 +52,21 @@ const styles = StyleSheet.create({
     header: {
         flex: 1,
         textAlign: 'center',
-        marginTop: 10,
+        marginTop: 2,
     },
     companyName: {
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 'bold',
     },
     code: {
-        fontSize: 7,
-        marginBottom: 1,
+        fontSize: 8,
+        marginBottom: 0.5,
     },
     title: {
-        fontSize: 7,
+        fontSize: 10,
         fontWeight: 'bold',
         textDecoration: 'underline',
-        marginBottom: 3,
+        marginBottom: 2,
     },
 
     // --- Table Layout ---
@@ -74,19 +75,19 @@ const styles = StyleSheet.create({
         width: '100%',
         borderWidth: 0.8,
         borderColor: '#000',
-        marginTop: 10,
+        marginTop: 20,
     },
     tableRow: {
         flexDirection: 'row',
         borderBottomWidth: 0.8,
         borderColor: '#000',
-        minHeight: 10,
+        minHeight: 6,
     },
     cell: {
         borderRightWidth: 0.8,
         borderColor: '#000',
         justifyContent: 'center',
-        paddingVertical: 1,
+        paddingVertical: 0.5,
     },
     text: {
         fontSize: 6,
@@ -99,19 +100,19 @@ const styles = StyleSheet.create({
     leftAlignText: {
         fontSize: 6,
         textAlign: 'left',
-        paddingLeft: 2,
+        paddingLeft: 1,
     },
 
     // --- Column Widths ---
-    colSchedule: { width: '12%', padding: 0.5 },
-    colNumber: { width: '1.5%', padding: 0.5 },
-    colWorker: { width: '10%', padding: 0.5 },
+    colSchedule: { width: '12%', padding: 0.3 },
+    colNumber: { width: '1.5%', padding: 0.3 },
+    colWorker: { width: '10%', padding: 0.3 },
     colDay: { width: `${(76.5 / 7).toFixed(2)}%` }, // evenly divide remaining 76.5%
 
     dayLabelCell: {
         borderBottomWidth: 0.8,
         borderColor: '#000',
-        paddingVertical: 2,
+        paddingVertical: 1,
         backgroundColor: '#e8e8e8',
     },
     inOutContainer: {
@@ -123,18 +124,18 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRightWidth: 0.8,
         borderColor: '#000',
-        paddingVertical: 2,
+        paddingVertical: 1,
         backgroundColor: '#e8e8e8',
         justifyContent: 'center',
     },
     outCell: {
         flex: 1,
-        paddingVertical: 2,
+        paddingVertical: 1,
         backgroundColor: '#e8e8e8',
         justifyContent: 'center',
     },
     inOutText: {
-        fontSize: 5,
+        fontSize: 6,
         textAlign: 'center',
         fontWeight: 'bold',
     },
@@ -142,22 +143,22 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRightWidth: 0.8,
         borderColor: '#000',
-        paddingVertical: 1,
+        paddingVertical: 0.5,
         justifyContent: 'center',
         alignItems: 'center',
     },
     timeCellLast: {
         flex: 1,
-        paddingVertical: 1,
+        paddingVertical: 0.5,
         justifyContent: 'center',
         alignItems: 'center',
     },
     timeText: {
-        fontSize: 5,
+        fontSize: 6,
         textAlign: 'center',
     },
     emptyCell: {
-        minHeight: 8,
+        minHeight: 6,
     },
     leaveCell: {
         width: '23.5%',
@@ -244,7 +245,7 @@ export default function PackingPlantPDF({
 
         return (
             <Document>
-                <Page size="LEGAL" orientation="portrait" style={styles.page}>
+                <Page size="A4" orientation="portrait" style={styles.page}>
                     {/* Header */}
                     <View style={styles.headerContainer}>
                         {/* <Image src="/Logo.png" style={styles.logo} /> */}
@@ -303,7 +304,7 @@ export default function PackingPlantPDF({
                                 return (
                                     <View key={`${pIndex}-${i}`} style={styles.tableRow}>
                                         {i === 0 ? (
-                                            <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 3 }]}>
+                                            <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 1 }]}>
                                                 <Text style={styles.leftAlignText}>{p.name}</Text>
                                             </View>
                                         ) : (
@@ -341,7 +342,7 @@ export default function PackingPlantPDF({
                             if (isSupportAbsent) {
                                 const leaveRows = leaveTypes.map((leave, leaveIndex) => (
                                     <View key={`leave-${leaveIndex}`} style={styles.tableRow}>
-                                        <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 3 }]}>
+                                        <View style={[styles.cell, styles.colSchedule, { textAlign: 'left', paddingLeft: 1 }]}>
                                             <Text style={styles.leftAlignText}>{leave}</Text>
                                         </View>
                                         <View style={[styles.cell, styles.colNumber]} />
@@ -350,7 +351,7 @@ export default function PackingPlantPDF({
                                             const leaveValue = leaveData[`${leave}_${dIndex}`] || '';
                                             return (
                                                 <View key={dIndex} style={[styles.colDay, styles.cell, { padding: 0 }]}>
-                                                    <View style={{ flexDirection: 'row', minHeight: 10 }}>
+                                                    <View style={{ flexDirection: 'row', minHeight: 8 }}>
                                                         <View style={[styles.timeCell, { borderRightWidth: 0.8 }]}>
                                                             <Text style={styles.timeText}>{leaveValue}</Text>
                                                         </View>

@@ -209,7 +209,7 @@ export default function CoopAreaDTRPDF({ reportDate, data }: CoopAreaDTRPDFProps
         if (employee?.time_in && employee?.time_out) {
             remarks = 'AWP'; // Present with work
         } else if (!employee?.time_in && !employee?.time_out) {
-            remarks = 'AWOP'; // Absent without pay
+            remarks = ''; // Empty when no time in/out
         } else {
             remarks = 'SL'; // Sick Leave or other
         }
