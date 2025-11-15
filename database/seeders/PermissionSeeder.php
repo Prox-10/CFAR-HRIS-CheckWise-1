@@ -309,8 +309,9 @@ class PermissionSeeder extends Seeder
         'View Attendance Details',
         'View Leave',
         'View Evaluation By Department',
+        'View Leave Credit Summary',
 
-
+        'View Absence Credit Summary',
         'Delete Evaluation',
         'Start Evaluation Rating',
         'Refresh Evaluation List',

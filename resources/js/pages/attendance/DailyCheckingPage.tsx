@@ -121,7 +121,10 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     const [checkedBy, setCheckedBy] = useState('');
     const [showPreview, setShowPreview] = useState(false);
     const [selectedMicroteam, setSelectedMicroteam] = useState<'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null>(null);
-    const [allSelectedEmployees, setAllSelectedEmployees] = useState<Set<string>>(new Set());
+    // Track selected employees by microteam and date: { microteam: { date: Set<employeeNames> } }
+    const [allSelectedEmployees, setAllSelectedEmployees] = useState<{
+        [microteam: string]: { [date: string]: Set<string> };
+    }>({});
     const [loadingMicroteam, setLoadingMicroteam] = useState(false);
 
     // Initialize assignment data structure
@@ -244,49 +247,71 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
         const fetchGlobalSelectedEmployees = async () => {
             try {
-                const days = getDaysOfWeek();
-                const weekStartDate = days[0].toISOString().split('T')[0];
+                // Build structure of selected employees by microteam and date
+                // We need to fetch assignments for each date in the week to properly track by date
+                const weekDays = getDaysOfWeek();
+                const globalSelected: { [microteam: string]: { [date: string]: Set<string> } } = {};
 
-                // Fetch all assignments for this week to get globally selected employees
-                const response = await axios.get('/api/daily-checking/for-date', {
-                    params: { date: weekStartDate },
-                });
+                // For each day in the week, fetch assignments to get the date-specific selections
+                const fetchPromises = weekDays.map(async (day) => {
+                    const dayDateStr = day.toISOString().split('T')[0];
+                    try {
+                        const dayResponse = await axios.get('/api/daily-checking/for-date', {
+                            params: { date: dayDateStr },
+                        });
 
-                // Build set of all selected employees across all microteams (including Add Crew)
-                const globalSelected = new Set<string>();
-                if (response.data.microteams) {
-                    Object.values(response.data.microteams).forEach((microteam: any) => {
-                        if (Array.isArray(microteam)) {
-                            microteam.forEach((emp: any) => {
-                                if (emp.employee_name) {
-                                    globalSelected.add(emp.employee_name);
+                        // Process microteams
+                        if (dayResponse.data.microteams) {
+                            Object.keys(dayResponse.data.microteams).forEach((microteamKey) => {
+                                if (!globalSelected[microteamKey]) {
+                                    globalSelected[microteamKey] = {};
+                                }
+                                if (!globalSelected[microteamKey][dayDateStr]) {
+                                    globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                }
+
+                                const microteam = dayResponse.data.microteams[microteamKey];
+                                if (Array.isArray(microteam)) {
+                                    microteam.forEach((emp: any) => {
+                                        if (emp.employee_name) {
+                                            globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                        }
+                                    });
                                 }
                             });
                         }
-                    });
-                }
-                // Also include Add Crew employees (handle both old array format and new grouped format)
-                if (response.data.add_crew) {
-                    if (Array.isArray(response.data.add_crew)) {
-                        // Old format: array
-                        response.data.add_crew.forEach((emp: any) => {
-                            if (emp.employee_name) {
-                                globalSelected.add(emp.employee_name);
-                            }
-                        });
-                    } else {
-                        // New format: grouped by microteam
-                        Object.values(response.data.add_crew).forEach((microteamAddCrew: any) => {
-                            if (Array.isArray(microteamAddCrew)) {
-                                microteamAddCrew.forEach((emp: any) => {
-                                    if (emp.employee_name) {
-                                        globalSelected.add(emp.employee_name);
+
+                        // Process Add Crew
+                        if (dayResponse.data.add_crew) {
+                            if (Array.isArray(dayResponse.data.add_crew)) {
+                                // Old format: array - we can't determine microteam, so skip
+                            } else {
+                                // New format: grouped by microteam
+                                Object.keys(dayResponse.data.add_crew).forEach((microteamKey) => {
+                                    if (!globalSelected[microteamKey]) {
+                                        globalSelected[microteamKey] = {};
+                                    }
+                                    if (!globalSelected[microteamKey][dayDateStr]) {
+                                        globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                    }
+
+                                    const microteamAddCrew = dayResponse.data.add_crew[microteamKey];
+                                    if (Array.isArray(microteamAddCrew)) {
+                                        microteamAddCrew.forEach((emp: any) => {
+                                            if (emp.employee_name) {
+                                                globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                            }
+                                        });
                                     }
                                 });
                             }
-                        });
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching assignments for date ${dayDateStr}:`, error);
                     }
-                }
+                });
+
+                await Promise.all(fetchPromises);
                 setAllSelectedEmployees(globalSelected);
             } catch (error) {
                 console.error('Error fetching existing assignments:', error);
@@ -408,18 +433,30 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             [field]: prev[field].map((item, i) => (i === slotIndex ? value : item)),
         }));
 
-        // Update global selected employees set (including Add Crew)
-        // All employees should be tracked globally to prevent duplicate selection across microteams
-        setAllSelectedEmployees((prev) => {
-            const newSet = new Set(prev);
-            if (previousValue) {
-                newSet.delete(previousValue);
-            }
-            if (value) {
-                newSet.add(value);
-            }
-            return newSet;
-        });
+        // Update global selected employees set by microteam and date
+        // Only prevent selection if same employee is selected for same microteam AND same date
+        if (selectedMicroteam && date) {
+            setAllSelectedEmployees((prev) => {
+                const updated = { ...prev };
+                if (!updated[selectedMicroteam]) {
+                    updated[selectedMicroteam] = {};
+                }
+                if (!updated[selectedMicroteam][date]) {
+                    updated[selectedMicroteam][date] = new Set<string>();
+                }
+
+                const dateSet = new Set(updated[selectedMicroteam][date]);
+                if (previousValue) {
+                    dateSet.delete(previousValue);
+                }
+                if (value) {
+                    dateSet.add(value);
+                }
+
+                updated[selectedMicroteam][date] = dateSet;
+                return updated;
+            });
+        }
 
         // Auto-populate time_in and time_out when employee is selected
         if (value) {
@@ -570,59 +607,90 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             setAssignmentData(initialData);
             setTimeData(initialTimeData);
 
-            // Update global selected employees from all microteams (including Add Crew)
+            // Update global selected employees by microteam and date
             try {
-                const globalResponse = await axios.get('/api/daily-checking/for-date', {
-                    params: { date: weekStartDate },
-                });
+                const days = getDaysOfWeek();
+                const globalSelected: { [microteam: string]: { [date: string]: Set<string> } } = {};
 
-                const globalSelected = new Set<string>();
-                if (globalResponse.data.microteams) {
-                    Object.values(globalResponse.data.microteams).forEach((microteam: any) => {
-                        if (Array.isArray(microteam)) {
-                            microteam.forEach((emp: any) => {
-                                if (emp.employee_name) {
-                                    globalSelected.add(emp.employee_name);
+                // For each day in the week, fetch assignments to get the date-specific selections
+                const fetchPromises = days.map(async (day) => {
+                    const dayDateStr = day.toISOString().split('T')[0];
+                    try {
+                        const dayResponse = await axios.get('/api/daily-checking/for-date', {
+                            params: { date: dayDateStr },
+                        });
+
+                        // Process microteams
+                        if (dayResponse.data.microteams) {
+                            Object.keys(dayResponse.data.microteams).forEach((microteamKey) => {
+                                if (!globalSelected[microteamKey]) {
+                                    globalSelected[microteamKey] = {};
+                                }
+                                if (!globalSelected[microteamKey][dayDateStr]) {
+                                    globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                }
+
+                                const microteam = dayResponse.data.microteams[microteamKey];
+                                if (Array.isArray(microteam)) {
+                                    microteam.forEach((emp: any) => {
+                                        if (emp.employee_name) {
+                                            globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                        }
+                                    });
                                 }
                             });
                         }
-                    });
-                }
-                // Also include Add Crew employees (handle both old array format and new grouped format)
-                if (globalResponse.data.add_crew) {
-                    if (Array.isArray(globalResponse.data.add_crew)) {
-                        // Old format: array
-                        globalResponse.data.add_crew.forEach((emp: any) => {
-                            if (emp.employee_name) {
-                                globalSelected.add(emp.employee_name);
-                            }
-                        });
-                    } else {
-                        // New format: grouped by microteam
-                        Object.values(globalResponse.data.add_crew).forEach((microteamAddCrew: any) => {
-                            if (Array.isArray(microteamAddCrew)) {
-                                microteamAddCrew.forEach((emp: any) => {
-                                    if (emp.employee_name) {
-                                        globalSelected.add(emp.employee_name);
+
+                        // Process Add Crew
+                        if (dayResponse.data.add_crew) {
+                            if (Array.isArray(dayResponse.data.add_crew)) {
+                                // Old format: array - we can't determine microteam, so skip
+                            } else {
+                                // New format: grouped by microteam
+                                Object.keys(dayResponse.data.add_crew).forEach((microteamKey) => {
+                                    if (!globalSelected[microteamKey]) {
+                                        globalSelected[microteamKey] = {};
+                                    }
+                                    if (!globalSelected[microteamKey][dayDateStr]) {
+                                        globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                    }
+
+                                    const microteamAddCrew = dayResponse.data.add_crew[microteamKey];
+                                    if (Array.isArray(microteamAddCrew)) {
+                                        microteamAddCrew.forEach((emp: any) => {
+                                            if (emp.employee_name) {
+                                                globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                            }
+                                        });
                                     }
                                 });
                             }
-                        });
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching assignments for date ${dayDateStr}:`, error);
                     }
-                }
+                });
+
+                await Promise.all(fetchPromises);
                 setAllSelectedEmployees(globalSelected);
             } catch (error) {
                 console.error('Error loading global selected employees:', error);
-                // Fallback to current microteam selection
-                const selectedEmps = new Set<string>();
-                Object.values(initialData).forEach((slots) => {
-                    slots.forEach((emp) => {
-                        if (emp) {
-                            selectedEmps.add(emp);
-                        }
+                // Fallback: initialize with current microteam selection for current date
+                if (selectedMicroteam && date) {
+                    const selectedEmps = new Set<string>();
+                    Object.values(initialData).forEach((slots) => {
+                        slots.forEach((emp) => {
+                            if (emp) {
+                                selectedEmps.add(emp);
+                            }
+                        });
                     });
-                });
-                setAllSelectedEmployees(selectedEmps);
+                    setAllSelectedEmployees({
+                        [selectedMicroteam]: {
+                            [date]: selectedEmps,
+                        },
+                    });
+                }
             }
         } catch (error) {
             console.error('Error loading microteam data:', error);
@@ -645,9 +713,29 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         return selected;
     };
 
-    // Check if employee is selected in any microteam
+    // Check if employee is selected on the CURRENT date across ANY microteam
+    // This prevents selecting the same employee on the same date in different microteams
+    // But allows selecting the same employee on different dates (regardless of microteam)
+    // Example: If Mr. Kyle is selected in M1 on 2025-11-10, he cannot be selected in M2 on 2025-11-10
+    // But Mr. Kyle can be selected in M1 on 2025-11-10 and again in M1 (or any microteam) on 2025-11-11
     const isEmployeeSelectedGlobally = (employeeName: string): boolean => {
-        return allSelectedEmployees.has(employeeName);
+        if (!date) return false;
+
+        // Check across ALL microteams for the current date
+        // If employee is selected in ANY microteam on this date, return true
+        for (const microteamKey in allSelectedEmployees) {
+            const microteamSelections = allSelectedEmployees[microteamKey];
+            if (!microteamSelections) continue;
+
+            const dateSelections = microteamSelections[date];
+            if (!dateSelections) continue;
+
+            if (dateSelections.has(employeeName)) {
+                return true; // Employee is already selected on this date in some microteam
+            }
+        }
+
+        return false; // Employee is not selected on this date in any microteam
     };
 
     // Filter employees based on position field and attendance for selected week
@@ -817,63 +905,97 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                     duration: 5000,
                 });
 
-                // Refresh global selected employees from API after successful save (including Add Crew)
+                // Refresh global selected employees from API after successful save (by microteam and date)
                 // NOTE: We do NOT clear assignmentData or timeData - they persist for the whole week
                 // This allows users to continue editing the week without losing their work
                 try {
-                    const refreshResponse = await axios.get('/api/daily-checking/for-date', {
-                        params: { date: weekStartDate },
-                    });
+                    const days = getDaysOfWeek();
+                    const globalSelected: { [microteam: string]: { [date: string]: Set<string> } } = {};
 
-                    const globalSelected = new Set<string>();
-                    if (refreshResponse.data.microteams) {
-                        Object.values(refreshResponse.data.microteams).forEach((microteam: any) => {
-                            if (Array.isArray(microteam)) {
-                                microteam.forEach((emp: any) => {
-                                    if (emp.employee_name) {
-                                        globalSelected.add(emp.employee_name);
+                    // For each day in the week, fetch assignments to get the date-specific selections
+                    const fetchPromises = days.map(async (day) => {
+                        const dayDateStr = day.toISOString().split('T')[0];
+                        try {
+                            const dayResponse = await axios.get('/api/daily-checking/for-date', {
+                                params: { date: dayDateStr },
+                            });
+
+                            // Process microteams
+                            if (dayResponse.data.microteams) {
+                                Object.keys(dayResponse.data.microteams).forEach((microteamKey) => {
+                                    if (!globalSelected[microteamKey]) {
+                                        globalSelected[microteamKey] = {};
+                                    }
+                                    if (!globalSelected[microteamKey][dayDateStr]) {
+                                        globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                    }
+
+                                    const microteam = dayResponse.data.microteams[microteamKey];
+                                    if (Array.isArray(microteam)) {
+                                        microteam.forEach((emp: any) => {
+                                            if (emp.employee_name) {
+                                                globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                            }
+                                        });
                                     }
                                 });
                             }
-                        });
-                    }
-                    // Also include Add Crew employees (handle both old array format and new grouped format)
-                    if (refreshResponse.data.add_crew) {
-                        if (Array.isArray(refreshResponse.data.add_crew)) {
-                            // Old format: array
-                            refreshResponse.data.add_crew.forEach((emp: any) => {
-                                if (emp.employee_name) {
-                                    globalSelected.add(emp.employee_name);
-                                }
-                            });
-                        } else {
-                            // New format: grouped by microteam
-                            Object.values(refreshResponse.data.add_crew).forEach((microteamAddCrew: any) => {
-                                if (Array.isArray(microteamAddCrew)) {
-                                    microteamAddCrew.forEach((emp: any) => {
-                                        if (emp.employee_name) {
-                                            globalSelected.add(emp.employee_name);
+
+                            // Process Add Crew
+                            if (dayResponse.data.add_crew) {
+                                if (Array.isArray(dayResponse.data.add_crew)) {
+                                    // Old format: array - we can't determine microteam, so skip
+                                } else {
+                                    // New format: grouped by microteam
+                                    Object.keys(dayResponse.data.add_crew).forEach((microteamKey) => {
+                                        if (!globalSelected[microteamKey]) {
+                                            globalSelected[microteamKey] = {};
+                                        }
+                                        if (!globalSelected[microteamKey][dayDateStr]) {
+                                            globalSelected[microteamKey][dayDateStr] = new Set<string>();
+                                        }
+
+                                        const microteamAddCrew = dayResponse.data.add_crew[microteamKey];
+                                        if (Array.isArray(microteamAddCrew)) {
+                                            microteamAddCrew.forEach((emp: any) => {
+                                                if (emp.employee_name) {
+                                                    globalSelected[microteamKey][dayDateStr].add(emp.employee_name);
+                                                }
+                                            });
                                         }
                                     });
                                 }
-                            });
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching assignments for date ${dayDateStr}:`, error);
                         }
-                    }
+                    });
+
+                    await Promise.all(fetchPromises);
                     setAllSelectedEmployees(globalSelected);
 
-                    // Also update employeesWithAttendance to reflect saved data
-                    setEmployeesWithAttendance(globalSelected);
+                    // Also update employeesWithAttendance to reflect saved data (flatten for backward compatibility)
+                    const allEmployeesSet = new Set<string>();
+                    Object.values(globalSelected).forEach((microteamData) => {
+                        Object.values(microteamData).forEach((dateSet) => {
+                            dateSet.forEach((empName) => allEmployeesSet.add(empName));
+                        });
+                    });
+                    setEmployeesWithAttendance(allEmployeesSet);
                 } catch (error) {
                     console.error('Error refreshing global selected employees:', error);
                     // Fallback to current selection if API call fails
-                    const currentSelected = getSelectedEmployees();
-                    setAllSelectedEmployees((prev) => {
-                        const newSet = new Set(prev);
-                        currentSelected.forEach((empName) => {
-                            newSet.add(empName);
+                    if (selectedMicroteam && date) {
+                        const currentSelected = getSelectedEmployees();
+                        setAllSelectedEmployees((prev) => {
+                            const updated = { ...prev };
+                            if (!updated[selectedMicroteam]) {
+                                updated[selectedMicroteam] = {};
+                            }
+                            updated[selectedMicroteam][date] = new Set(currentSelected);
+                            return updated;
                         });
-                        return newSet;
-                    });
+                    }
                 }
 
                 // DO NOT clear assignmentData or timeData - they should persist for the whole week
@@ -1175,14 +1297,22 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                     {getFilteredEmployees(position.field).map((emp) => {
                                                                         const selectedEmployees = getSelectedEmployees();
                                                                         const isSelectedInCurrent = selectedEmployees.includes(emp.employee_name);
-                                                                        const isSelectedGlobally = isEmployeeSelectedGlobally(emp.employee_name);
+                                                                        const isSelectedInSameMicroteamAndDate = isEmployeeSelectedGlobally(
+                                                                            emp.employee_name,
+                                                                        );
                                                                         const isCurrentSelection =
                                                                             assignmentData[position.field]?.[slotIndex] === emp.employee_name;
 
-                                                                        // For all positions (including SUPPORT: ABSENT), disable if selected in current form or in other microteams
+                                                                        // Disable only if:
+                                                                        // 1. Employee is already selected in current form (same microteam, same date) AND it's not the current selection
+                                                                        // 2. Employee is selected on the same date in ANY microteam (from saved data) AND it's not the current selection
+                                                                        // This prevents selecting the same employee on the same date across different microteams
+                                                                        // But allows selecting the same employee on different dates (regardless of microteam)
                                                                         const shouldDisable =
                                                                             (isSelectedInCurrent && !isCurrentSelection) ||
-                                                                            (isSelectedGlobally && !isCurrentSelection && !isSelectedInCurrent);
+                                                                            (isSelectedInSameMicroteamAndDate &&
+                                                                                !isCurrentSelection &&
+                                                                                !isSelectedInCurrent);
 
                                                                         return (
                                                                             <SelectItem

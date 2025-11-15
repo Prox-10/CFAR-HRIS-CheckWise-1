@@ -1,5 +1,4 @@
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartLineLabelLeave } from '@/components/chartlinelabel-leave';
 import { Main } from '@/components/customize/main';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
@@ -14,8 +13,8 @@ import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Users, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { CreditDisplay, CreditSummary } from './components/credit-display';
+import { useEffect, useMemo, useState } from 'react';
+import { CreditDisplay } from './components/credit-display';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -61,9 +60,37 @@ export default function LeaveCredit({ employees = [], monthlyLeaveStats = [], us
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(12);
 
-    // Filter employees based on search and department
+    // Get available departments based on user permissions
+    const availableDepartments = useMemo(() => {
+        if (user_permissions?.is_super_admin) {
+            // SuperAdmin can see all departments
+            return departments;
+        }
+        if (user_permissions?.is_supervisor && user_permissions?.supervised_departments?.length > 0) {
+            // Supervisor can only see their supervised departments
+            return user_permissions.supervised_departments;
+        }
+        // Default: show all departments (fallback)
+        return departments;
+    }, [user_permissions]);
+
+    // Reset selected department if it's not in available departments
+    useEffect(() => {
+        if (selectedDepartment !== 'All' && !availableDepartments.includes(selectedDepartment)) {
+            setSelectedDepartment('All');
+        }
+    }, [availableDepartments, selectedDepartment]);
+
+    // Filter employees based on permissions, search, and department
     const filteredEmployees = useMemo(() => {
         let filtered = employees;
+
+        // Apply permission-based filtering (safety measure - backend already filters)
+        if (user_permissions?.is_supervisor && !user_permissions?.is_super_admin) {
+            if (user_permissions?.supervised_departments?.length > 0) {
+                filtered = filtered.filter((employee) => user_permissions.supervised_departments.includes(employee.department));
+            }
+        }
 
         // Apply search filter
         if (searchTerm.trim()) {
@@ -83,7 +110,7 @@ export default function LeaveCredit({ employees = [], monthlyLeaveStats = [], us
         }
 
         return filtered;
-    }, [employees, searchTerm, selectedDepartment]);
+    }, [employees, searchTerm, selectedDepartment, user_permissions]);
 
     // Pagination logic
     const totalEmployees = filteredEmployees.length;
@@ -168,7 +195,7 @@ export default function LeaveCredit({ employees = [], monthlyLeaveStats = [], us
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="All">All Departments</SelectItem>
-                                                {departments.map((dept) => (
+                                                {availableDepartments.map((dept) => (
                                                     <SelectItem key={dept} value={dept}>
                                                         {dept}
                                                     </SelectItem>

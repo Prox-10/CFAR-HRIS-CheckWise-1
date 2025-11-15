@@ -409,6 +409,67 @@ export default function DailyAttendancePage() {
         return sortEmployees(employees, addCrewSort);
     };
 
+    // Helper function to count present employees (those with both time_in and time_out)
+    const countPresentEmployees = (employees: MicroteamEmployee[]): number => {
+        return employees.filter((emp) => emp?.time_in && emp?.time_out).length;
+    };
+
+    // Calculate summary counts using useMemo for performance
+    const summaryCounts = useMemo(() => {
+        // Present Regular counts for each microteam
+        const presentRegularM1 = countPresentEmployees(microteams['MICROTEAM - 01'] || []);
+        const presentRegularM2 = countPresentEmployees(microteams['MICROTEAM - 02'] || []);
+        const presentRegularM3 = countPresentEmployees(microteams['MICROTEAM - 03'] || []);
+        const presentRegularTotal = presentRegularM1 + presentRegularM2 + presentRegularM3;
+
+        // Add Crew counts for each group
+        const addCrewM1 = countPresentEmployees(addCrew['ADD CREW - 01'] || []);
+        const addCrewM2 = countPresentEmployees(addCrew['ADD CREW - 02'] || []);
+        const addCrewM3 = countPresentEmployees(addCrew['ADD CREW - 03'] || []);
+        const addCrewTotal = addCrewM1 + addCrewM2 + addCrewM3;
+
+        // Total (Present Regular + Add Crew)
+        const totalM1 = presentRegularM1 + addCrewM1;
+        const totalM2 = presentRegularM2 + addCrewM2;
+        const totalM3 = presentRegularM3 + addCrewM3;
+        const totalOverall = presentRegularTotal + addCrewTotal;
+
+        return {
+            presentRegular: {
+                m1: presentRegularM1,
+                m2: presentRegularM2,
+                m3: presentRegularM3,
+                total: presentRegularTotal,
+            },
+            addCrew: {
+                m1: addCrewM1,
+                m2: addCrewM2,
+                m3: addCrewM3,
+                total: addCrewTotal,
+            },
+            total: {
+                m1: totalM1,
+                m2: totalM2,
+                m3: totalM3,
+                total: totalOverall,
+            },
+        };
+    }, [microteams, addCrew]);
+
+    // Helper function to get summary value for a specific row and column
+    const getSummaryValue = (rowName: string, column: 'm1' | 'm2' | 'm3' | 'total'): string => {
+        switch (rowName) {
+            case 'PRESENT REGULAR':
+                return summaryCounts.presentRegular[column].toString();
+            case 'ADD CREW':
+                return summaryCounts.addCrew[column].toString();
+            case 'TOTAL':
+                return summaryCounts.total[column].toString();
+            default:
+                return ''; // Other rows (AWP, AWOP/AWOL, etc.) remain empty for now
+        }
+    };
+
     return (
         <SidebarProvider>
             <Head title="Daily Attendance Report" />
@@ -645,10 +706,10 @@ export default function DailyAttendancePage() {
                                                     ].map((row) => (
                                                         <TableRow key={row}>
                                                             <TableCell className="text-[10px]">{row}</TableCell>
-                                                            <TableCell className="text-center text-[10px]"></TableCell>
-                                                            <TableCell className="text-center text-[10px]"></TableCell>
-                                                            <TableCell className="text-center text-[10px]"></TableCell>
-                                                            <TableCell className="text-center text-[10px]"></TableCell>
+                                                            <TableCell className="text-center text-[10px]">{getSummaryValue(row, 'm1')}</TableCell>
+                                                            <TableCell className="text-center text-[10px]">{getSummaryValue(row, 'm2')}</TableCell>
+                                                            <TableCell className="text-center text-[10px]">{getSummaryValue(row, 'm3')}</TableCell>
+                                                            <TableCell className="text-center text-[10px]">{getSummaryValue(row, 'total')}</TableCell>
                                                         </TableRow>
                                                     ))}
                                                 </TableBody>

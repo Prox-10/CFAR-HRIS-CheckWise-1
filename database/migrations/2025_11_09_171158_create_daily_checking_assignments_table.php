@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Ensure unique assignment per week, position, slot, and day
-            $table->unique(['week_start_date', 'employee_id', 'position_field', 'slot_index', 'day_index'], 'unique_daily_assignment');
+            $table->unique(['employee_id', 'position_field', 'slot_index', 'day_index'], 'unique_daily_assignment');
 
             // Index for faster queries
             $table->index(['week_start_date', 'position_field']);
