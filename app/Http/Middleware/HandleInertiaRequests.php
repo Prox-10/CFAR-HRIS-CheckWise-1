@@ -43,14 +43,14 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         $user = $request->user();
-        
+
         // Fetch user-specific notifications (latest 10)
         $notifications = collect();
         $unreadCount = 0;
-        
+
         if ($user) {
             $isSuperAdmin = $user->hasRole('Super Admin');
-            
+
             if ($isSuperAdmin) {
                 // Super admin sees all notifications
                 $notifications = Notification::orderBy('created_at', 'desc')->take(10)->get();
@@ -66,7 +66,7 @@ class HandleInertiaRequests extends Middleware
                     ->count();
             }
         }
-        
+
         $permissions = $user ? $user->getAllPermissions()->pluck('name')->toArray() : [];
 
         // Transform user data to include profile_image and roles
@@ -86,6 +86,7 @@ class HandleInertiaRequests extends Middleware
                 'updated_at' => $user->updated_at,
                 'isSupervisor' => $user->isSupervisor(),
                 'isSuperAdmin' => $user->isSuperAdmin(),
+                'isHR' => $user->isHR(),
             ];
         }
 

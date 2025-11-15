@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +19,7 @@ import { differenceInDays, format, parseISO } from 'date-fns';
 import {
     AlertCircle,
     ArrowLeft,
+    ArrowRight,
     Building,
     Camera,
     CheckCircle,
@@ -33,6 +35,8 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { hrStatuses, supervisorStatuses } from '../data/data';
+
 const leaveTypes = ['Annual Leave', 'Sick Leave', 'Emergency Leave', 'Maternity Leave', 'Paternity Leave', 'Bereavement Leave', 'Personal Leave'];
 const leaveStatuses = ['Pending', 'Approved', 'Rejected', 'Cancelled'];
 
@@ -40,6 +44,13 @@ export default function LeaveEditPage() {
     const leave = (usePage().props as any).leave;
     const employee = leave.employee || {};
     const { can } = usePermission();
+    const page = usePage();
+    const user = (page.props as any).auth?.user;
+    // Use the boolean flags from HandleInertiaRequests middleware
+    const isSupervisor = user?.isSupervisor || false;
+    const isHR = user?.isHR || false;
+    const isSuperAdmin = user?.isSuperAdmin || false;
+
     const { data, setData, put, processing, errors } = useForm({
         // Employee Information (read-only)
         picture: employee.picture || '',
@@ -57,7 +68,13 @@ export default function LeaveEditPage() {
         leave_date_approved: leave.leave_date_approved || '',
         leave_reason: leave.leave_reason || '',
         leave_comments: leave.leave_comments || '',
-        leave_status: leave.status || 'Pending',
+        leave_status: leave.leave_status || leave.status || 'Pending',
+        // Supervisor approval fields
+        supervisor_status: leave.supervisor_status || null,
+        supervisor_comments: leave.supervisor_comments || '',
+        // HR approval fields
+        hr_status: leave.hr_status || null,
+        hr_comments: leave.hr_comments || '',
     });
 
     const [openApproved, setOpenApproved] = useState(false);
@@ -75,31 +92,49 @@ export default function LeaveEditPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!data.leave_date_approved) {
-            setData('leave_date_approved', format(new Date(), 'yyyy-MM-dd'));
-            setTimeout(() => {
-                put(route('leave.update', leave.id), {
-                    onSuccess: () => {
-                        toast.success('Leave status update successfully');
-                    },
-                    onError: (errors: any) => {
-                        toast.error('Failed to update leave date approved');
-                    },
-                    preserveScroll: true,
-                });
-            }, 0);
-        } else {
-            put(route('leave.update', leave.id), {
-                onSuccess: () => {
-                    toast.success('Leave status update successfully');
-                },
-                onError: (errors: any) => {
-                    toast.error('Failed to update leave status');
-                },
-                preserveScroll: true,
-            });
-        }
+
+        // Determine which action is being taken
+        const isSupervisorAction =
+            (isSupervisor || isSuperAdmin) &&
+            (leave.supervisor_status === 'pending' || !leave.supervisor_status) &&
+            data.supervisor_status &&
+            data.supervisor_status !== 'pending';
+
+        const isHRAction =
+            (isHR || isSuperAdmin) &&
+            leave.supervisor_status === 'approved' &&
+            (leave.hr_status === 'pending' || !leave.hr_status) &&
+            data.hr_status &&
+            data.hr_status !== 'pending';
+
+        put(route('leave.update', leave.id), {
+            onSuccess: () => {
+                if (isSupervisorAction) {
+                    toast.success('Supervisor approval submitted successfully!');
+                } else if (isHRAction) {
+                    toast.success('HR approval submitted successfully!');
+                } else {
+                    toast.success('Leave updated successfully');
+                }
+            },
+            onError: (errors: any) => {
+                toast.error('Failed to update leave approval');
+                console.error('Leave update errors:', errors);
+            },
+            preserveScroll: true,
+        });
     };
+
+    // Calculate progress for approval workflow (0-100)
+    const calculateProgress = () => {
+        if (leave.supervisor_status === 'rejected') return 0; // Rejected at stage 1
+        if (leave.hr_status === 'rejected') return 50; // Rejected at stage 2
+        if (leave.hr_status === 'approved') return 100; // Fully approved
+        if (leave.supervisor_status === 'approved') return 50; // Supervisor approved, waiting for HR
+        return 0; // Pending supervisor approval
+    };
+
+    const progress = calculateProgress();
 
     const handleBack = () => {
         router.visit(route('leave.index'));
@@ -408,19 +443,158 @@ export default function LeaveEditPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="leave-type" className="text-sm font-medium">
-                                    Leave Type
-                                </Label>
-                                <Input
-                                    id="leave-type"
-                                    value={data.leave_type}
-                                    readOnly
-                                    className="mt-[8px] cursor-not-allowed bg-gray-100 transition-all focus:ring-2 focus:ring-primary/20"
-                                />
-                                {errors.leave_type && <div className="text-xs text-red-500">{errors.leave_type}</div>}
+                        <div className="space-y-2">
+                            <Label htmlFor="leave-type" className="text-sm font-medium">
+                                Leave Type
+                            </Label>
+                            <Input
+                                id="leave-type"
+                                value={data.leave_type}
+                                readOnly
+                                className="mt-[8px] cursor-not-allowed bg-gray-100 transition-all focus:ring-2 focus:ring-primary/20"
+                            />
+                            {errors.leave_type && <div className="text-xs text-red-500">{errors.leave_type}</div>}
+                        </div>
+                        {/* Approval Stages - Full Width */}
+                        <div className="flex w-full items-start justify-between gap-4">
+                            {/* Stage 1: Supervisor Approval - Left */}
+                            <div className="flex flex-1 flex-col justify-start">
+                                <div className="mb-2 flex items-center gap-2">
+                                    {leave.supervisor_status === 'approved' ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                    ) : leave.supervisor_status === 'rejected' ? (
+                                        <XCircle className="h-5 w-5 text-red-600" />
+                                    ) : (
+                                        <Clock className="h-5 w-5 text-yellow-600" />
+                                    )}
+                                    <Label className="text-sm font-semibold">Stage 1: Supervisor Approval</Label>
+                                </div>
+                                <div className={`ml-7 space-y-2 ${isHR && !isSuperAdmin ? 'opacity-50' : ''}`}>
+                                    <div className="text-xs text-muted-foreground">
+                                        Status: <span className="font-medium capitalize">{leave.supervisor_status || 'Pending'}</span>
+                                    </div>
+                                    {leave.supervisor_approver && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Approved by: <span className="font-medium">{leave.supervisor_approver.name}</span>
+                                        </div>
+                                    )}
+                                    {leave.supervisor_approved_at && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Date: <span className="font-medium">{format(parseISO(leave.supervisor_approved_at), 'PPP')}</span>
+                                        </div>
+                                    )}
+                                    {(isSupervisor || isSuperAdmin) &&
+                                        !(isHR && !isSuperAdmin) &&
+                                        (leave.supervisor_status === 'pending' || !leave.supervisor_status) && (
+                                            <div className="mt-3 space-y-2">
+                                                <Select
+                                                    value={data.supervisor_status || 'pending'}
+                                                    onValueChange={(val) => setData('supervisor_status', val)}
+                                                    disabled={isHR && !isSuperAdmin}
+                                                >
+                                                    <SelectTrigger className="w-full" disabled={isHR && !isSuperAdmin}>
+                                                        <SelectValue placeholder="Select action" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {supervisorStatuses
+                                                            .filter((s) => s.value !== 'pending')
+                                                            .map((status) => (
+                                                                <SelectItem key={status.value} value={status.value}>
+                                                                    {status.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Textarea
+                                                    placeholder="Supervisor comments (optional)"
+                                                    value={data.supervisor_comments}
+                                                    onChange={(e) => setData('supervisor_comments', e.target.value)}
+                                                    rows={2}
+                                                    className="resize-none"
+                                                    disabled={isHR && !isSuperAdmin}
+                                                />
+                                            </div>
+                                        )}
+                                    {leave.supervisor_comments && (
+                                        <div className="mt-2 rounded bg-muted p-2 text-xs text-muted-foreground">
+                                            Comments: {leave.supervisor_comments}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Arrow - Center */}
+                            <div className="flex flex-shrink-0 items-center justify-center px-4">
+                                <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+
+                            {/* Stage 2: HR Approval - Right */}
+                            <div className="flex flex-1 flex-col items-end justify-end">
+                                <div className="mb-2 flex items-center justify-end gap-2">
+                                    {leave.hr_status === 'approved' ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                    ) : leave.hr_status === 'rejected' ? (
+                                        <XCircle className="h-5 w-5 text-red-600" />
+                                    ) : leave.supervisor_status === 'approved' ? (
+                                        <Clock className="h-5 w-5 text-yellow-600" />
+                                    ) : (
+                                        <Clock className="h-5 w-5 text-gray-400" />
+                                    )}
+                                    <Label className="text-sm font-semibold">Stage 2: HR Approval</Label>
+                                </div>
+                                <div className="mr-7 space-y-2 text-right">
+                                    <div className="text-xs text-muted-foreground">
+                                        Status:{' '}
+                                        <span className="font-medium capitalize">
+                                            {leave.supervisor_status !== 'approved' ? 'Waiting for Supervisor' : leave.hr_status || 'Pending'}
+                                        </span>
+                                    </div>
+                                    {leave.hr_approver && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Approved by: <span className="font-medium">{leave.hr_approver.name}</span>
+                                        </div>
+                                    )}
+                                    {leave.hr_approved_at && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Date: <span className="font-medium">{format(parseISO(leave.hr_approved_at), 'PPP')}</span>
+                                        </div>
+                                    )}
+                                    {(isHR || isSuperAdmin) &&
+                                        leave.supervisor_status === 'approved' &&
+                                        (leave.hr_status === 'pending' || !leave.hr_status) && (
+                                            <div className="mt-3 space-y-2">
+                                                <Select value={data.hr_status || 'pending'} onValueChange={(val) => setData('hr_status', val)}>
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select action" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {hrStatuses
+                                                            .filter((s) => s.value !== 'pending')
+                                                            .map((status) => (
+                                                                <SelectItem key={status.value} value={status.value}>
+                                                                    {status.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Textarea
+                                                    placeholder="HR comments (optional)"
+                                                    value={data.hr_comments}
+                                                    onChange={(e) => setData('hr_comments', e.target.value)}
+                                                    rows={2}
+                                                    className="resize-none"
+                                                />
+                                            </div>
+                                        )}
+                                    {leave.hr_comments && (
+                                        <div className="mt-2 rounded bg-muted p-2 text-xs text-muted-foreground">Comments: {leave.hr_comments}</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Section - Full Width */}
+                        <div className="w-full">
                             <div className="" id="status">
                                 <div className="item-center flex">
                                     <Label htmlFor="leave-status" className="mr-1 text-sm font-medium">
@@ -430,21 +604,49 @@ export default function LeaveEditPage() {
                                     <span className="mt-1 px-2 text-xs text-muted-foreground">Current status: </span>
                                     <span className="mb-2">{getStatusBadge(leave.leave_status || leave.status)}</span>
                                 </div>
-                                <Select value={data.leave_status} onValueChange={(val) => setData('leave_status', val)}>
-                                    <SelectTrigger className="transition-all focus:ring-2 focus:ring-primary/20">
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    {can('Leave Status Approval') && (
-                                        <SelectContent>
-                                            {leaveStatuses.map((status) => (
-                                                <SelectItem key={status} value={status} className="cursor-pointer">
-                                                    {status}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    )}
-                                </Select>
-                                {errors.leave_status && <div className="text-xs text-red-500">{errors.leave_status}</div>}
+
+                                {/* Progress Bar in Status Area */}
+                                <div className="mt-3 space-y-2 rounded-lg border border-muted p-3">
+                                    <div className="flex justify-between text-xs font-medium">
+                                        <span
+                                            className={
+                                                leave.supervisor_status === 'approved'
+                                                    ? 'text-primary'
+                                                    : leave.supervisor_status === 'rejected'
+                                                      ? 'text-red-600'
+                                                      : 'text-muted-foreground'
+                                            }
+                                        >
+                                            Stage 1: Supervisor{' '}
+                                            {leave.supervisor_status === 'approved'
+                                                ? '✓'
+                                                : leave.supervisor_status === 'rejected'
+                                                  ? '✗'
+                                                  : '(Pending)'}
+                                        </span>
+                                        <span
+                                            className={
+                                                leave.hr_status === 'approved'
+                                                    ? 'text-primary'
+                                                    : leave.hr_status === 'rejected'
+                                                      ? 'text-red-600'
+                                                      : leave.supervisor_status === 'approved'
+                                                        ? 'text-yellow-600'
+                                                        : 'text-muted-foreground'
+                                            }
+                                        >
+                                            Stage 2: HR{' '}
+                                            {leave.hr_status === 'approved'
+                                                ? '✓'
+                                                : leave.hr_status === 'rejected'
+                                                  ? '✗'
+                                                  : leave.supervisor_status === 'approved'
+                                                    ? '(Waiting)'
+                                                    : '(Not Started)'}
+                                        </span>
+                                    </div>
+                                    <Progress value={progress} className="h-2" />
+                                </div>
                             </div>
                         </div>
                         <Separator className="my-4" />
@@ -543,26 +745,233 @@ export default function LeaveEditPage() {
                     </CardContent>
                 </Card>
 
+                {/* Approval Workflow Section */}
+                {/* <Card className="animate-fade-in border-main transition-all hover:shadow-md">
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-primary">Approval Workflow</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        
+                        <div className="flex items-center justify-between space-x-4">
+                            
+                            <div className="flex-1">
+                                <div className="mb-2 flex items-center gap-2">
+                                    {leave.supervisor_status === 'approved' ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                    ) : leave.supervisor_status === 'rejected' ? (
+                                        <XCircle className="h-5 w-5 text-red-600" />
+                                    ) : (
+                                        <Clock className="h-5 w-5 text-yellow-600" />
+                                    )}
+                                    <Label className="text-sm font-semibold">Stage 1: Supervisor Approval</Label>
+                                </div>
+                                <div className={`ml-7 space-y-2 ${isHR && !isSuperAdmin ? 'opacity-50' : ''}`}>
+                                    <div className="text-xs text-muted-foreground">
+                                        Status: <span className="font-medium capitalize">{leave.supervisor_status || 'Pending'}</span>
+                                    </div>
+                                    {leave.supervisor_approver && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Approved by: <span className="font-medium">{leave.supervisor_approver.name}</span>
+                                        </div>
+                                    )}
+                                    {leave.supervisor_approved_at && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Date: <span className="font-medium">{format(parseISO(leave.supervisor_approved_at), 'PPP')}</span>
+                                        </div>
+                                    )}
+                                    {(isSupervisor || isSuperAdmin) &&
+                                        !(isHR && !isSuperAdmin) &&
+                                        (leave.supervisor_status === 'pending' || !leave.supervisor_status) && (
+                                            <div className="mt-3 space-y-2">
+                                                <Select
+                                                    value={data.supervisor_status || 'pending'}
+                                                    onValueChange={(val) => setData('supervisor_status', val)}
+                                                    disabled={isHR && !isSuperAdmin}
+                                                >
+                                                    <SelectTrigger className="w-full" disabled={isHR && !isSuperAdmin}>
+                                                        <SelectValue placeholder="Select action" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {supervisorStatuses
+                                                            .filter((s) => s.value !== 'pending')
+                                                            .map((status) => (
+                                                                <SelectItem key={status.value} value={status.value}>
+                                                                    {status.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Textarea
+                                                    placeholder="Supervisor comments (optional)"
+                                                    value={data.supervisor_comments}
+                                                    onChange={(e) => setData('supervisor_comments', e.target.value)}
+                                                    rows={2}
+                                                    className="resize-none"
+                                                    disabled={isHR && !isSuperAdmin}
+                                                />
+                                            </div>
+                                        )}
+                                    {leave.supervisor_comments && (
+                                        <div className="mt-2 rounded bg-muted p-2 text-xs text-muted-foreground">
+                                            Comments: {leave.supervisor_comments}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                          
+                            <ArrowRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+
+                            
+                            <div className="flex-1">
+                                <div className="mb-2 flex items-center gap-2">
+                                    {leave.hr_status === 'approved' ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                    ) : leave.hr_status === 'rejected' ? (
+                                        <XCircle className="h-5 w-5 text-red-600" />
+                                    ) : leave.supervisor_status === 'approved' ? (
+                                        <Clock className="h-5 w-5 text-yellow-600" />
+                                    ) : (
+                                        <Clock className="h-5 w-5 text-gray-400" />
+                                    )}
+                                    <Label className="text-sm font-semibold">Stage 2: HR Approval</Label>
+                                </div>
+                                <div className="ml-7 space-y-2">
+                                    <div className="text-xs text-muted-foreground">
+                                        Status:{' '}
+                                        <span className="font-medium capitalize">
+                                            {leave.supervisor_status !== 'approved' ? 'Waiting for Supervisor' : leave.hr_status || 'Pending'}
+                                        </span>
+                                    </div>
+                                    {leave.hr_approver && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Approved by: <span className="font-medium">{leave.hr_approver.name}</span>
+                                        </div>
+                                    )}
+                                    {leave.hr_approved_at && (
+                                        <div className="text-xs text-muted-foreground">
+                                            Date: <span className="font-medium">{format(parseISO(leave.hr_approved_at), 'PPP')}</span>
+                                        </div>
+                                    )}
+                                    {(isHR || isSuperAdmin) &&
+                                        leave.supervisor_status === 'approved' &&
+                                        (leave.hr_status === 'pending' || !leave.hr_status) && (
+                                            <div className="mt-3 space-y-2">
+                                                <Select value={data.hr_status || 'pending'} onValueChange={(val) => setData('hr_status', val)}>
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select action" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {hrStatuses
+                                                            .filter((s) => s.value !== 'pending')
+                                                            .map((status) => (
+                                                                <SelectItem key={status.value} value={status.value}>
+                                                                    {status.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Textarea
+                                                    placeholder="HR comments (optional)"
+                                                    value={data.hr_comments}
+                                                    onChange={(e) => setData('hr_comments', e.target.value)}
+                                                    rows={2}
+                                                    className="resize-none"
+                                                />
+                                            </div>
+                                        )}
+                                    {leave.hr_comments && (
+                                        <div className="mt-2 rounded bg-muted p-2 text-xs text-muted-foreground">Comments: {leave.hr_comments}</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                       
+                        {process.env.NODE_ENV === 'development' && (
+                            <Alert className="mt-4 border-blue-300 bg-blue-50 text-blue-800">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription className="text-xs">
+                                    <div className="mb-1 font-semibold">Debug Info:</div>
+                                    <div>User ID: {user?.id || 'N/A'}</div>
+                                    <div>User Role: {isSupervisor ? 'Supervisor' : isHR ? 'HR' : isSuperAdmin ? 'Super Admin' : 'None'}</div>
+                                    <div>User Roles: {user?.roles?.join(', ') || 'N/A'}</div>
+                                    <div>isSupervisor: {String(isSupervisor)}</div>
+                                    <div>isHR: {String(isHR)}</div>
+                                    <div>isSuperAdmin: {String(isSuperAdmin)}</div>
+                                    <div>Supervisor Status: {leave.supervisor_status || 'null'}</div>
+                                    <div>HR Status: {leave.hr_status || 'null'}</div>
+                                    <div>Leave Status: {leave.leave_status || leave.status}</div>
+                                    <div>Employee Department: {employee.department || 'N/A'}</div>
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </CardContent>
+                </Card> */}
+
                 {/* Action Buttons */}
                 <div className="animate-fade-in flex justify-end space-x-4 pt-6">
                     <Button variant="outline" className="transition-all hover:scale-105" disabled={processing} type="button" onClick={handleBack}>
                         Cancel
                     </Button>
-                    {can('Leave Status Approval') && (
-                        <Button variant="main" disabled={processing} type="submit">
+                    {/* Show submit button for supervisors when they need to approve */}
+                    {(isSupervisor || isSuperAdmin) && (leave.supervisor_status === 'pending' || !leave.supervisor_status) && (
+                        <Button variant="main" disabled={processing || !data.supervisor_status || data.supervisor_status === 'pending'} type="submit">
                             {processing ? (
                                 <>
-                                    <div className="n mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
-                                    Saving...
+                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                                    Submitting...
                                 </>
                             ) : (
                                 <>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    Save Changes
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Submit Supervisor Approval
                                 </>
                             )}
                         </Button>
                     )}
+                    {/* Show submit button for HR when they need to approve */}
+                    {(isHR || isSuperAdmin) && leave.supervisor_status === 'approved' && (leave.hr_status === 'pending' || !leave.hr_status) && (
+                        <Button variant="main" disabled={processing || !data.hr_status || data.hr_status === 'pending'} type="submit">
+                            {processing ? (
+                                <>
+                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Submit HR Approval
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {/* Show general save button for Super Admin with full permissions */}
+                    {isSuperAdmin &&
+                        can('Leave Status Approval') &&
+                        !((isSupervisor || isSuperAdmin) && (leave.supervisor_status === 'pending' || !leave.supervisor_status)) &&
+                        !(
+                            (isHR || isSuperAdmin) &&
+                            leave.supervisor_status === 'approved' &&
+                            (leave.hr_status === 'pending' || !leave.hr_status)
+                        ) && (
+                            <Button variant="main" disabled={processing} type="submit">
+                                {processing ? (
+                                    <>
+                                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </Button>
+                        )}
                 </div>
             </div>
         </form>

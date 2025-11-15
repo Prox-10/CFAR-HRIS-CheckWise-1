@@ -24,6 +24,16 @@ class Leave extends Model
         'leave_reason',
         'leave_comments',
         'leave_status',
+        // Supervisor approval fields
+        'supervisor_status',
+        'supervisor_approved_by',
+        'supervisor_approved_at',
+        'supervisor_comments',
+        // HR approval fields
+        'hr_status',
+        'hr_approved_by',
+        'hr_approved_at',
+        'hr_comments',
     ];
 
     protected $casts = [
@@ -31,11 +41,29 @@ class Leave extends Model
         'leave_end_date' => 'date',
         'leave_date_reported' => 'date',
         'leave_date_approved' => 'date',
+        'supervisor_approved_at' => 'datetime',
+        'hr_approved_at' => 'datetime',
     ];
 
 
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'employee_id');
+    }
+
+    /**
+     * Get the supervisor who approved/rejected this leave
+     */
+    public function supervisorApprover()
+    {
+        return $this->belongsTo(User::class, 'supervisor_approved_by');
+    }
+
+    /**
+     * Get the HR who approved/rejected this leave
+     */
+    public function hrApprover()
+    {
+        return $this->belongsTo(User::class, 'hr_approved_by');
     }
 }

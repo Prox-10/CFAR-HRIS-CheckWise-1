@@ -121,7 +121,57 @@ class User extends Authenticatable
     {
         return self::whereHas('supervisedDepartments', function ($query) use ($department) {
             $query->where('department', $department)
-                  ->where('can_evaluate', true);
+                ->where('can_evaluate', true);
         })->first();
+    }
+
+    /**
+     * Check if user has HR role (HR, HR Manager, HR Personnel)
+     */
+    public function isHR()
+    {
+        return $this->hasRole(['HR', 'HR Manager', 'HR Personnel']);
+    }
+
+    /**
+     * Get HR assignments for this user
+     */
+    public function hrAssignments()
+    {
+        return $this->hasMany(HRDepartmentAssignment::class);
+    }
+
+    /**
+     * Get all departments this user handles as HR
+     */
+    public function getHRDepartments()
+    {
+        return $this->hrAssignments()
+            ->pluck('department')
+            ->toArray();
+    }
+
+    /**
+     * Get HR personnel for a specific department
+     */
+    public static function getHRForDepartment($department)
+    {
+        return self::whereHas('hrAssignments', function ($query) use ($department) {
+            $query->where('department', $department);
+        })->whereHas('roles', function ($query) {
+            $query->whereIn('name', ['HR', 'HR Manager', 'HR Personnel']);
+        })->first();
+    }
+
+    /**
+     * Get all HR personnel for a specific department (multiple HR can handle one department)
+     */
+    public static function getAllHRForDepartment($department)
+    {
+        return self::whereHas('hrAssignments', function ($query) use ($department) {
+            $query->where('department', $department);
+        })->whereHas('roles', function ($query) {
+            $query->whereIn('name', ['HR', 'HR Manager', 'HR Personnel']);
+        })->get();
     }
 }
