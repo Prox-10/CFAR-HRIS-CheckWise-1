@@ -177,10 +177,9 @@ class DailyCheckingController extends Controller
             })->count(),
         ]);
 
-        // Filter to only include assignments with time_in OR time_out
-        $assignments = $allAssignments->filter(function ($assignment) {
-            return ($assignment->time_in !== null || $assignment->time_out !== null);
-        });
+        // Include ALL assignments regardless of time_in/time_out status
+        // This allows displaying employees even if they don't have time records yet
+        $assignments = $allAssignments;
 
         // Group employees by microteam using saved microteam field
         $microteams = [
@@ -203,20 +202,17 @@ class DailyCheckingController extends Controller
             }
 
             // Use the saved microteam field
-            // Only include if employee has time_in OR time_out for this specific date
+            // Include ALL employees regardless of time_in/time_out status
             if ($assignment->microteam && isset($microteams[$assignment->microteam])) {
-                // Only add if there's actual time data for this specific date
-                if ($assignment->time_in || $assignment->time_out) {
-                    $microteams[$assignment->microteam][] = [
-                        'id' => $assignment->employee->id,
-                        'employee_name' => $assignment->employee->employee_name,
-                        'employeeid' => $assignment->employee->employeeid,
-                        'work_status' => $assignment->employee->work_status,
-                        'position' => $assignment->position_field,
-                        'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
-                        'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
-                    ];
-                }
+                $microteams[$assignment->microteam][] = [
+                    'id' => $assignment->employee->id,
+                    'employee_name' => $assignment->employee->employee_name,
+                    'employeeid' => $assignment->employee->employeeid,
+                    'work_status' => $assignment->employee->work_status,
+                    'position' => $assignment->position_field,
+                    'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
+                    'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
+                ];
             }
         }
 
@@ -247,18 +243,16 @@ class DailyCheckingController extends Controller
                     }
 
                     if (!$alreadyAdded) {
-                        // Only add if there's actual time data for this specific date
-                        if ($assignment->time_in || $assignment->time_out) {
-                            $addCrewByMicroteam[$microteam][] = [
-                                'id' => $assignment->employee->id,
-                                'employee_name' => $assignment->employee->employee_name,
-                                'employeeid' => $assignment->employee->employeeid,
-                                'work_status' => $assignment->employee->work_status,
-                                'position' => $assignment->position_field,
-                                'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
-                                'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
-                            ];
-                        }
+                        // Include ALL Add Crew employees regardless of time_in/time_out status
+                        $addCrewByMicroteam[$microteam][] = [
+                            'id' => $assignment->employee->id,
+                            'employee_name' => $assignment->employee->employee_name,
+                            'employeeid' => $assignment->employee->employeeid,
+                            'work_status' => $assignment->employee->work_status,
+                            'position' => $assignment->position_field,
+                            'time_in' => $assignment->time_in ? (string)$assignment->time_in : null,
+                            'time_out' => $assignment->time_out ? (string)$assignment->time_out : null,
+                        ];
                     }
                 }
             }

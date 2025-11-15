@@ -183,17 +183,11 @@ export default function DailyAttendancePage() {
             if (hasData) {
                 // Only set data if we have actual data for the selected date
                 if (hasMicroteamData && response.data.microteams) {
-                    // Verify microteams have actual employees with time_in OR time_out for this specific date
+                    // Include ALL employees regardless of time_in/time_out status
                     const verifiedMicroteams: MicroteamData = {
-                        'MICROTEAM - 01': (response.data.microteams['MICROTEAM - 01'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        ),
-                        'MICROTEAM - 02': (response.data.microteams['MICROTEAM - 02'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        ),
-                        'MICROTEAM - 03': (response.data.microteams['MICROTEAM - 03'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        ),
+                        'MICROTEAM - 01': (response.data.microteams['MICROTEAM - 01'] || []).filter((emp: MicroteamEmployee) => emp),
+                        'MICROTEAM - 02': (response.data.microteams['MICROTEAM - 02'] || []).filter((emp: MicroteamEmployee) => emp),
+                        'MICROTEAM - 03': (response.data.microteams['MICROTEAM - 03'] || []).filter((emp: MicroteamEmployee) => emp),
                     };
 
                     // Only set if at least one microteam has data
@@ -221,16 +215,10 @@ export default function DailyAttendancePage() {
                         response.data.add_crew['MICROTEAM - 03']
                     ) {
                         // New format: grouped by microteam
-                        // Only include employees with time_in OR time_out for this specific date
-                        addCrewData['ADD CREW - 01'] = (response.data.add_crew['MICROTEAM - 01'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        );
-                        addCrewData['ADD CREW - 02'] = (response.data.add_crew['MICROTEAM - 02'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        );
-                        addCrewData['ADD CREW - 03'] = (response.data.add_crew['MICROTEAM - 03'] || []).filter(
-                            (emp: MicroteamEmployee) => emp && (emp.time_in || emp.time_out),
-                        );
+                        // Include ALL employees regardless of time_in/time_out status
+                        addCrewData['ADD CREW - 01'] = (response.data.add_crew['MICROTEAM - 01'] || []).filter((emp: MicroteamEmployee) => emp);
+                        addCrewData['ADD CREW - 02'] = (response.data.add_crew['MICROTEAM - 02'] || []).filter((emp: MicroteamEmployee) => emp);
+                        addCrewData['ADD CREW - 03'] = (response.data.add_crew['MICROTEAM - 03'] || []).filter((emp: MicroteamEmployee) => emp);
                     } else if (Array.isArray(response.data.add_crew) && response.data.add_crew.length > 0) {
                         // Old format: array (fallback for backward compatibility)
                         response.data.add_crew.forEach((employee: MicroteamEmployee, index: number) => {
@@ -409,6 +397,11 @@ export default function DailyAttendancePage() {
         return sortEmployees(employees, addCrewSort);
     };
 
+    // Helper function to count all displayed employees (regardless of time_in/time_out status)
+    const countAllEmployees = (employees: MicroteamEmployee[]): number => {
+        return employees.filter((emp) => emp).length;
+    };
+
     // Helper function to count present employees (those with both time_in and time_out)
     const countPresentEmployees = (employees: MicroteamEmployee[]): number => {
         return employees.filter((emp) => emp?.time_in && emp?.time_out).length;
@@ -416,16 +409,16 @@ export default function DailyAttendancePage() {
 
     // Calculate summary counts using useMemo for performance
     const summaryCounts = useMemo(() => {
-        // Present Regular counts for each microteam
-        const presentRegularM1 = countPresentEmployees(microteams['MICROTEAM - 01'] || []);
-        const presentRegularM2 = countPresentEmployees(microteams['MICROTEAM - 02'] || []);
-        const presentRegularM3 = countPresentEmployees(microteams['MICROTEAM - 03'] || []);
+        // Present Regular counts for each microteam - count ALL displayed employees
+        const presentRegularM1 = countAllEmployees(microteams['MICROTEAM - 01'] || []);
+        const presentRegularM2 = countAllEmployees(microteams['MICROTEAM - 02'] || []);
+        const presentRegularM3 = countAllEmployees(microteams['MICROTEAM - 03'] || []);
         const presentRegularTotal = presentRegularM1 + presentRegularM2 + presentRegularM3;
 
-        // Add Crew counts for each group
-        const addCrewM1 = countPresentEmployees(addCrew['ADD CREW - 01'] || []);
-        const addCrewM2 = countPresentEmployees(addCrew['ADD CREW - 02'] || []);
-        const addCrewM3 = countPresentEmployees(addCrew['ADD CREW - 03'] || []);
+        // Add Crew counts for each group - count ALL displayed employees
+        const addCrewM1 = countAllEmployees(addCrew['ADD CREW - 01'] || []);
+        const addCrewM2 = countAllEmployees(addCrew['ADD CREW - 02'] || []);
+        const addCrewM3 = countAllEmployees(addCrew['ADD CREW - 03'] || []);
         const addCrewTotal = addCrewM1 + addCrewM2 + addCrewM3;
 
         // Total (Present Regular + Add Crew)

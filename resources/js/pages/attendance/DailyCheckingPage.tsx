@@ -718,11 +718,15 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     // But allows selecting the same employee on different dates (regardless of microteam)
     // Example: If Mr. Kyle is selected in M1 on 2025-11-10, he cannot be selected in M2 on 2025-11-10
     // But Mr. Kyle can be selected in M1 on 2025-11-10 and again in M1 (or any microteam) on 2025-11-11
+    // IMPORTANT: This applies to ALL employees including Add Crew employees
+    // If Add Crew employee Mr. Kyle is selected in M1 on 2025-11-14, he CANNOT be selected in M2 on 2025-11-14
+    // But if date changes to 2025-11-15, Mr. Kyle can be selected again (even if selected in M1 on 2025-11-14)
     const isEmployeeSelectedGlobally = (employeeName: string): boolean => {
         if (!date) return false;
 
         // Check across ALL microteams for the current date
         // If employee is selected in ANY microteam on this date, return true
+        // This applies to both regular employees and Add Crew employees
         for (const microteamKey in allSelectedEmployees) {
             const microteamSelections = allSelectedEmployees[microteamKey];
             if (!microteamSelections) continue;
@@ -1303,11 +1307,18 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                         const isCurrentSelection =
                                                                             assignmentData[position.field]?.[slotIndex] === emp.employee_name;
 
+                                                                        // Check if this is an Add Crew employee
+                                                                        const isAddCrewEmployee =
+                                                                            emp.work_status === 'Add Crew' || position.field === 'supportAbsent';
+
                                                                         // Disable only if:
                                                                         // 1. Employee is already selected in current form (same microteam, same date) AND it's not the current selection
                                                                         // 2. Employee is selected on the same date in ANY microteam (from saved data) AND it's not the current selection
                                                                         // This prevents selecting the same employee on the same date across different microteams
                                                                         // But allows selecting the same employee on different dates (regardless of microteam)
+                                                                        // IMPORTANT: For Add Crew employees, this ensures they cannot be selected in different microteams on the same date
+                                                                        // Example: If Add Crew employee Mr. Kyle is selected in M1 on 2025-11-14, he CANNOT be selected in M2 on 2025-11-14
+                                                                        // But if date changes to 2025-11-15, Mr. Kyle can be selected again in any microteam
                                                                         const shouldDisable =
                                                                             (isSelectedInCurrent && !isCurrentSelection) ||
                                                                             (isSelectedInSameMicroteamAndDate &&

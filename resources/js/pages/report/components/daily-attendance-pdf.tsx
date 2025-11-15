@@ -256,6 +256,70 @@ export default function DailyAttendancePDF({ reportDate, microteams, addCrew, ph
     const titleDate = format(reportDate, 'MMMM dd, yyyy');
     const titleDay = format(reportDate, 'EEEE');
 
+    // Helper function to count all displayed employees (regardless of time_in/time_out status)
+    const countAllEmployees = (employees: MicroteamEmployee[]): number => {
+        return employees.filter((emp) => emp).length;
+    };
+
+    // Calculate summary counts
+    const calculateSummaryCounts = () => {
+        // Present Regular counts for each microteam - count ALL displayed employees
+        const presentRegularM1 = countAllEmployees(microteams['MICROTEAM - 01'] || []);
+        const presentRegularM2 = countAllEmployees(microteams['MICROTEAM - 02'] || []);
+        const presentRegularM3 = countAllEmployees(microteams['MICROTEAM - 03'] || []);
+        const presentRegularTotal = presentRegularM1 + presentRegularM2 + presentRegularM3;
+
+        // Add Crew counts for each group - count ALL displayed employees
+        const addCrewM1 = countAllEmployees(addCrewData['ADD CREW - 01'] || []);
+        const addCrewM2 = countAllEmployees(addCrewData['ADD CREW - 02'] || []);
+        const addCrewM3 = countAllEmployees(addCrewData['ADD CREW - 03'] || []);
+        const addCrewTotal = addCrewM1 + addCrewM2 + addCrewM3;
+
+        // Total (Present Regular + Add Crew)
+        const totalM1 = presentRegularM1 + addCrewM1;
+        const totalM2 = presentRegularM2 + addCrewM2;
+        const totalM3 = presentRegularM3 + addCrewM3;
+        const totalOverall = presentRegularTotal + addCrewTotal;
+
+        return {
+            presentRegular: {
+                m1: presentRegularM1,
+                m2: presentRegularM2,
+                m3: presentRegularM3,
+                total: presentRegularTotal,
+            },
+            addCrew: {
+                m1: addCrewM1,
+                m2: addCrewM2,
+                m3: addCrewM3,
+                total: addCrewTotal,
+            },
+            total: {
+                m1: totalM1,
+                m2: totalM2,
+                m3: totalM3,
+                total: totalOverall,
+            },
+        };
+    };
+
+    // Calculate summary counts once
+    const summaryCounts = calculateSummaryCounts();
+
+    // Get summary value for a specific row and column
+    const getSummaryValue = (rowName: string, column: 'm1' | 'm2' | 'm3' | 'total'): string => {
+        switch (rowName) {
+            case 'PRESENT REGULAR':
+                return summaryCounts.presentRegular[column].toString();
+            case 'ADD CREW':
+                return summaryCounts.addCrew[column].toString();
+            case 'TOTAL':
+                return summaryCounts.total[column].toString();
+            default:
+                return ''; // Other rows (AWP, AWOP/AWOL, etc.) remain empty for now
+        }
+    };
+
     // Render a table row
     const renderTableRow = (index: number, employee?: MicroteamEmployee) => {
         const no = String(index + 1).padStart(2, '0');
@@ -399,16 +463,16 @@ export default function DailyAttendancePDF({ reportDate, microteams, addCrew, ph
                                 <Text>{row}</Text>
                             </View>
                             <View style={styles.summaryCell}>
-                                <Text></Text>
+                                <Text>{getSummaryValue(row, 'm1')}</Text>
                             </View>
                             <View style={styles.summaryCell}>
-                                <Text></Text>
+                                <Text>{getSummaryValue(row, 'm2')}</Text>
                             </View>
                             <View style={styles.summaryCell}>
-                                <Text></Text>
+                                <Text>{getSummaryValue(row, 'm3')}</Text>
                             </View>
                             <View style={[styles.summaryCell, { borderRightWidth: 0 }]}>
-                                <Text></Text>
+                                <Text>{getSummaryValue(row, 'total')}</Text>
                             </View>
                         </View>
                     ))}
