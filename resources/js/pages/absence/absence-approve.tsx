@@ -383,13 +383,21 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                 console.log('Received AbsenceSupervisorApproved on HR channel:', e);
                 const absenceData = e;
                 if (absenceData && absenceData.absence_id) {
+                    const isSuperAdmin = user_permissions?.is_super_admin || false;
+                    const isRejected = absenceData.supervisor_status === 'rejected' || absenceData.status === 'Rejected by Supervisor';
+
                     setRequests((prev) => {
                         const exists = prev.some((r) => r.id === String(absenceData.absence_id));
                         if (exists) {
                             // Update existing absence
                             return prev.map((r) => {
                                 if (String(r.id) === String(absenceData.absence_id)) {
-                                    toast.info(`Supervisor approved absence request from ${absenceData.full_name} - Ready for HR review`);
+                                    // Only show notification if approved, or if rejected and user is Super Admin
+                                    if (!isRejected) {
+                                        toast.info(`Supervisor approved absence request from ${absenceData.full_name} - Ready for HR review`);
+                                    } else if (isSuperAdmin) {
+                                        toast.warning(`Supervisor rejected absence request from ${absenceData.full_name} - Available for override`);
+                                    }
                                     return {
                                         ...r,
                                         supervisor_status: absenceData.supervisor_status,
@@ -404,32 +412,39 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                                 return r;
                             });
                         } else {
-                            // Add new absence if it doesn't exist
-                            const newAbsence: AbsenceRequestItem = {
-                                id: String(absenceData.absence_id),
-                                full_name: absenceData.full_name,
-                                employee_id_number: absenceData.employee_id_number || '',
-                                department: absenceData.department || '',
-                                position: absenceData.position || '',
-                                absence_type: absenceData.absence_type,
-                                from_date: absenceData.from_date,
-                                to_date: absenceData.to_date,
-                                submitted_at: absenceData.submitted_at || new Date().toISOString(),
-                                days: absenceData.days || 1,
-                                reason: absenceData.reason || '',
-                                is_partial_day: !!absenceData.is_partial_day,
-                                status: absenceData.status,
-                                picture: absenceData.picture || '',
-                                employee_name: absenceData.employee_name || '',
-                                supervisor_status: absenceData.supervisor_status,
-                                supervisor_approved_by: absenceData.supervisor_approved_by,
-                                supervisor_approved_at: absenceData.supervisor_approved_at,
-                                supervisor_comments: absenceData.supervisor_comments,
-                                supervisor_approver: absenceData.supervisor_approver,
-                                hr_status: absenceData.hr_status,
-                            };
-                            toast.success(`New absence request from ${newAbsence.full_name} - Ready for HR review`);
-                            return [newAbsence, ...prev];
+                            // Add new absence if it doesn't exist (only if approved, or rejected and Super Admin)
+                            if (!isRejected || isSuperAdmin) {
+                                const newAbsence: AbsenceRequestItem = {
+                                    id: String(absenceData.absence_id),
+                                    full_name: absenceData.full_name,
+                                    employee_id_number: absenceData.employee_id_number || '',
+                                    department: absenceData.department || '',
+                                    position: absenceData.position || '',
+                                    absence_type: absenceData.absence_type,
+                                    from_date: absenceData.from_date,
+                                    to_date: absenceData.to_date,
+                                    submitted_at: absenceData.submitted_at || new Date().toISOString(),
+                                    days: absenceData.days || 1,
+                                    reason: absenceData.reason || '',
+                                    is_partial_day: !!absenceData.is_partial_day,
+                                    status: absenceData.status,
+                                    picture: absenceData.picture || '',
+                                    employee_name: absenceData.employee_name || '',
+                                    supervisor_status: absenceData.supervisor_status,
+                                    supervisor_approved_by: absenceData.supervisor_approved_by,
+                                    supervisor_approved_at: absenceData.supervisor_approved_at,
+                                    supervisor_comments: absenceData.supervisor_comments,
+                                    supervisor_approver: absenceData.supervisor_approver,
+                                    hr_status: absenceData.hr_status,
+                                };
+                                if (!isRejected) {
+                                    toast.success(`New absence request from ${newAbsence.full_name} - Ready for HR review`);
+                                } else {
+                                    toast.warning(`Supervisor rejected absence request from ${newAbsence.full_name} - Available for override`);
+                                }
+                                return [newAbsence, ...prev];
+                            }
+                            return prev;
                         }
                     });
                 }
@@ -467,14 +482,21 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
     }, [requests, search, typeFilter]);
 
     const grouped = useMemo(() => {
+        const isSuperAdmin = user_permissions?.is_super_admin || false;
+
         return {
             pending: filtered.filter(
                 (r) =>
                     r.status === 'pending' || r.status === 'Pending Supervisor Approval' || r.supervisor_status === 'pending' || !r.supervisor_status,
             ),
-            pendingHR: filtered.filter(
-                (r) => r.status === 'Pending HR Approval' || (r.supervisor_status === 'approved' && (r.hr_status === 'pending' || !r.hr_status)),
-            ),
+            pendingHR: filtered.filter((r) => {
+                // If supervisor rejected, only show to Super Admin
+                if (r.supervisor_status === 'rejected' || r.status === 'Rejected by Supervisor') {
+                    return isSuperAdmin && (r.hr_status === 'pending' || !r.hr_status);
+                }
+                // Normal flow: show if supervisor approved and waiting for HR
+                return r.status === 'Pending HR Approval' || (r.supervisor_status === 'approved' && (r.hr_status === 'pending' || !r.hr_status));
+            }),
             approved: filtered.filter((r) => r.status === 'approved' || r.hr_status === 'approved'),
             rejected: filtered.filter(
                 (r) =>
@@ -485,7 +507,7 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                     r.hr_status === 'rejected',
             ),
         };
-    }, [filtered]);
+    }, [filtered, user_permissions?.is_super_admin]);
 
     const onDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData('text/plain', id);
@@ -656,7 +678,7 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
 
                         <Separator />
 
-                        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
                             <BoardColumn
                                 title="Pending Supervisor"
                                 count={grouped.pending.length}

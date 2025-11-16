@@ -502,11 +502,11 @@ class LeaveController extends Controller
                         $leave->hr_comments = $request->hr_comments ?? $leave->hr_comments;
 
                         // Set approval date when finally approved
-                        if (!empty($request->leave_date_approved)) {
-                            $leave->leave_date_approved = $request->leave_date_approved;
-                        } else {
-                            $leave->leave_date_approved = now()->format('Y-m-d');
-                        }
+                if (!empty($request->leave_date_approved)) {
+                    $leave->leave_date_approved = $request->leave_date_approved;
+                } else {
+                    $leave->leave_date_approved = now()->format('Y-m-d');
+                }
 
                         if ($hrStatus === 'approved') {
                             // HR approved → Final approval
@@ -519,7 +519,7 @@ class LeaveController extends Controller
                             ]);
 
                             // Handle credit management - Only deduct credits when HR approves (final approval)
-                            $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee_id);
+                $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee_id);
 
                             // Check if credits were already deducted (in case of status change)
                             if ($oldStatus !== 'Approved') {
@@ -606,13 +606,13 @@ class LeaveController extends Controller
                     }
 
                     // Notify if status changed
-                    if ($oldStatus !== $newStatus) {
-                        event(new RequestStatusUpdated('leave', $newStatus, $leave->employee_id, $leave->id, [
-                            'leave_type' => $leave->leave_type,
-                            'leave_start_date' => $leave->leave_start_date,
-                            'leave_end_date' => $leave->leave_end_date,
-                        ]));
-                    }
+                if ($oldStatus !== $newStatus) {
+                    event(new RequestStatusUpdated('leave', $newStatus, $leave->employee_id, $leave->id, [
+                        'leave_type' => $leave->leave_type,
+                        'leave_start_date' => $leave->leave_start_date,
+                        'leave_end_date' => $leave->leave_end_date,
+                    ]));
+                }
                 } else {
                     // For non-admin users, update comments if provided
                     $leave->leave_comments = $request->leave_comments ?? $leave->leave_comments;
