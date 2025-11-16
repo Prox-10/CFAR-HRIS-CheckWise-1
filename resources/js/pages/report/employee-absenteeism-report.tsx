@@ -135,7 +135,7 @@ export default function EmployeeAbsenteeismReportPage() {
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                     {absences.map((absence) => (
-                                        <Card key={absence.id} className="border-main transition-shadow hover:shadow-md">
+                                        <Card key={absence.id} className="border-main transition-shadow hover:shadow-lg hover:shadow-green-500">
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-center gap-3">
                                                     {absence.picture ? (

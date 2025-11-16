@@ -38,7 +38,7 @@ class EvaluationController extends Controller
 
         $employeeList = $employees->map(function ($employee) {
             $latestEval = $employee->evaluations()->with(['attendance', 'attitudes', 'workAttitude', 'workFunctions'])->first();
-            $frequency = $employee->department 
+            $frequency = $employee->department
                 ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
                 : 'annual';
 
@@ -329,18 +329,64 @@ class EvaluationController extends Controller
         })->toArray();
 
         // Get supervisor assignments from database
+        // Fetches from supervisor_departments table where:
+        // - department column matches the selected department (e.g., "Packing Plant")
+        // - can_evaluate is true
+        // Returns the employee's full name (firstname + lastname) from the users table
+        Log::info('[EVALUATION DEBUG] Fetching supervisor assignments from database');
+        $allSupervisorAssignments = \App\Models\SupervisorDepartment::with('user')->get();
+        Log::info('[EVALUATION DEBUG] Total supervisor assignments found:', ['count' => $allSupervisorAssignments->count()]);
+
         $supervisorAssignments = \App\Models\SupervisorDepartment::with('user')
             ->where('can_evaluate', true)
-            ->get()
-            ->map(function ($assignment) {
-                return [
-                    'id' => $assignment->id,
-                    'department' => $assignment->department,
-                    'supervisor_name' => $assignment->user->firstname . ' ' . $assignment->user->lastname,
-                    'supervisor_email' => $assignment->user->email,
-                    'can_evaluate' => $assignment->can_evaluate,
-                ];
-            });
+            ->get();
+
+        Log::info('[EVALUATION DEBUG] Supervisor assignments with can_evaluate=true:', ['count' => $supervisorAssignments->count()]);
+
+        $supervisorAssignments = $supervisorAssignments->map(function ($assignment) {
+            // Try to get the employee's actual name from the employees table using email
+            // This ensures we get the real employee name, not just the user account name
+            $employee = Employee::where('email', $assignment->user->email)->first();
+
+            if ($employee) {
+                // Use employee_name if available, otherwise construct from firstname + lastname
+                $fullName = $employee->employee_name ?? trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''));
+                Log::info('[EVALUATION DEBUG] Found employee record for supervisor:', [
+                    'user_email' => $assignment->user->email,
+                    'employee_name' => $fullName,
+                    'employee_id' => $employee->id,
+                ]);
+            } else {
+                // Fallback to user's name if no employee record found
+                $firstName = $assignment->user->firstname ?? '';
+                $lastName = $assignment->user->lastname ?? '';
+                $fullName = trim($firstName . ' ' . $lastName);
+                Log::warning('[EVALUATION DEBUG] No employee record found for supervisor, using user name:', [
+                    'user_email' => $assignment->user->email,
+                    'user_name' => $fullName,
+                ]);
+            }
+
+            // If name is still empty, fallback to email or a default message
+            if (empty($fullName)) {
+                $fullName = $assignment->user->email ?? 'Unknown Supervisor';
+            }
+
+            $result = [
+                'id' => $assignment->id,
+                'department' => $assignment->department,
+                'supervisor_name' => $fullName, // Employee's actual name from employees table (e.g., "Kyle Lastname")
+                'supervisor_email' => $assignment->user->email,
+                'can_evaluate' => $assignment->can_evaluate,
+            ];
+
+            // DEBUG: Log each assignment
+            Log::info('[EVALUATION DEBUG] Supervisor assignment:', $result);
+
+            return $result;
+        });
+
+        Log::info('[EVALUATION DEBUG] Final supervisor assignments array:', ['count' => $supervisorAssignments->count(), 'data' => $supervisorAssignments->toArray()]);
 
         // Get HR assignments
         $hrAssignments = \App\Models\HRDepartmentAssignment::with('user')->get()->map(function ($assignment) {
@@ -433,7 +479,7 @@ class EvaluationController extends Controller
 
         // Check evaluation frequency rules (Super Admin can bypass)
         if (!$user->isSuperAdmin()) {
-            $frequency = $employee->department 
+            $frequency = $employee->department
                 ? EvaluationConfiguration::getFrequencyForDepartment($employee->department)
                 : 'annual';
             $now = now();
@@ -672,7 +718,7 @@ class EvaluationController extends Controller
      */
     public function checkExistingEvaluation($employeeId, $department)
     {
-        $frequency = $department 
+        $frequency = $department
             ? EvaluationConfiguration::getFrequencyForDepartment($department)
             : 'annual';
         $now = now();
@@ -832,7 +878,8 @@ class EvaluationController extends Controller
         }
     }
 
-    public function evaluationSettings(){
+    public function evaluationSettings()
+    {
         return Inertia::render('evaluation/evaluation-settings');
     }
 }

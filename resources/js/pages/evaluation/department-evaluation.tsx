@@ -16,14 +16,14 @@ import { Employees } from '@/hooks/employees';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Calendar, Download, FileText, RotateCcw, Star, User, Users } from 'lucide-react';
+import { Calendar, FileText, RotateCcw, Star, User, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { WorkFunctionsSection } from './components/work-functions-section';
 import { getAllWorkFunctions, getCriteriaLabel, getDefaultDepartmentSettings, getDepartmentSettings } from './types/evaluation-settings';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { 
+    {
         title: 'Evaluation Management',
         href: '/evaluation',
     },
@@ -117,6 +117,19 @@ export default function DepartmentEvaluation({
     manager_assignments = [],
     user_permissions,
 }: Props) {
+    // DEBUG: Log props when component mounts or props change
+    useEffect(() => {
+        console.log('🔍 [DEBUG] Component props received:');
+        console.log('  - supervisor_assignments:', supervisor_assignments);
+        console.log('  - supervisor_assignments type:', typeof supervisor_assignments);
+        console.log('  - supervisor_assignments is array:', Array.isArray(supervisor_assignments));
+        console.log('  - supervisor_assignments length:', supervisor_assignments?.length);
+        if (supervisor_assignments && supervisor_assignments.length > 0) {
+            console.log('  - First assignment sample:', supervisor_assignments[0]);
+            console.log('  - All assignments:', JSON.stringify(supervisor_assignments, null, 2));
+        }
+    }, [supervisor_assignments]);
+
     const [selectedDepartment, setSelectedDepartment] = useState<string>('');
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [evaluationData, setEvaluationData] = useState<EvaluationData>({
@@ -145,16 +158,83 @@ export default function DepartmentEvaluation({
     const availableDepartments = globalDepartments;
 
     // Function to get supervisor(s) for a department from database assignments
+    // Flow:
+    // 1. User selects department (e.g., "Packing Plant")
+    // 2. This function filters supervisor_assignments from supervisor_departments table where:
+    //    - department column matches selected department
+    //    - can_evaluate = true
+    //    - user_id links to users table (user must have "Supervisor" role)
+    // 3. Returns the supervisor's employee name (fetched from employees table via email)
     const getSupervisorForDepartment = (department: string) => {
-        const assignments = supervisor_assignments.filter((assignment) => assignment.department === department && assignment.can_evaluate);
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('🔍 [DEBUG] getSupervisorForDepartment called');
+        console.log('  📋 Input department:', department);
+        console.log('  📊 Total supervisor_assignments available:', supervisor_assignments?.length || 0);
+        console.log('  📦 supervisor_assignments data:', supervisor_assignments);
+
+        if (!department) {
+            console.warn('⚠️ [DEBUG] No department provided');
+            return 'No Department Selected';
+        }
+
+        if (!supervisor_assignments || supervisor_assignments.length === 0) {
+            console.warn('⚠️ [DEBUG] No supervisor_assignments available');
+            return 'No Supervisor Assignments Found';
+        }
+
+        // Filter supervisor assignments by department and can_evaluate flag
+        // supervisor_assignments comes from supervisor_departments table in database
+        // Structure: { id, department, supervisor_name, supervisor_email, can_evaluate }
+        const assignments = supervisor_assignments.filter((assignment) => {
+            const matchesDepartment = assignment.department === department;
+            const canEvaluate = assignment.can_evaluate === true;
+
+            // DEBUG: Log each assignment check
+            console.log('  🔎 Checking assignment:', {
+                assignment_id: assignment.id,
+                assignment_department: `"${assignment.department}"`,
+                selected_department: `"${department}"`,
+                department_match: matchesDepartment,
+                can_evaluate_value: assignment.can_evaluate,
+                can_evaluate_type: typeof assignment.can_evaluate,
+                can_evaluate_match: canEvaluate,
+                supervisor_name: assignment.supervisor_name,
+                supervisor_email: assignment.supervisor_email,
+                will_include: matchesDepartment && canEvaluate,
+            });
+
+            return matchesDepartment && canEvaluate;
+        });
+
+        console.log('  ✅ Filtered assignments count:', assignments.length);
+        console.log('  📋 Filtered assignments:', assignments);
 
         if (assignments.length === 0) {
+            console.warn('⚠️ [DEBUG] No supervisor found for department:', department);
+            // DEBUG: Check if there are any assignments for this department without can_evaluate filter
+            const deptOnlyAssignments = supervisor_assignments.filter((a) => a.department === department);
+            console.log('  🔍 Assignments for department (ignoring can_evaluate):', deptOnlyAssignments);
+
+            // Check for partial matches (case-insensitive, contains, etc.)
+            const partialMatches = supervisor_assignments.filter(
+                (a) => a.department.toLowerCase().includes(department.toLowerCase()) || department.toLowerCase().includes(a.department.toLowerCase()),
+            );
+            console.log('  🔍 Partial department matches:', partialMatches);
+
             return 'No Supervisor Assigned';
         } else if (assignments.length === 1) {
-            return assignments[0].supervisor_name;
+            // Return the supervisor's full name (e.g., "Kyle Lastname" from employees table)
+            const supervisorName = assignments[0].supervisor_name;
+            console.log('  ✅ [SUCCESS] Found supervisor:', supervisorName);
+            console.log('  📧 Supervisor email:', assignments[0].supervisor_email);
+            console.log('═══════════════════════════════════════════════════════════');
+            return supervisorName;
         } else {
             // Multiple evaluators - join with " / " separator
-            return assignments.map((assignment) => assignment.supervisor_name).join(' / ');
+            const names = assignments.map((assignment) => assignment.supervisor_name).join(' / ');
+            console.log('  ✅ [SUCCESS] Found multiple supervisors:', names);
+            console.log('═══════════════════════════════════════════════════════════');
+            return names;
         }
     };
 
@@ -163,9 +243,9 @@ export default function DepartmentEvaluation({
         return supervisor_assignments.filter((assignment) => assignment.department === department && assignment.can_evaluate);
     };
 
-    // Function to get HR Personnel for a department
-    const getHRForDepartment = (department: string) => {
-        const assignments = hr_assignments?.filter((assignment) => assignment.department === department) || [];
+    // Function to get HR Personnel (for all departments, not filtered by department)
+    const getHRForDepartment = () => {
+        const assignments = hr_assignments || [];
 
         if (assignments.length === 0) {
             return 'No HR Personnel Assigned';
@@ -225,11 +305,24 @@ export default function DepartmentEvaluation({
         const departmentEmployees = employees_all.filter((emp) => emp.department === selectedDepartment);
 
         // Auto-populate evaluator field when department changes
+        // DEBUG: Log department change
+        console.log('🔄 [DEBUG] Department changed to:', selectedDepartment);
+        console.log('🔄 [DEBUG] Fetching supervisor for department...');
+
         const supervisorName = getSupervisorForDepartment(selectedDepartment);
+
+        console.log('🔄 [DEBUG] Supervisor name retrieved:', supervisorName);
+        console.log('🔄 [DEBUG] Updating evaluationData.evaluator to:', supervisorName);
+
         setEvaluationData((prev) => ({
             ...prev,
             evaluator: supervisorName,
         }));
+
+        // Also update Inertia form data
+        setData((prev) => ({ ...prev, evaluator: supervisorName }));
+
+        console.log('🔄 [DEBUG] Evaluation data updated with supervisor:', supervisorName);
 
         // Check each employee's evaluation status
         const checkEmployeeEvaluationStatus = async () => {
@@ -1461,55 +1554,73 @@ export default function DepartmentEvaluation({
                                             </CardHeader>
                                             <CardContent className="p-6">
                                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                                    {/* Evaluated by - Supervisor */}
+                                                    {/* 
+                                                        Flow: 
+                                                        1. User selects department (e.g., "Packing Plant")
+                                                        2. System fetches supervisor from supervisor_departments table where:
+                                                           - department column = selected department
+                                                           - can_evaluate = true
+                                                           - user_id links to users table (user must have "Supervisor" role)
+                                                        3. System looks up employee name from employees table using user's email
+                                                        4. Displays the supervisor's actual employee name
+                                                    */}
                                                     <div>
                                                         <label className="mb-2 block text-sm font-medium text-gray-700">Evaluated by:</label>
                                                         <div className="rounded-lg border border-gray-300 bg-gray-50 p-3">
                                                             <div className="font-medium text-gray-800">
-                                                                {evaluationData.evaluator ||
-                                                                    (selectedDepartment
-                                                                        ? getSupervisorForDepartment(selectedDepartment)
-                                                                        : 'Select Department First')}
+                                                                {(() => {
+                                                                    if (!selectedDepartment) {
+                                                                        return 'Select Department First';
+                                                                    }
+
+                                                                    // DEBUG: Log when rendering supervisor name
+                                                                    console.log(
+                                                                        '🔍 [DEBUG] Rendering supervisor for department:',
+                                                                        selectedDepartment,
+                                                                    );
+                                                                    const supervisorName = getSupervisorForDepartment(selectedDepartment);
+                                                                    console.log('🔍 [DEBUG] Supervisor name to display:', supervisorName);
+
+                                                                    return supervisorName;
+                                                                })()}
                                                             </div>
                                                             <div className="text-xs text-gray-500">
                                                                 {selectedDepartment
                                                                     ? (() => {
                                                                           const evaluators = getEvaluatorsForDepartment(selectedDepartment);
+                                                                          console.log('🔍 [DEBUG] Evaluators found for helper text:', evaluators);
                                                                           if (evaluators.length === 0) {
-                                                                              return 'No supervisor assigned to this department';
+                                                                              return 'No supervisor assigned to this department in supervisor_departments table';
                                                                           } else if (evaluators.length === 1) {
-                                                                              return 'Auto-populated from database supervisor assignment';
+                                                                              return `Supervisor: ${evaluators[0].supervisor_name}`;
                                                                           } else {
-                                                                              return `Auto-populated from ${evaluators.length} database supervisor assignments`;
+                                                                              return `Supervisors: ${evaluators.map((e) => e.supervisor_name).join(', ')}`;
                                                                           }
                                                                       })()
                                                                     : 'Will be populated when department is selected'}
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    {/* Noted by - HR Personnel */}
                                                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                                                         <div className="mb-2 text-sm font-medium text-blue-700">Noted by:</div>
-                                                        <div className="font-semibold text-blue-800">
-                                                            {selectedDepartment ? getHRForDepartment(selectedDepartment) : 'Select Department First'}
-                                                        </div>
+                                                        <div className="font-semibold text-blue-800">{getHRForDepartment()}</div>
                                                         <div className="text-sm text-blue-700">HR Personnel</div>
                                                         <div className="text-xs text-blue-600">
-                                                            {selectedDepartment
-                                                                ? (() => {
-                                                                      const hrAssignments =
-                                                                          hr_assignments?.filter(
-                                                                              (assignment) => assignment.department === selectedDepartment,
-                                                                          ) || [];
-                                                                      if (hrAssignments.length === 0) {
-                                                                          return 'No HR Personnel assigned to this department';
-                                                                      } else if (hrAssignments.length === 1) {
-                                                                          return 'Auto-populated from database HR assignment';
-                                                                      } else {
-                                                                          return `Auto-populated from ${hrAssignments.length} database HR assignments`;
-                                                                      }
-                                                                  })()
-                                                                : 'Will be populated when department is selected'}
+                                                            {(() => {
+                                                                const hrAssignments = hr_assignments || [];
+                                                                if (hrAssignments.length === 0) {
+                                                                    return 'No HR Personnel assigned';
+                                                                } else if (hrAssignments.length === 1) {
+                                                                    return 'Auto-fetched from database HR assignment (applies to all departments)';
+                                                                } else {
+                                                                    return `Auto-fetched from ${hrAssignments.length} database HR assignments (applies to all departments)`;
+                                                                }
+                                                            })()}
                                                         </div>
                                                     </div>
+                                                    {/* Approved by - Manager */}
                                                     <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                                                         <div className="mb-2 text-sm font-medium text-green-700">Approved by:</div>
                                                         <div className="font-semibold text-green-800">
@@ -1528,9 +1639,9 @@ export default function DepartmentEvaluation({
                                                                       if (managerAssignments.length === 0) {
                                                                           return 'No Manager assigned to this department';
                                                                       } else if (managerAssignments.length === 1) {
-                                                                          return 'Auto-populated from database Manager assignment';
+                                                                          return 'Auto-fetched from database Manager assignment';
                                                                       } else {
-                                                                          return `Auto-populated from ${managerAssignments.length} database Manager assignments`;
+                                                                          return `Auto-fetched from ${managerAssignments.length} database Manager assignments`;
                                                                       }
                                                                   })()
                                                                 : 'Will be populated when department is selected'}
@@ -1592,14 +1703,6 @@ export default function DepartmentEvaluation({
                                                     Clear & Start New Evaluation
                                                 </Button>
                                             )}
-
-                                            <Button
-                                                variant="outline"
-                                                className="border-0 bg-gradient-to-r from-yellow-500 to-orange-500 px-8 py-3 text-lg font-semibold text-white shadow-lg transition-all duration-200 hover:from-yellow-600 hover:to-orange-600 hover:shadow-xl"
-                                            >
-                                                <Download className="mr-2 h-5 w-5" />
-                                                Export to PDF
-                                            </Button>
 
                                             {!isFormReadOnly && (
                                                 <Button
