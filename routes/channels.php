@@ -116,3 +116,37 @@ Broadcast::channel('supervisor.{supervisorId}', function ($user, $supervisorId) 
 
     return false;
 });
+
+Broadcast::channel('hr.{hrId}', function ($user, $hrId) {
+    $isAuthenticated = Auth::check();
+    $currentUser = Auth::user();
+
+    if (!$isAuthenticated || !$currentUser) {
+        return false;
+    }
+
+    // Allow if user ID matches (HR accessing their own channel)
+    if ($currentUser->id == $hrId) {
+        return ['id' => $currentUser->id, 'name' => $currentUser->fullname];
+    }
+
+    // Check if user is HR
+    try {
+        if ($currentUser->isHR()) {
+            return ['id' => $currentUser->id, 'name' => $currentUser->fullname];
+        }
+    } catch (\Exception $e) {
+        Log::error('Error calling isHR()', ['error' => $e->getMessage()]);
+    }
+
+    // Check if user is super admin
+    try {
+        if ($currentUser->isSuperAdmin()) {
+            return ['id' => $currentUser->id, 'name' => $currentUser->fullname];
+        }
+    } catch (\Exception $e) {
+        Log::error('Error calling isSuperAdmin()', ['error' => $e->getMessage()]);
+    }
+
+    return false;
+});

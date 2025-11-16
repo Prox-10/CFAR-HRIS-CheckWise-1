@@ -19,9 +19,13 @@ class AbsenceRequested implements ShouldBroadcastNow
 
   public function __construct(public Absence $absence)
   {
+    // Ensure relationships are loaded
+    $absence->load(['employee', 'supervisorApprover', 'hrApprover']);
+
     $this->payload = [
       'type' => 'absence_request',
       // Flat structure for frontend compatibility
+      'id' => $absence->id,
       'absence_id' => $absence->id,
       'employee_id' => $absence->employee_id,
       'full_name' => $absence->full_name,
@@ -36,8 +40,26 @@ class AbsenceRequested implements ShouldBroadcastNow
       'reason' => $absence->reason,
       'is_partial_day' => $absence->is_partial_day,
       'status' => $absence->status,
+      'supervisor_status' => $absence->supervisor_status,
+      'supervisor_approved_by' => $absence->supervisor_approved_by,
+      'supervisor_approved_at' => $absence->supervisor_approved_at ? $absence->supervisor_approved_at->format('Y-m-d H:i:s') : null,
+      'supervisor_comments' => $absence->supervisor_comments,
+      'hr_status' => $absence->hr_status,
+      'hr_approved_by' => $absence->hr_approved_by,
+      'hr_approved_at' => $absence->hr_approved_at ? $absence->hr_approved_at->format('Y-m-d H:i:s') : null,
+      'hr_comments' => $absence->hr_comments,
       'employee_name' => $absence->employee ? $absence->employee->employee_name : $absence->full_name,
       'picture' => $absence->employee ? $absence->employee->picture : null,
+      'supervisor_approver' => $absence->supervisorApprover ? [
+        'id' => $absence->supervisorApprover->id,
+        'name' => $absence->supervisorApprover->fullname,
+        'email' => $absence->supervisorApprover->email,
+      ] : null,
+      'hr_approver' => $absence->hrApprover ? [
+        'id' => $absence->hrApprover->id,
+        'name' => $absence->hrApprover->fullname,
+        'email' => $absence->hrApprover->email,
+      ] : null,
       // Keep nested structure for backward compatibility
       'absence' => [
         'id' => $absence->id,
@@ -54,6 +76,8 @@ class AbsenceRequested implements ShouldBroadcastNow
         'reason' => $absence->reason,
         'is_partial_day' => $absence->is_partial_day,
         'status' => $absence->status,
+        'supervisor_status' => $absence->supervisor_status,
+        'hr_status' => $absence->hr_status,
         'employee_name' => $absence->employee ? $absence->employee->employee_name : $absence->full_name,
         'picture' => $absence->employee ? $absence->employee->picture : null,
       ]

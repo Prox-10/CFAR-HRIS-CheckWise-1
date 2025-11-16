@@ -27,6 +27,16 @@ class Absence extends Model
         'approved_at',
         'approved_by',
         'approval_comments',
+        // Supervisor approval fields
+        'supervisor_status',
+        'supervisor_approved_by',
+        'supervisor_approved_at',
+        'supervisor_comments',
+        // HR approval fields
+        'hr_status',
+        'hr_approved_by',
+        'hr_approved_at',
+        'hr_comments',
     ];
 
     protected $casts = [
@@ -35,6 +45,8 @@ class Absence extends Model
         'is_partial_day' => 'boolean',
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
+        'supervisor_approved_at' => 'datetime',
+        'hr_approved_at' => 'datetime',
     ];
 
     public function employee(): BelongsTo
@@ -45,6 +57,16 @@ class Absence extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function supervisorApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_approved_by');
+    }
+
+    public function hrApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hr_approved_by');
     }
 
     public function getDaysAttribute(): int
