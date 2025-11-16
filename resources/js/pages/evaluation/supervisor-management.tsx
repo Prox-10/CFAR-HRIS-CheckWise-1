@@ -33,10 +33,6 @@ import { EvaluationSettingsManager } from './components/evaluation-settings-mana
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Evaluation Management',
-        href: '/evaluation',
-    },
-    {
         title: 'Supervisor Management',
         href: '/evaluation/supervisor-management',
     },

@@ -27,19 +27,15 @@ import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Settings, Star, Trash2, UserCheck, UserCog, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { EvaluationFrequencyManager } from './components/evaluation-frequency-manager';
 import { EvaluationSettingsManager } from './components/evaluation-settings-manager';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Evaluation Management',
-        href: '/evaluation',
-    },
-    {
-        title: 'Supervisor Management',
-        href: '/evaluation/supervisor-management',
+        title: 'Admin Management',
+        href: '/admin-management',
     },
 ];
 
@@ -161,6 +157,264 @@ export default function SupervisorManagement({
     const isAdmin = user_permissions?.is_super_admin || false;
     const isSupervisor = user_permissions?.is_supervisor || false;
 
+    // Helper function to process assignment queue (defined inside component to access state setters)
+    const processAssignmentQueue = (index: number) => {
+        const queueKey = 'assignment_queue';
+        const processingKey = 'assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+
+        // Check if already processing to prevent duplicate calls
+        if (sessionStorage.getItem(processingKey) === 'true' && index > 0) {
+            return;
+        }
+
+        if (queue.length === 0 || index >= queue.length) {
+            // All done or no queue
+            const successCount = parseInt(sessionStorage.getItem('assignment_queue_success') || '0');
+            const errors = JSON.parse(sessionStorage.getItem('assignment_queue_errors') || '[]');
+
+            if (queue.length > 0) {
+                // Clean up
+                sessionStorage.removeItem(queueKey);
+                sessionStorage.removeItem('assignment_queue_index');
+                sessionStorage.removeItem('assignment_queue_success');
+                sessionStorage.removeItem('assignment_queue_errors');
+                sessionStorage.removeItem(processingKey);
+
+                if (errors.length === 0) {
+                    toast.success(`Supervisor assignment created successfully for ${successCount} department(s)`);
+                    setNewAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
+                } else if (successCount > 0) {
+                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                } else {
+                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                }
+            }
+            return;
+        }
+
+        // Mark as processing
+        sessionStorage.setItem(processingKey, 'true');
+
+        const assignment = queue[index];
+        router.post(route('evaluation.supervisor-management.store'), assignment, {
+            onSuccess: () => {
+                const successCount = parseInt(sessionStorage.getItem('assignment_queue_success') || '0') + 1;
+                sessionStorage.setItem('assignment_queue_success', successCount.toString());
+                sessionStorage.setItem('assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Process next assignment after a short delay (Inertia will reload first)
+                // The useEffect will pick up the queue and continue processing
+            },
+            onError: (error) => {
+                const errors = JSON.parse(sessionStorage.getItem('assignment_queue_errors') || '[]');
+                const errorMessage = Object.values(error)[0] as string;
+                errors.push(errorMessage);
+                sessionStorage.setItem('assignment_queue_errors', JSON.stringify(errors));
+                sessionStorage.setItem('assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Continue with next assignment after Inertia reloads
+                // The useEffect will pick up the queue and continue processing
+            },
+            preserveState: true,
+            preserveScroll: true,
+            only: ['assignments'],
+        });
+    };
+
+    // Helper function to process HR assignment queue
+    const processHRAssignmentQueue = (index: number) => {
+        const queueKey = 'hr_assignment_queue';
+        const processingKey = 'hr_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+
+        // Check if already processing to prevent duplicate calls
+        if (sessionStorage.getItem(processingKey) === 'true' && index > 0) {
+            return;
+        }
+
+        if (queue.length === 0 || index >= queue.length) {
+            // All done or no queue
+            const successCount = parseInt(sessionStorage.getItem('hr_assignment_queue_success') || '0');
+            const errors = JSON.parse(sessionStorage.getItem('hr_assignment_queue_errors') || '[]');
+
+            if (queue.length > 0) {
+                // Clean up
+                sessionStorage.removeItem(queueKey);
+                sessionStorage.removeItem('hr_assignment_queue_index');
+                sessionStorage.removeItem('hr_assignment_queue_success');
+                sessionStorage.removeItem('hr_assignment_queue_errors');
+                sessionStorage.removeItem(processingKey);
+
+                if (errors.length === 0) {
+                    toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
+                    setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
+                } else if (successCount > 0) {
+                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                } else {
+                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                }
+            }
+            return;
+        }
+
+        // Mark as processing
+        sessionStorage.setItem(processingKey, 'true');
+
+        const assignment = queue[index];
+        router.post(route('evaluation.hr-management.store'), assignment, {
+            onSuccess: () => {
+                const successCount = parseInt(sessionStorage.getItem('hr_assignment_queue_success') || '0') + 1;
+                sessionStorage.setItem('hr_assignment_queue_success', successCount.toString());
+                sessionStorage.setItem('hr_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Process next assignment after a short delay (Inertia will reload first)
+                // The useEffect will pick up the queue and continue processing
+            },
+            onError: (error) => {
+                const errors = JSON.parse(sessionStorage.getItem('hr_assignment_queue_errors') || '[]');
+                const errorMessage = Object.values(error)[0] as string;
+                errors.push(errorMessage);
+                sessionStorage.setItem('hr_assignment_queue_errors', JSON.stringify(errors));
+                sessionStorage.setItem('hr_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Continue with next assignment after Inertia reloads
+                // The useEffect will pick up the queue and continue processing
+            },
+            preserveState: true,
+            preserveScroll: true,
+            only: ['hr_assignments'],
+        });
+    };
+
+    // Check for ongoing queue processing on mount and after assignments update
+    useEffect(() => {
+        const queueKey = 'assignment_queue';
+        const processingKey = 'assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+        const currentIndex = parseInt(sessionStorage.getItem('assignment_queue_index') || '0');
+        const isProcessing = sessionStorage.getItem(processingKey) === 'true';
+
+        // Only continue if there's a queue, we haven't finished, and we're not already processing
+        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+            // Continue processing the queue after a short delay to ensure Inertia has finished updating
+            const timeoutId = setTimeout(() => {
+                processAssignmentQueue(currentIndex);
+            }, 200);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [assignments]); // Re-run when assignments prop changes (after Inertia reload)
+
+    // Helper function to process Manager assignment queue
+    const processManagerAssignmentQueue = (index: number) => {
+        const queueKey = 'manager_assignment_queue';
+        const processingKey = 'manager_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+
+        // Check if already processing to prevent duplicate calls
+        if (sessionStorage.getItem(processingKey) === 'true' && index > 0) {
+            return;
+        }
+
+        if (queue.length === 0 || index >= queue.length) {
+            // All done or no queue
+            const successCount = parseInt(sessionStorage.getItem('manager_assignment_queue_success') || '0');
+            const errors = JSON.parse(sessionStorage.getItem('manager_assignment_queue_errors') || '[]');
+
+            if (queue.length > 0) {
+                // Clean up
+                sessionStorage.removeItem(queueKey);
+                sessionStorage.removeItem('manager_assignment_queue_index');
+                sessionStorage.removeItem('manager_assignment_queue_success');
+                sessionStorage.removeItem('manager_assignment_queue_errors');
+                sessionStorage.removeItem(processingKey);
+
+                if (errors.length === 0) {
+                    toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
+                    setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
+                } else if (successCount > 0) {
+                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                } else {
+                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                }
+            }
+            return;
+        }
+
+        // Mark as processing
+        sessionStorage.setItem(processingKey, 'true');
+
+        const assignment = queue[index];
+        router.post(route('evaluation.manager-management.store'), assignment, {
+            onSuccess: () => {
+                const successCount = parseInt(sessionStorage.getItem('manager_assignment_queue_success') || '0') + 1;
+                sessionStorage.setItem('manager_assignment_queue_success', successCount.toString());
+                sessionStorage.setItem('manager_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Process next assignment after a short delay (Inertia will reload first)
+                // The useEffect will pick up the queue and continue processing
+            },
+            onError: (error) => {
+                const errors = JSON.parse(sessionStorage.getItem('manager_assignment_queue_errors') || '[]');
+                const errorMessage = Object.values(error)[0] as string;
+                errors.push(errorMessage);
+                sessionStorage.setItem('manager_assignment_queue_errors', JSON.stringify(errors));
+                sessionStorage.setItem('manager_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Continue with next assignment after Inertia reloads
+                // The useEffect will pick up the queue and continue processing
+            },
+            preserveState: true,
+            preserveScroll: true,
+            only: ['manager_assignments'],
+        });
+    };
+
+    // Check for ongoing HR queue processing on mount and after hr_assignments update
+    useEffect(() => {
+        const queueKey = 'hr_assignment_queue';
+        const processingKey = 'hr_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+        const currentIndex = parseInt(sessionStorage.getItem('hr_assignment_queue_index') || '0');
+        const isProcessing = sessionStorage.getItem(processingKey) === 'true';
+
+        // Only continue if there's a queue, we haven't finished, and we're not already processing
+        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+            // Continue processing the queue after a short delay to ensure Inertia has finished updating
+            const timeoutId = setTimeout(() => {
+                processHRAssignmentQueue(currentIndex);
+            }, 200);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [hr_assignments]); // Re-run when hr_assignments prop changes (after Inertia reload)
+
+    // Check for ongoing Manager queue processing on mount and after manager_assignments update
+    useEffect(() => {
+        const queueKey = 'manager_assignment_queue';
+        const processingKey = 'manager_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+        const currentIndex = parseInt(sessionStorage.getItem('manager_assignment_queue_index') || '0');
+        const isProcessing = sessionStorage.getItem(processingKey) === 'true';
+
+        // Only continue if there's a queue, we haven't finished, and we're not already processing
+        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+            // Continue processing the queue after a short delay to ensure Inertia has finished updating
+            const timeoutId = setTimeout(() => {
+                processManagerAssignmentQueue(currentIndex);
+            }, 200);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [manager_assignments]); // Re-run when manager_assignments prop changes (after Inertia reload)
+
     // Helper functions for department selection
     const handleSelectAllDepartments = (type: 'supervisor' | 'hr' | 'manager') => {
         if (type === 'supervisor') {
@@ -227,39 +481,32 @@ export default function SupervisorManagement({
             return;
         }
 
+        // Check for existing assignments
+        const existingAssignments = newAssignment.departments.filter((dept) =>
+            assignments.some((assignment) => assignment.user_id === parseInt(newAssignment.user_id) && assignment.department === dept),
+        );
+
+        if (existingAssignments.length > 0) {
+            toast.error(`This supervisor is already assigned to: ${existingAssignments.join(', ')}`);
+            return;
+        }
+
         // Send each department as a separate assignment
-        const assignments = newAssignment.departments.map((department) => ({
+        const assignmentsToCreate = newAssignment.departments.map((department) => ({
             user_id: newAssignment.user_id,
             department: department,
             can_evaluate: newAssignment.can_evaluate,
         }));
 
-        // Process all assignments
-        let successCount = 0;
-        let errorCount = 0;
+        // Store the queue in sessionStorage to persist across page reloads
+        const queueKey = 'assignment_queue';
+        sessionStorage.setItem(queueKey, JSON.stringify(assignmentsToCreate));
+        sessionStorage.setItem('assignment_queue_index', '0');
+        sessionStorage.setItem('assignment_queue_success', '0');
+        sessionStorage.setItem('assignment_queue_errors', JSON.stringify([]));
 
-        assignments.forEach((assignment) => {
-            router.post(route('evaluation.supervisor-management.store'), assignment, {
-                onSuccess: () => {
-                    successCount++;
-                    if (successCount + errorCount === assignments.length) {
-                        if (errorCount === 0) {
-                            toast.success(`Supervisor assignment created successfully for ${successCount} department(s)`);
-                            setNewAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
-                        } else {
-                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                        }
-                    }
-                },
-                onError: (errors) => {
-                    errorCount++;
-                    toast.error(Object.values(errors)[0] as string);
-                    if (successCount + errorCount === assignments.length && errorCount > 0) {
-                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                    }
-                },
-            });
-        });
+        // Start processing from index 0
+        processAssignmentQueue(0);
     };
 
     const handleUpdateAssignment = (assignmentId: number, canEvaluate: boolean) => {
@@ -307,37 +554,20 @@ export default function SupervisorManagement({
         }
 
         // Send each department as a separate assignment
-        const assignments = newHRAssignment.departments.map((department) => ({
+        const assignmentsToCreate = newHRAssignment.departments.map((department) => ({
             user_id: newHRAssignment.user_id,
             department: department,
         }));
 
-        // Process all assignments
-        let successCount = 0;
-        let errorCount = 0;
+        // Store the queue in sessionStorage to persist across page reloads
+        const queueKey = 'hr_assignment_queue';
+        sessionStorage.setItem(queueKey, JSON.stringify(assignmentsToCreate));
+        sessionStorage.setItem('hr_assignment_queue_index', '0');
+        sessionStorage.setItem('hr_assignment_queue_success', '0');
+        sessionStorage.setItem('hr_assignment_queue_errors', JSON.stringify([]));
 
-        assignments.forEach((assignment) => {
-            router.post(route('evaluation.hr-management.store'), assignment, {
-                onSuccess: () => {
-                    successCount++;
-                    if (successCount + errorCount === assignments.length) {
-                        if (errorCount === 0) {
-                            toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
-                            setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
-                        } else {
-                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                        }
-                    }
-                },
-                onError: (errors) => {
-                    errorCount++;
-                    toast.error(Object.values(errors)[0] as string);
-                    if (successCount + errorCount === assignments.length && errorCount > 0) {
-                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                    }
-                },
-            });
-        });
+        // Start processing from index 0
+        processHRAssignmentQueue(0);
     };
 
     const handleDeleteHRAssignment = (assignmentId: number) => {
@@ -370,37 +600,20 @@ export default function SupervisorManagement({
         }
 
         // Send each department as a separate assignment
-        const assignments = newManagerAssignment.departments.map((department) => ({
+        const assignmentsToCreate = newManagerAssignment.departments.map((department) => ({
             user_id: newManagerAssignment.user_id,
             department: department,
         }));
 
-        // Process all assignments
-        let successCount = 0;
-        let errorCount = 0;
+        // Store the queue in sessionStorage to persist across page reloads
+        const queueKey = 'manager_assignment_queue';
+        sessionStorage.setItem(queueKey, JSON.stringify(assignmentsToCreate));
+        sessionStorage.setItem('manager_assignment_queue_index', '0');
+        sessionStorage.setItem('manager_assignment_queue_success', '0');
+        sessionStorage.setItem('manager_assignment_queue_errors', JSON.stringify([]));
 
-        assignments.forEach((assignment) => {
-            router.post(route('evaluation.manager-management.store'), assignment, {
-                onSuccess: () => {
-                    successCount++;
-                    if (successCount + errorCount === assignments.length) {
-                        if (errorCount === 0) {
-                            toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
-                            setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
-                        } else {
-                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                        }
-                    }
-                },
-                onError: (errors) => {
-                    errorCount++;
-                    toast.error(Object.values(errors)[0] as string);
-                    if (successCount + errorCount === assignments.length && errorCount > 0) {
-                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
-                    }
-                },
-            });
-        });
+        // Start processing from index 0
+        processManagerAssignmentQueue(0);
     };
 
     const handleDeleteManagerAssignment = (assignmentId: number) => {
@@ -416,7 +629,7 @@ export default function SupervisorManagement({
 
     return (
         <SidebarProvider>
-            <Head title="Supervisor Management" />
+            <Head title="Admin Management" />
             {/* <Toaster position="top-right" richColors closeButton /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
@@ -427,8 +640,8 @@ export default function SupervisorManagement({
                                 <div className="ms-2 flex items-center">
                                     <Users className="size-11" />
                                     <div className="ms-2">
-                                        <h2 className="flex text-2xl font-bold tracking-tight">Supervisor Management</h2>
-                                        <p className="text-muted-foreground">Manage supervisors and evaluation settings</p>
+                                        <h2 className="flex text-2xl font-bold tracking-tight">Admin Management</h2>
+                                        <p className="text-muted-foreground">Manage your organization's workforce</p>
                                     </div>
                                 </div>
                             </div>
@@ -462,7 +675,7 @@ export default function SupervisorManagement({
                             <TabsContent value="supervisors" className="space-y-6">
                                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                                     {/* Create New Assignment */}
-                                    <Card>
+                                    <Card className="transition-shadow hover:shadow-lg">
                                         <CardHeader>
                                             <CardTitle>Create New Assignment</CardTitle>
                                             <CardDescription>Assign a supervisor to a department</CardDescription>
@@ -543,13 +756,13 @@ export default function SupervisorManagement({
                                     </Card>
 
                                     {/* Current Assignments */}
-                                    <Card>
+                                    <Card className="transition-shadow hover:shadow-lg">
                                         <CardHeader>
                                             <CardTitle>Current Assignments</CardTitle>
                                             <CardDescription>Manage existing supervisor-department assignments</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="space-y-4">
+                                            <div className="max-h-96 space-y-4 overflow-y-auto pr-2 ">
                                                 {assignments.map((assignment) => (
                                                     <div key={assignment.id} className="flex items-center justify-between rounded-lg border p-4">
                                                         <div>
@@ -711,7 +924,7 @@ export default function SupervisorManagement({
                                                 <CardDescription>Manage existing HR Personnel-department assignments</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="space-y-4">
+                                                <div className="max-h-96 space-y-4 overflow-y-auto pr-2">
                                                     {hr_assignments?.map((assignment) => (
                                                         <div key={assignment.id} className="flex items-center justify-between rounded-lg border p-4">
                                                             <div>
@@ -873,7 +1086,7 @@ export default function SupervisorManagement({
                                                 <CardDescription>Manage existing Manager-department assignments</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="space-y-4">
+                                                <div className="max-h-96 space-y-4 overflow-y-auto pr-2">
                                                     {manager_assignments?.map((assignment) => (
                                                         <div key={assignment.id} className="flex items-center justify-between rounded-lg border p-4">
                                                             <div>
