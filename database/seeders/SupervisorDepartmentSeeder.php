@@ -28,22 +28,12 @@ class SupervisorDepartmentSeeder extends Seeder
         'department' => 'Management & Staff(Admin)',
       ],
       [
-        'firstname' => 'Rovilyn',
-        'middlename' => 'B.',
-        'lastname' => 'Villanueva',
-        'email' => 'rovilynvillanueva@gmail.com',
-        'password' => bcrypt('10282001'),
-        // 'roles' => ['HR Personnel']
-         'department' => 'HR Personnel',
-      ],
-      [
         'firstname' => 'Ronelito',
         'middlename' => '',
         'lastname' => 'Mulato',
         'email' => 'ronelitomulato@gmail.com',
         'password' => bcrypt('10282001'),
-        // 'roles' => ['Farm Supervisor']
-         'department' => 'Farm Supervisor',
+         'department' => 'Harvesting',
         
       ],
       [
@@ -52,7 +42,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'lastname' => 'Geraga',
         'email' => 'nestorcgeraga@gmail.com',
         'password' => bcrypt('10282001'),
-        'department' => 'P&D Supervisor',
+        'department' => 'Pest & Decease',
       ],
       [
         'firstname' => 'Marcelo',
@@ -60,7 +50,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'lastname' => 'Milana',
         'email' => 'marcelomilana@gmail.com',
         'password' => bcrypt('10282001'),
-        'department' => 'Packing Plant Supervisor'
+        'department' => 'Packing Plant',
       ],
       [
         'firstname' => 'Jeah Pearl',
@@ -68,7 +58,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'lastname' => 'Cabal',
         'email' => 'jeahpearlcabal@gmail.com',
         'password' => bcrypt('10282001'),
-        'department' => 'PP Asst. Supervisor'
+        'department' => 'Packing Plant',
       ],
       [
         'firstname' => 'Norberto',
@@ -76,7 +66,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'lastname' => 'Aguilar',
         'email' => 'norbertooaguilar@gmail.com',
         'password' => bcrypt('10282001'),
-        'department' => 'Harvesting Supervisor'
+        'department' => 'Harvesting',
       ],
       [
         'firstname' => 'LP',
@@ -84,7 +74,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'lastname' => 'Subayno',
         'email' => 'lpsubayno@gmail.com',
         'password' => bcrypt('10282001'),
-        'department' => 'ACCTG. Head'
+        'department' => 'Management & Staff(Admin)',
       ],
     ];
 

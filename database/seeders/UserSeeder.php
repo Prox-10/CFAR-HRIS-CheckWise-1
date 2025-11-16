@@ -19,12 +19,12 @@ class UserSeeder extends Seeder
 
     // Create admin user
     $admin = User::firstOrCreate(
-      ['email' => 'admin@example.com'],
+      ['email' => 'superadmin@gmail.com'],
       [
         'firstname' => 'Super',
         'lastname' => 'Admin',
-        'email' => 'admin@example.com',
-        'password' => bcrypt('password'),
+        'email' => 'superadmin@gmail.com',
+        'password' => bcrypt('10282001'),
         'email_verified_at' => now(),
         'department' => 'Management & Staff(Admin)',
       ]
@@ -39,33 +39,33 @@ class UserSeeder extends Seeder
 
     // Create HR Manager
     $hrManager = User::firstOrCreate(
-      ['email' => 'hr@example.com'],
+      ['email' => 'hr@gmail.com'],
       [
         'firstname' => 'HR',
         'lastname' => 'Manager',
-        'email' => 'hr@example.com',
-        'password' => bcrypt('password'),
+        'email' => 'hr@gmail.com',
+        'password' => bcrypt('10282001'),
         'email_verified_at' => now(),
         'department' => 'Management & Staff(Admin)',
       ]
     );
 
-    if (Role::where('name', 'HR Manager')->exists()) {
-      $hrManager->assignRole('HR Manager');
+    if (Role::where('name', 'HR')->exists()) {
+      $hrManager->assignRole('HR');
     } else {
-      $this->command->warn('HR Manager role not found. Skipping role assignment.');
+      $this->command->warn('HR role not found. Skipping role assignment.');
     }
 
     // Create Supervisor
     $supervisor = User::firstOrCreate(
-      ['email' => 'supervisor@example.com'],
+      ['email' => 'ppsupervisor@gmail.com'],
       [
         'firstname' => 'Department',
         'lastname' => 'Supervisor',
-        'email' => 'supervisor@example.com',
-        'password' => bcrypt('password'),
+        'email' => 'ppsupervisor@gmail.com',
+          'password' => bcrypt('10282001'),
         'email_verified_at' => now(),
-        'department' => 'Management & Staff(Admin)',
+        'department' => 'Packing Plant',
       ]
     );
 
@@ -100,7 +100,7 @@ class UserSeeder extends Seeder
       $user = User::firstOrCreate(
         ['email' => $employeeData['email']],
         array_merge($employeeData, [
-          'password' => bcrypt('password'),
+          'password' => bcrypt('10282001'),
           'email_verified_at' => now(),
         ])
       );
@@ -133,20 +133,12 @@ class UserSeeder extends Seeder
         'roles' => ['Manager']
       ],
       [
-        'firstname' => 'Carmella',
-        'middlename' => 'B.',
-        'lastname' => 'Pedregosa',
-        'email' => 'carmellapedregos@gmail.com',
-        'department' => 'Management & Staff(Admin)',
-        'roles' => ['Manager']
-      ],
-      [
         'firstname' => 'Rovilyn',
         'middlename' => 'B.',
         'lastname' => 'Villanueva',
         'email' => 'rovilynvillanueva@gmail.com',
         'department' => 'Management & Staff(Admin)',
-        'roles' => ['HR Personnel']
+        'roles' => ['HR']
       ],
       [
         'firstname' => 'Ronelito',
@@ -154,7 +146,7 @@ class UserSeeder extends Seeder
         'lastname' => 'Mulato',
         'email' => 'ronelitomulato@gmail.com',
         'department' => 'Harvesting',
-        'roles' => ['Farm Supervisor']
+        'roles' => ['Supervisor']
       ],
       [
         'firstname' => 'Nestor',
@@ -162,7 +154,7 @@ class UserSeeder extends Seeder
         'lastname' => 'Geraga',
         'email' => 'nestorcgeraga@gmail.com',
         'department' => 'Pest & Decease',
-        'roles' => ['P&D Supervisor']
+        'roles' => ['Supervisor']
       ],
       [
         'firstname' => 'Marcelo',
@@ -170,7 +162,7 @@ class UserSeeder extends Seeder
         'lastname' => 'Milana',
         'email' => 'marcelomilana@gmail.com',
         'department' => 'Packing Plant',
-        'roles' => ['Packing Plant Supervisor']
+        'roles' => ['Supervisor']
       ],
       [
         'firstname' => 'Jeah Pearl',
@@ -178,7 +170,7 @@ class UserSeeder extends Seeder
         'lastname' => 'Cabal',
         'email' => 'jeahpearlcabal@gmail.com',
         'department' => 'Packing Plant',
-        'roles' => ['PP Asst. Supervisor']
+        'roles' => ['Supervisor']
       ],
       [
         'firstname' => 'Norberto',
@@ -186,7 +178,7 @@ class UserSeeder extends Seeder
         'lastname' => 'Aguilar',
         'email' => 'norbertooaguilar@gmail.com',
         'department' => 'Harvesting',
-        'roles' => ['Harvesting Supervisor']
+        'roles' => ['Supervisor']
       ],
       [
         'firstname' => 'LP',
@@ -233,8 +225,8 @@ class UserSeeder extends Seeder
 
     $this->command->info('Users seeded successfully!');
     $this->command->info('Default login credentials:');
-    $this->command->info('Admin: admin@example.com / password');
-    $this->command->info('HR Manager: hr@example.com / password');
-    $this->command->info('Supervisor: supervisor@example.com / password');
+    $this->command->info('Super Admin: superadmin@gmail.com / 10282001');
+    $this->command->info('HR: hr@gmail.com / 10282001');
+    $this->command->info('Supervisor: ppsupervisor@gmail.com / 10282001');
   }
 }
