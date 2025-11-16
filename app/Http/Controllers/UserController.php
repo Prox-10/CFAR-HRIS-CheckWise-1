@@ -28,7 +28,7 @@ class UserController extends Controller
                 'profile_image' => $user->profile_image ? $user->profile_image : '/Logo.png',
                 'roles' => $user->roles->pluck('name')->toArray(),
                 'role_ids' => $user->roles->pluck('id')->toArray(),
-                'created_at' => $user->created_at->format('d-m-Y'),
+                'created_at' => $user->created_at ? $user->created_at->toISOString() : null,
             ];
         });
 

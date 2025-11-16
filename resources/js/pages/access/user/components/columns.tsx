@@ -59,24 +59,18 @@ const columns = (
                                 <img
                                     src={profileImage}
                                     alt={fullname}
-                                    className="w-10 h-10 rounded-full object-cover"
+                                    className="h-10 w-10 rounded-full object-cover"
                                     onError={(e) => {
                                         e.currentTarget.src = '/Logo.png';
                                     }}
                                 />
                             ) : (
-                                <img
-                                    src="/Logo.png"
-                                    alt={fullname}
-                                    className="w-10 h-10 rounded-full object-cover"
-                                />
+                                <img src="/Logo.png" alt={fullname} className="h-10 w-10 rounded-full object-cover" />
                             )}
                         </div>
                         <div>
                             <div className="text-sm font-medium text-gray-900">{fullname}</div>
-                            <div className="text-xs text-gray-500">
-                                {department || 'N/A'}
-                            </div>
+                            <div className="text-xs text-gray-500">{department || 'N/A'}</div>
                         </div>
                     </div>
                 );
@@ -87,11 +81,7 @@ const columns = (
             header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
             cell: ({ row }) => {
                 const email = row.getValue('email') as string;
-                return (
-                    <div className="text-sm text-gray-900">
-                        {email}
-                    </div>
-                );
+                return <div className="text-sm text-gray-900">{email}</div>;
             },
         },
         {
@@ -99,11 +89,7 @@ const columns = (
             header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
             cell: ({ row }) => {
                 const department = row.getValue('department') as string;
-                return (
-                    <div className="text-sm text-gray-900">
-                        {department || 'N/A'}
-                    </div>
-                );
+                return <div className="text-sm text-gray-900">{department || 'N/A'}</div>;
             },
         },
 
@@ -139,13 +125,13 @@ const columns = (
                         {roles.slice(0, 3).map((role, index) => (
                             <span
                                 key={index}
-                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${getRoleColor(role)}`}
+                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getRoleColor(role)}`}
                             >
                                 {role}
                             </span>
                         ))}
                         {roles.length > 3 && (
-                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 border border-gray-200">
+                            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
                                 +{roles.length - 3} more
                             </span>
                         )}
@@ -157,12 +143,30 @@ const columns = (
             accessorKey: 'created_at',
             header: 'Created Date',
             cell: ({ row }) => {
-                const createdDate = row.getValue('created_at') as string;
-                return (
-                    <div className="text-sm text-gray-900">
-                        {new Date(createdDate).toLocaleDateString()}
-                    </div>
-                );
+                const createdDate = row.getValue('created_at') as string | null | undefined;
+
+                if (!createdDate) {
+                    return <div className="text-sm text-gray-500">N/A</div>;
+                }
+
+                try {
+                    const date = new Date(createdDate);
+                    // Check if date is valid
+                    if (isNaN(date.getTime())) {
+                        return <div className="text-sm text-gray-500">N/A</div>;
+                    }
+                    return (
+                        <div className="text-sm text-gray-900">
+                            {date.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                            })}
+                        </div>
+                    );
+                } catch (error) {
+                    return <div className="text-sm text-gray-500">N/A</div>;
+                }
             },
         },
         {
@@ -177,12 +181,7 @@ const columns = (
                         {/* Dropdown for additional actions */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="border border-gray-200"
-                                    aria-label="More actions"
-                                >
+                                <Button size="icon" variant="ghost" className="border border-gray-200" aria-label="More actions">
                                     <CircleEllipsis className="h-5 w-5" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -234,4 +233,3 @@ const columns = (
 };
 
 export { columns };
-

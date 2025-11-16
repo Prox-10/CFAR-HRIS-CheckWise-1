@@ -53,6 +53,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('report/pest-disease-dtr', function () {
             return Inertia::render('report/pest-disease');
         })->name('report.pest-disease-dtr');
+        Route::get('report/gender-development', function () {
+            return Inertia::render('report/gender-development');
+        })->name('report.gender-development');
     });
 
     // Explicit routes for all service-tenure subpages

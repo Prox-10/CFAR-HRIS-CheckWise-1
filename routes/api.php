@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AttendanceController as ApiAttendanceController;
 use App\Http\Controllers\Api\AttendanceSessionController;
 use App\Http\Controllers\Api\EvaluationController as ApiEvaluationController;
 use App\Http\Controllers\Api\DailyCheckingController;
+use App\Http\Controllers\GenderDevelopmentReportController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -32,6 +33,7 @@ Route::post('/fingerprint/verify', [FingerprintController::class, 'verify']);
 Route::post('/employee/store', [EmployeeController::class, 'store']);
 Route::get('/fingerprint/all', [FingerprintController::class, 'all']);
 Route::get('/employee/all', [ApiEmployeeController::class, 'index']);
+Route::get('/employees', [ApiEmployeeController::class, 'index']); // Alias for /employee/all
 Route::get('/employees/packing-plant', function (Request $request) {
     $startDate = $request->query('start_date');
     $endDate = $request->query('end_date');
@@ -105,6 +107,11 @@ Route::put('/attendance-sessions/{attendanceSession}', [AttendanceSessionControl
 Route::post('/daily-checking/store', [DailyCheckingController::class, 'store']);
 Route::get('/daily-checking/for-date', [DailyCheckingController::class, 'getForDate']);
 Route::get('/daily-checking/by-microteam', [DailyCheckingController::class, 'getByMicroteam']);
+
+// Gender Development Report API
+Route::get('/gender-development/hr', [GenderDevelopmentReportController::class, 'getHR'])->middleware('web');
+Route::get('/gender-development/manager', [GenderDevelopmentReportController::class, 'getManager'])->middleware('web');
+Route::post('/gender-development/store', [GenderDevelopmentReportController::class, 'store'])->middleware('web');
 
 Route::get('/employee/by-employeeid', function (Request $request) {
     $employeeid = $request->query('employeeid');

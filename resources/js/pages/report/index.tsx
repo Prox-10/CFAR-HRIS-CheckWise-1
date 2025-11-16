@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, CalendarDays, ClipboardList, Clock, EyeIcon, FileText, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, Clock, EyeIcon, FileText, UsersIcon } from 'lucide-react';
 // import { format } from 'path';
 import { AppSidebar } from '@/components/app-sidebar';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
@@ -170,22 +170,34 @@ const ReportPage = () => {
                                     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 p-5">
                                         <TabsList className="bg-main mb-4 grid grid-cols-2 py-[5px] md:grid-cols-5">
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5"
+                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
                                                 value="attendance"
                                                 // onClick={() => router.visit('/report/daily-attendance')}
                                             >
                                                 Attendance
                                             </TabsTrigger>
-                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="employee">
+                                            <TabsTrigger
+                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                value="employee"
+                                            >
                                                 Employee
                                             </TabsTrigger>
-                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="leave">
+                                            <TabsTrigger
+                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                value="leave"
+                                            >
                                                 Leave
                                             </TabsTrigger>
-                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="evaluation">
+                                            <TabsTrigger
+                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                value="evaluation"
+                                            >
                                                 Evaluation
                                             </TabsTrigger>
-                                            <TabsTrigger className="hover:bg-main-600 mx-3 mb-5" value="absenteeism">
+                                            <TabsTrigger
+                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                value="absenteeism"
+                                            >
                                                 Absenteeism
                                             </TabsTrigger>
                                         </TabsList>
@@ -228,13 +240,14 @@ const ReportPage = () => {
                                         <TabsContent value="employee" className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                                 <ReportCard
-                                                    title="Employee Information"
-                                                    description="Complete employee information with contact information"
-                                                    icon={Users}
+                                                    title="Gender And Development"
+                                                    description="Report on employee gender and development"
+                                                    icon={UsersIcon}
                                                     variant="employee"
-                                                    buttonText="Generate Employee Info"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/gender-development')}
                                                 />
-                                                <ReportCard
+                                                {/* <ReportCard
                                                     title="Employee Tenure"
                                                     description="Report on employee service length and anniversaries"
                                                     icon={Calendar}
@@ -254,7 +267,7 @@ const ReportPage = () => {
                                                     icon={Users}
                                                     variant="employee"
                                                     buttonText="Generate New Hires Report"
-                                                />
+                                                /> */}
                                             </div>
                                         </TabsContent>
                                         <TabsContent value="leave" className="space-y-4">
