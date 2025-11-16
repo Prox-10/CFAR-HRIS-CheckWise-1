@@ -145,12 +145,12 @@ export function DataTable<TData, TValue>({ columns, data, employees }: DataTable
                         </Button> */}
                         <DataTableViewOptions table={table} />
                     </DropdownMenuTrigger>
-                    {can('Add Leave') && (
+                    {/* {can('Add Leave') && (
                         <Button variant="main" className="ml-auto" onClick={() => setIsModelOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Leave Request
                         </Button>
-                    )}
+                    )} */}
                     <DropdownMenuContent align="end">
                         {table
                             .getAllColumns()

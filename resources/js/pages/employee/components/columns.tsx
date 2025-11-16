@@ -1,11 +1,9 @@
 'use client';
 import DeleteConfirmationDialog from '@/components/delete-alert';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
-import { CircleEllipsis, Edit, Eye, Fingerprint, Key, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+import { CircleEllipsis, Edit, Eye, Fingerprint, Key } from 'lucide-react';
 // import { Employees } from '../types/employees';
 import { Employee, Employees } from '@/hooks/employees';
 
@@ -18,21 +16,11 @@ const calculateAge = (dateOfBirth: string | null): number => {
     if (!dateOfBirth) return 0;
 
     try {
-        // Handle different date formats that might come from the backend
-        let birthDate: Date;
+        // Parse the date string
+        const birthDate = new Date(dateOfBirth);
 
-        // If it's already a Date object
-        if (dateOfBirth instanceof Date) {
-            birthDate = dateOfBirth;
-        } else if (typeof dateOfBirth === 'string') {
-            // Try to parse the date string
-            birthDate = new Date(dateOfBirth);
-
-            // Check if the date is valid
-            if (isNaN(birthDate.getTime())) {
-                return 0;
-            }
-        } else {
+        // Check if the date is valid
+        if (isNaN(birthDate.getTime())) {
             return 0;
         }
 
@@ -63,19 +51,6 @@ const columns = (
     handleDelete: (id: string, onSuccess: () => void) => void,
 ): ColumnDef<Employee>[] => {
     return [
-        {
-            id: 'select',
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-            ),
-        },
         {
             accessorKey: 'employee_name',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Employee" />,
@@ -246,9 +221,9 @@ const columns = (
                         ? 'bg-green-100 text-green-800'
                         : work_status === 'Add Crew'
                           ? 'bg-blue-100 text-blue-800'
-                            : work_status === 'Probationary'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800';
+                          : work_status === 'Probationary'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800';
 
                 return <span className={`rounded px-2 py-1 text-xs font-medium ${workStatusColor}`}>{work_status}</span>;
             },

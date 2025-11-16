@@ -251,7 +251,7 @@ export default function Index({ leave, employees, leaveStats, leavesPerMonth, le
                                                                 pendingLabel: user_permissions?.is_supervisor ? 'Your Pending' : 'Pending',
                                                                 rejectedLabel: user_permissions?.is_supervisor
                                                                     ? 'Your Rejected'
-                                                                    : 'Rejected / Cancelled',
+                                                                    : 'Rejected',
                                                             }}
                                                         />
                                                         {/* ChartBarLabel for leave per month by type */}

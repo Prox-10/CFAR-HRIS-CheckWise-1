@@ -35,19 +35,6 @@ const columns = (
     handleDelete: (id: string, onSuccess: () => void) => void,
 ): ColumnDef<Attendance>[] => [
     {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-    },
-    {
         accessorKey: 'employee_name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Employee" />,
         cell: ({ row }) => {
@@ -145,21 +132,6 @@ const columns = (
             return filterValue.includes(leaveStatus);
         },
     },
-    // {
-    //     accessorKey: 'session',
-    //     header: 'Session',
-    //     cell: ({ row }) => {
-    //         const session = 'present';
-    //         let colorClass = 'bg-green-100 text-green-800';
-    //         return (
-    //             <div className="w-24">
-    //                 <span className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium ${colorClass}`}>
-    //                     {session.charAt(0).toUpperCase() + session.slice(1)}
-    //                 </span>
-    //             </div>
-    //         );
-    //     }, 
-    // },
     {
         accessorKey: 'status',
         header: 'Status',

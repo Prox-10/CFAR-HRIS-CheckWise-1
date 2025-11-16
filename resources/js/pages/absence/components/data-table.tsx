@@ -139,12 +139,12 @@ export function DataTable<TData, TValue>({ columns, data, employees = [] }: Data
                         <DataTableViewOptions table={table} />
                     </DropdownMenuTrigger>
                     <div className="ml-auto flex items-center gap-2">
-                        {can('Add Absence') && (
+                        {/* {can('Add Absence') && (
                             <Button variant="main" onClick={() => setIsModelOpen(true)}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Absence
                             </Button>
-                        )}
+                        )} */}
                         {can('Absence Request') && (
                             <Link href={route('absence.absence-approve')}>
                                 <Button variant="main">Absence Request</Button>

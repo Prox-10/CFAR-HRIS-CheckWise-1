@@ -1,6 +1,5 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { usePermission } from '@/hooks/user-permission';
 import { ColumnDef } from '@tanstack/react-table';
 import { Eye, Star } from 'lucide-react';
@@ -20,19 +19,6 @@ const columns = (
         evaluable_departments: string[];
     },
 ): ColumnDef<Evaluation>[] => [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-    },
     {
         accessorKey: 'employee_name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Employee" />,

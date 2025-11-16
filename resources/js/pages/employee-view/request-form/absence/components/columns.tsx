@@ -1,6 +1,5 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { CircleEllipsis, Eye } from 'lucide-react';
@@ -40,19 +39,6 @@ const columns = (
     handleEdit: (absence: AbsenceRequest) => void,
     handleDelete: (id: string, onSuccess: () => void) => void,
 ): ColumnDef<AbsenceRequest>[] => [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-    },
     {
         accessorKey: 'absence_type',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Absence Type" />,

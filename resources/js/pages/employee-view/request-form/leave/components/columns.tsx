@@ -1,6 +1,5 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { CircleEllipsis, Eye } from 'lucide-react';
@@ -39,19 +38,6 @@ const columns = (
     handleEdit: (leave: LeaveRequest) => void,
     handleDelete: (id: string, onSuccess: () => void) => void,
 ): ColumnDef<LeaveRequest>[] => [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-    },
     {
         accessorKey: 'leave_type',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Leave Type" />,
@@ -114,10 +100,8 @@ const columns = (
                     : leave_status === 'Pending'
                       ? 'bg-yellow-100 text-yellow-800'
                       : leave_status === 'Rejected'
-                        ? 'bg-red-100 text-red-800'
-                        : leave_status === 'Cancelled'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-gray-100 text-gray-800';
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-gray-100 text-gray-800';
 
             return <span className={`rounded px-2 py-1 text-xs font-medium ${statusColor}`}>{leave_status}</span>;
         },

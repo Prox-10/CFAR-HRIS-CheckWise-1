@@ -1,6 +1,5 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Clock, Edit, Eye, XCircle } from 'lucide-react';
 // import { Employees } from '../types/employees';
@@ -33,19 +32,6 @@ const columns = (
     handleEdit: (leave: Leave) => void,
     handleDelete: (id: string, onSuccess: () => void) => void,
 ): ColumnDef<Leave>[] => [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-    },
     {
         accessorKey: 'employee_name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Employee" />,
