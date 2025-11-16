@@ -35,7 +35,7 @@ const ReportCard = ({
     description: string;
     icon: React.ElementType;
     buttonText?: string;
-    variant?: 'default' | 'attendance' | 'employee' | 'leave' | 'evaluation' | 'payroll';
+    variant?: 'default' | 'attendance' | 'employee' | 'leave' | 'evaluation' | 'absenteeism';
     onClick?: () => void;
 }) => {
     return (
@@ -47,7 +47,7 @@ const ReportCard = ({
                     variant === 'employee' && 'border-l-4 border-blue-500',
                     variant === 'leave' && 'border-l-4 border-yellow-500',
                     variant === 'evaluation' && 'border-l-4 border-purple-500',
-                    variant === 'payroll' && 'border-l-4 border-orange-500',
+                    variant === 'absenteeism' && 'border-l-4 border-orange-500',
                 )}
             >
                 <CardTitle className="flex items-center text-base">
@@ -59,7 +59,7 @@ const ReportCard = ({
                             variant === 'employee' && 'text-blue-500',
                             variant === 'leave' && 'text-yellow-500',
                             variant === 'evaluation' && 'text-purple-500',
-                            variant === 'payroll' && 'text-orange-500',
+                            variant === 'absenteeism' && 'text-orange-500',
                         )}
                     />
                     {title}
@@ -273,13 +273,14 @@ const ReportPage = () => {
                                         <TabsContent value="leave" className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                                 <ReportCard
-                                                    title="Leave Balance Report"
+                                                    title="Employee Leave List"
                                                     description="Current leave balances for all employees"
                                                     icon={CalendarDays}
                                                     variant="leave"
-                                                    buttonText="Generate Leave Balance"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/employee-leave-list')}
                                                 />
-                                                <ReportCard
+                                                {/* <ReportCard
                                                     title="Leave Usage Summary"
                                                     description="Summary of leave usage by type and department"
                                                     icon={CalendarDays}
@@ -292,6 +293,18 @@ const ReportPage = () => {
                                                     icon={CalendarDays}
                                                     variant="leave"
                                                     buttonText="Generate Pending List"
+                                                /> */}
+                                            </div>
+                                        </TabsContent>
+                                        <TabsContent value="absenteeism" className="space-y-4">
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                <ReportCard
+                                                    title="Employee Absenteeism Report"
+                                                    description="Summary of employee absenteeism"
+                                                    icon={FileText}
+                                                    variant="absenteeism"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/employee-absenteeism-report')}
                                                 />
                                             </div>
                                         </TabsContent>
@@ -318,73 +331,6 @@ const ReportPage = () => {
                                                     variant="evaluation"
                                                     buttonText="Generate Status Report"
                                                 />
-                                            </div>
-                                        </TabsContent>
-                                        <TabsContent value="absenteeism" className="space-y-4">
-                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                                <Card>
-                                                    <CardHeader>
-                                                        <CardTitle className="text-base">Attendance Rate (Last 6 months)</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="h-64">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <LineChart data={attendanceRateData}>
-                                                                <XAxis dataKey="month" />
-                                                                <YAxis domain={[0, 100]} />
-                                                                <Tooltip />
-                                                                <Legend />
-                                                                <Line
-                                                                    type="monotone"
-                                                                    dataKey="rate"
-                                                                    stroke="#10b981"
-                                                                    strokeWidth={2}
-                                                                    dot={{ r: 3 }}
-                                                                />
-                                                            </LineChart>
-                                                        </ResponsiveContainer>
-                                                    </CardContent>
-                                                </Card>
-                                                <Card>
-                                                    <CardHeader>
-                                                        <CardTitle className="text-base">Leave Usage by Type</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="h-64">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <PieChart>
-                                                                <Pie
-                                                                    data={leaveTypeData}
-                                                                    dataKey="value"
-                                                                    nameKey="name"
-                                                                    innerRadius={45}
-                                                                    outerRadius={65}
-                                                                    paddingAngle={2}
-                                                                >
-                                                                    {leaveTypeData.map((entry, index) => (
-                                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                                    ))}
-                                                                </Pie>
-                                                                <Tooltip />
-                                                                <Legend />
-                                                            </PieChart>
-                                                        </ResponsiveContainer>
-                                                    </CardContent>
-                                                </Card>
-                                                <Card>
-                                                    <CardHeader>
-                                                        <CardTitle className="text-base">Performance Rating Distribution</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="h-64">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={performanceData}>
-                                                                <XAxis dataKey="rating" />
-                                                                <YAxis />
-                                                                <Tooltip />
-                                                                <Legend />
-                                                                <Bar dataKey="count" fill="#8b5cf6" />
-                                                            </BarChart>
-                                                        </ResponsiveContainer>
-                                                    </CardContent>
-                                                </Card>
                                             </div>
                                         </TabsContent>
                                     </Tabs>

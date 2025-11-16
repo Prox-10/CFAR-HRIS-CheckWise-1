@@ -904,4 +904,52 @@ class LeaveController extends Controller
             return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Get approved leaves for Employee Leave List report
+     */
+    public function approvedLeaves(): Response
+    {
+        // Get all approved leaves (where hr_status is 'approved' or leave_status is 'Approved')
+        $leaves = Leave::with(['employee', 'supervisorApprover', 'hrApprover'])
+            ->where(function ($query) {
+                $query->where('hr_status', 'approved')
+                    ->orWhere('leave_status', 'Approved');
+            })
+            ->orderBy('leave_date_approved', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $approvedLeaves = $leaves->map(function ($leave) {
+            return [
+                'id' => $leave->id,
+                'leave_type' => $leave->leave_type,
+                'leave_start_date' => $leave->leave_start_date->format('Y-m-d'),
+                'leave_end_date' => $leave->leave_end_date->format('Y-m-d'),
+                'leave_days' => $leave->leave_days,
+                'status' => $leave->leave_status,
+                'leave_reason' => $leave->leave_reason,
+                'leave_date_reported' => $leave->leave_date_reported->format('Y-m-d'),
+                'leave_date_approved' => $leave->leave_date_approved ? $leave->leave_date_approved->format('Y-m-d') : null,
+                'leave_comments' => $leave->leave_comments,
+                'employee_name' => $leave->employee ? $leave->employee->employee_name : null,
+                'employeeid' => $leave->employee ? $leave->employee->employeeid : null,
+                'department' => $leave->employee ? $leave->employee->department : null,
+                'position' => $leave->employee ? $leave->employee->position : null,
+                'picture' => $leave->employee ? $leave->employee->picture : null,
+                'supervisor_approver' => $leave->supervisorApprover ? [
+                    'id' => $leave->supervisorApprover->id,
+                    'name' => $leave->supervisorApprover->fullname,
+                ] : null,
+                'hr_approver' => $leave->hrApprover ? [
+                    'id' => $leave->hrApprover->id,
+                    'name' => $leave->hrApprover->fullname,
+                ] : null,
+            ];
+        })->toArray();
+
+        return Inertia::render('report/employee-leave-list', [
+            'leaves' => $approvedLeaves,
+        ]);
+    }
 }

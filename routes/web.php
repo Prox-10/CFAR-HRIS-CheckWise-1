@@ -56,6 +56,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('report/gender-development', function () {
             return Inertia::render('report/gender-development');
         })->name('report.gender-development');
+        Route::get('report/employee-leave-list', [\App\Http\Controllers\LeaveController::class, 'approvedLeaves'])->name('report.employee-leave-list');
+        Route::get('report/employee-absenteeism-report', [\App\Http\Controllers\AbsenceController::class, 'approvedAbsences'])->name('report.employee-absenteeism-report');
     });
 
     // Explicit routes for all service-tenure subpages

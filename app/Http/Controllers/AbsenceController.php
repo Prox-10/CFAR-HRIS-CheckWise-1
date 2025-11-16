@@ -483,7 +483,7 @@ class AbsenceController extends Controller
                         'department' => $absence->department,
                         'supervised_departments' => $supervisedDepartments,
                     ]);
-                    return response()->json(['error' => 'You do not have permission to approve absences for this department.'], 403);
+                    return redirect()->back()->withErrors(['error' => 'You do not have permission to approve absences for this department.']);
                 }
             }
 
@@ -535,10 +535,7 @@ class AbsenceController extends Controller
                         'is_hr' => $isHR,
                         'is_super_admin' => $isSuperAdmin,
                     ]);
-                    return response()->json([
-                        'message' => 'This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests. Only Super Admin can override this decision.',
-                        'error' => 'Supervisor rejected this absence request. HR actions are not allowed.'
-                    ], 403);
+                    return redirect()->back()->withErrors(['error' => 'This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests.']);
                 }
             } elseif ($absence->supervisor_status !== 'approved') {
                 // Supervisor hasn't approved yet (pending or null)
@@ -548,10 +545,7 @@ class AbsenceController extends Controller
                         'supervisor_status' => $absence->supervisor_status,
                         'user_id' => $user->id,
                     ]);
-                    return response()->json([
-                        'message' => 'Supervisor must approve this absence request before HR can make a decision.',
-                        'error' => 'Supervisor must approve before HR can make a decision.'
-                    ], 403);
+                    return redirect()->back()->withErrors(['error' => 'Supervisor must approve this absence request before HR can make a decision.']);
                 }
             }
 
@@ -747,6 +741,65 @@ class AbsenceController extends Controller
                 'is_hr' => $isHR,
                 'supervised_departments' => $supervisedDepartments,
             ],
+        ]);
+    }
+
+    /**
+     * Get approved absences for Employee Absenteeism Report
+     */
+    public function approvedAbsences()
+    {
+        // Get all approved absences (where hr_status is 'approved' or status is 'approved')
+        $absences = Absence::with(['employee', 'supervisorApprover', 'hrApprover'])
+            ->where(function ($query) {
+                $query->where('hr_status', 'approved')
+                    ->orWhere('status', 'approved');
+            })
+            ->orderBy('hr_approved_at', 'desc')
+            ->orderBy('approved_at', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get HR employee
+        $hrEmployee = User::whereHas('roles', function ($query) {
+            $query->whereIn('name', ['HR', 'HR Manager', 'HR Personnel']);
+        })->first();
+
+        $approvedAbsences = $absences->map(function ($absence) {
+            return [
+                'id' => $absence->id,
+                'absence_type' => $absence->absence_type,
+                'from_date' => $absence->from_date->format('Y-m-d'),
+                'to_date' => $absence->to_date->format('Y-m-d'),
+                'days' => $absence->days,
+                'is_partial_day' => $absence->is_partial_day,
+                'status' => $absence->status,
+                'reason' => $absence->reason,
+                'submitted_at' => $absence->submitted_at->format('Y-m-d'),
+                'approved_at' => $absence->approved_at ? $absence->approved_at->format('Y-m-d') : null,
+                'hr_approved_at' => $absence->hr_approved_at ? $absence->hr_approved_at->format('Y-m-d') : null,
+                'employee_name' => $absence->employee ? $absence->employee->employee_name : $absence->full_name,
+                'employeeid' => $absence->employee ? $absence->employee->employeeid : $absence->employee_id_number,
+                'department' => $absence->department,
+                'position' => $absence->position,
+                'picture' => $absence->employee ? $absence->employee->picture : null,
+                'supervisor_approver' => $absence->supervisorApprover ? [
+                    'id' => $absence->supervisorApprover->id,
+                    'name' => $absence->supervisorApprover->fullname,
+                ] : null,
+                'hr_approver' => $absence->hrApprover ? [
+                    'id' => $absence->hrApprover->id,
+                    'name' => $absence->hrApprover->fullname,
+                ] : null,
+            ];
+        })->toArray();
+
+        return Inertia::render('report/employee-absenteeism-report', [
+            'absences' => $approvedAbsences,
+            'hrEmployee' => $hrEmployee ? [
+                'id' => $hrEmployee->id,
+                'name' => $hrEmployee->fullname,
+            ] : null,
         ]);
     }
 }

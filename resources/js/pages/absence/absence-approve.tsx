@@ -563,9 +563,7 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
             // Client-side validation: Check if HR is trying to act on supervisor-rejected request
             if (stage === 'hr' && !isSuperAdmin) {
                 if (request.supervisor_status === 'rejected' || request.status === 'Rejected by Supervisor') {
-                    toast.error(
-                        'This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests.',
-                    );
+                    toast.error('This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests.');
                     return;
                 }
                 if (request.supervisor_status !== 'approved' && request.supervisor_status !== 'pending' && request.supervisor_status !== null) {
@@ -639,11 +637,11 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                     if (errors && typeof errors === 'object') {
                         // Check for message field first (from backend JSON response)
                         if (errors.message) {
-                            errorMessage = errors.message;
+                            errorMessage = Array.isArray(errors.message) ? errors.message[0] : errors.message;
                         }
-                        // Check for error field
+                        // Check for error field (from Inertia withErrors)
                         else if (errors.error) {
-                            errorMessage = errors.error;
+                            errorMessage = Array.isArray(errors.error) ? errors.error[0] : errors.error;
                         }
                         // Check for general error messages
                         else if (Array.isArray(errors)) {
