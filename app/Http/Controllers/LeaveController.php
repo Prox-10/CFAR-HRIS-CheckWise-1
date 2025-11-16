@@ -13,10 +13,12 @@ use Inertia\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Mail;
 use Exception;
 use App\Models\Notification;
 use App\Events\LeaveRequested;
 use App\Events\RequestStatusUpdated;
+use App\Mail\LeaveApprovalEmail;
 
 class LeaveController extends Controller
 {
@@ -502,11 +504,11 @@ class LeaveController extends Controller
                         $leave->hr_comments = $request->hr_comments ?? $leave->hr_comments;
 
                         // Set approval date when finally approved
-                if (!empty($request->leave_date_approved)) {
-                    $leave->leave_date_approved = $request->leave_date_approved;
-                } else {
-                    $leave->leave_date_approved = now()->format('Y-m-d');
-                }
+                        if (!empty($request->leave_date_approved)) {
+                            $leave->leave_date_approved = $request->leave_date_approved;
+                        } else {
+                            $leave->leave_date_approved = now()->format('Y-m-d');
+                        }
 
                         if ($hrStatus === 'approved') {
                             // HR approved → Final approval
@@ -519,7 +521,7 @@ class LeaveController extends Controller
                             ]);
 
                             // Handle credit management - Only deduct credits when HR approves (final approval)
-                $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee_id);
+                            $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee_id);
 
                             // Check if credits were already deducted (in case of status change)
                             if ($oldStatus !== 'Approved') {
@@ -606,13 +608,13 @@ class LeaveController extends Controller
                     }
 
                     // Notify if status changed
-                if ($oldStatus !== $newStatus) {
-                    event(new RequestStatusUpdated('leave', $newStatus, $leave->employee_id, $leave->id, [
-                        'leave_type' => $leave->leave_type,
-                        'leave_start_date' => $leave->leave_start_date,
-                        'leave_end_date' => $leave->leave_end_date,
-                    ]));
-                }
+                    if ($oldStatus !== $newStatus) {
+                        event(new RequestStatusUpdated('leave', $newStatus, $leave->employee_id, $leave->id, [
+                            'leave_type' => $leave->leave_type,
+                            'leave_start_date' => $leave->leave_start_date,
+                            'leave_end_date' => $leave->leave_end_date,
+                        ]));
+                    }
                 } else {
                     // For non-admin users, update comments if provided
                     $leave->leave_comments = $request->leave_comments ?? $leave->leave_comments;
@@ -819,5 +821,87 @@ class LeaveController extends Controller
         }
 
         return $monthlyData;
+    }
+
+    /**
+     * Send leave approval email to employee
+     * Only HR can send emails
+     */
+    public function sendEmail(Request $request, Leave $leave)
+    {
+        try {
+            $user = Auth::user();
+            $isHR = $user->isHR();
+            $isSuperAdmin = $user->isSuperAdmin();
+
+            // Check if user is HR or Super Admin
+            if (!$isHR && !$isSuperAdmin) {
+                Log::warning('[LEAVE SEND EMAIL] Unauthorized attempt to send email:', [
+                    'leave_id' => $leave->id,
+                    'user_id' => $user->id,
+                    'user_name' => $user->fullname,
+                ]);
+
+                return redirect()->back()->with('error', 'Only HR personnel can send leave approval emails.');
+            }
+
+            // Load necessary relationships
+            $leave->load(['employee', 'supervisorApprover', 'hrApprover']);
+
+            // Check if employee exists
+            if (!$leave->employee) {
+                Log::warning('[LEAVE SEND EMAIL] Employee not found:', [
+                    'leave_id' => $leave->id,
+                    'employee_id' => $leave->employee_id,
+                ]);
+
+                return redirect()->back()->with('error', 'Employee not found.');
+            }
+
+            // Check if employee has email
+            if (!$leave->employee->email) {
+                Log::warning('[LEAVE SEND EMAIL] Employee email not found:', [
+                    'leave_id' => $leave->id,
+                    'employee_id' => $leave->employee_id,
+                    'employee_name' => $leave->employee->employee_name,
+                ]);
+
+                return redirect()->back()->with('error', 'Employee email address is not set. Please update the employee profile with a valid email address.');
+            }
+
+            // Validate email format
+            $email = trim($leave->employee->email);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Log::warning('[LEAVE SEND EMAIL] Invalid email format:', [
+                    'leave_id' => $leave->id,
+                    'employee_id' => $leave->employee_id,
+                    'employee_name' => $leave->employee->employee_name,
+                    'invalid_email' => $email,
+                ]);
+
+                return redirect()->back()->with('error', 'Invalid email address format: "' . $email . '". Please update the employee profile with a valid email address (e.g., user@example.com).');
+            }
+
+            // Send email (use validated email variable)
+            Mail::to($email)->send(new LeaveApprovalEmail($leave));
+
+            Log::info('[LEAVE SEND EMAIL] Email sent successfully:', [
+                'leave_id' => $leave->id,
+                'employee_id' => $leave->employee_id,
+                'employee_email' => $email,
+                'sent_by' => $user->id,
+                'sent_by_name' => $user->fullname,
+            ]);
+
+            return redirect()->back()->with('success', 'Email sent successfully to ' . $email);
+        } catch (Exception $e) {
+            Log::error('[LEAVE SEND EMAIL] Failed to send email:', [
+                'leave_id' => $leave->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
     }
 }

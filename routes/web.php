@@ -107,6 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['permission:View Leave'])->group(function () {
         Route::get('leave/credit-summary', [LeaveController::class, 'creditSummary'])->name('leave.credit-summary');
         Route::resource('leave', LeaveController::class)->names('leave');
+        Route::post('leave/{leave}/send-email', [LeaveController::class, 'sendEmail'])->name('leave.send-email');
     });
 
     // Absence routes
