@@ -3,6 +3,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import LoginLoadingModal from '@/components/ui/login-loading-modal';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
@@ -32,6 +33,9 @@ export default function Login({ status }: LoginProps) {
     return (
         <div className="auth-bg flex min-h-svh items-center justify-center p-6 text-white md:p-10">
             <Head title="Employee Log in" />
+
+            <LoginLoadingModal isOpen={processing} />
+
             <div className="mx-auto grid w-full max-w-2xl overflow-hidden rounded-xl bg-cfar-500 shadow-xl md:grid-cols-2">
                 {/* Left image */}
                 <div className="relative hidden md:block">

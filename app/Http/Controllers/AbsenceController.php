@@ -524,13 +524,35 @@ class AbsenceController extends Controller
                 ]
             ));
         } elseif (($isHR || $isSuperAdmin) && $request->has('hr_status')) {
-            // HR approval stage (only if supervisor approved)
-            if ($absence->supervisor_status !== 'approved') {
-                Log::warning('[ABSENCE UPDATE] HR cannot approve before supervisor:', [
-                    'absence_id' => $absence->id,
-                    'supervisor_status' => $absence->supervisor_status,
-                ]);
-                return response()->json(['error' => 'Supervisor must approve before HR can make a decision.'], 403);
+            // HR approval stage - Check supervisor status
+            if ($absence->supervisor_status === 'rejected') {
+                // If supervisor rejected, only Super Admin can override
+                if (!$isSuperAdmin) {
+                    Log::warning('[ABSENCE UPDATE] HR cannot approve/reject when supervisor rejected:', [
+                        'absence_id' => $absence->id,
+                        'supervisor_status' => $absence->supervisor_status,
+                        'user_id' => $user->id,
+                        'is_hr' => $isHR,
+                        'is_super_admin' => $isSuperAdmin,
+                    ]);
+                    return response()->json([
+                        'message' => 'This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests. Only Super Admin can override this decision.',
+                        'error' => 'Supervisor rejected this absence request. HR actions are not allowed.'
+                    ], 403);
+                }
+            } elseif ($absence->supervisor_status !== 'approved') {
+                // Supervisor hasn't approved yet (pending or null)
+                if (!$isSuperAdmin) {
+                    Log::warning('[ABSENCE UPDATE] HR cannot approve before supervisor:', [
+                        'absence_id' => $absence->id,
+                        'supervisor_status' => $absence->supervisor_status,
+                        'user_id' => $user->id,
+                    ]);
+                    return response()->json([
+                        'message' => 'Supervisor must approve this absence request before HR can make a decision.',
+                        'error' => 'Supervisor must approve before HR can make a decision.'
+                    ], 403);
+                }
             }
 
             $validated = $request->validate([
@@ -594,7 +616,10 @@ class AbsenceController extends Controller
                 'user_id' => $user->id,
                 'request_data' => $request->all(),
             ]);
-            return response()->json(['error' => 'Invalid approval request.'], 400);
+            return response()->json([
+                'message' => 'Invalid approval request. Please ensure you have the correct permissions and the request is in a valid state.',
+                'error' => 'Invalid approval request.'
+            ], 400);
         }
 
         if ($request->expectsJson()) {

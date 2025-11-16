@@ -560,6 +560,20 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
             const isHR = user_permissions?.is_hr || false;
             const isSuperAdmin = user_permissions?.is_super_admin || false;
 
+            // Client-side validation: Check if HR is trying to act on supervisor-rejected request
+            if (stage === 'hr' && !isSuperAdmin) {
+                if (request.supervisor_status === 'rejected' || request.status === 'Rejected by Supervisor') {
+                    toast.error(
+                        'This absence request was rejected by the supervisor. HR cannot perform any actions on rejected requests.',
+                    );
+                    return;
+                }
+                if (request.supervisor_status !== 'approved' && request.supervisor_status !== 'pending' && request.supervisor_status !== null) {
+                    toast.error('Supervisor must approve this absence request before HR can make a decision.');
+                    return;
+                }
+            }
+
             // Prepare request data based on stage
             const requestData: any = {};
             if (stage === 'supervisor' && (isSupervisor || isSuperAdmin)) {
@@ -603,7 +617,7 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                     const message = stage === 'supervisor' ? `Supervisor ${status} successfully!` : `HR ${status} successfully!`;
                     toast.success(message);
                 },
-                onError: () => {
+                onError: (errors: any) => {
                     // Revert local state on error
                     setRequests((prev) =>
                         prev.map((r) => {
@@ -617,7 +631,40 @@ export default function AbsenceApprove({ initialRequests = [], user_permissions 
                             return r;
                         }),
                     );
-                    toast.error('Failed to update absence status. Please try again.');
+
+                    // Extract error message from response
+                    let errorMessage = 'Failed to update absence status. Please try again.';
+
+                    // Check if error is in the page props (Inertia error handling)
+                    if (errors && typeof errors === 'object') {
+                        // Check for message field first (from backend JSON response)
+                        if (errors.message) {
+                            errorMessage = errors.message;
+                        }
+                        // Check for error field
+                        else if (errors.error) {
+                            errorMessage = errors.error;
+                        }
+                        // Check for general error messages
+                        else if (Array.isArray(errors)) {
+                            errorMessage = errors[0] || errorMessage;
+                        }
+                        // Check for nested error structure
+                        else if (errors.hr_status || errors.supervisor_status) {
+                            const fieldError = errors.hr_status || errors.supervisor_status;
+                            errorMessage = Array.isArray(fieldError) ? fieldError[0] : fieldError;
+                        }
+                        // Check for other common error formats
+                        else {
+                            const firstKey = Object.keys(errors)[0];
+                            if (firstKey) {
+                                const firstError = errors[firstKey];
+                                errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+                            }
+                        }
+                    }
+
+                    toast.error(errorMessage);
                 },
                 preserveScroll: true,
             });
@@ -853,7 +900,11 @@ function AbsenceCard({
     const canApproveSupervisor = (isSupervisor || isSuperAdmin) && (supervisor_status === 'pending' || !supervisor_status);
 
     // Determine if user can approve at HR stage
-    const canApproveHR = (isHR || isSuperAdmin) && supervisor_status === 'approved' && (hr_status === 'pending' || !hr_status);
+    // HR cannot act if supervisor rejected (unless Super Admin)
+    // Only Super Admin can override a supervisor rejection
+    const canApproveHR = isSuperAdmin
+        ? (supervisor_status === 'approved' || (supervisor_status === 'rejected' && isSuperAdmin)) && (hr_status === 'pending' || !hr_status)
+        : isHR && supervisor_status === 'approved' && (hr_status === 'pending' || !hr_status);
 
     // Show action buttons if user can approve at current stage
     const showActionButtons = canApproveSupervisor || canApproveHR;

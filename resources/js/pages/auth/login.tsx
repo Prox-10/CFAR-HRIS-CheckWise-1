@@ -1,12 +1,12 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Backpack, LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
-import { cn } from '@/lib/utils';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import LoginLoadingModal from '@/components/ui/login-loading-modal';
 import AuthLayout from '@/layouts/auth-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import { FormEventHandler } from 'react';
 
 type LoginForm = {
     email: string;
@@ -36,7 +36,9 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     return (
         <AuthLayout title="Welcome" description="Login to your account">
             <Head title="Log in" />
-           
+
+            <LoginLoadingModal isOpen={processing} />
+
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
                     <div className="mt-8 grid gap-2">
@@ -73,7 +75,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             id="password"
                             type="password"
                             // required
-                            className="placeholder:text-white-500 text-background focus:ring-0 focus:ring-offset-0 dark:placeholder:text-white-500 dark:text-white-500"
+                            className="placeholder:text-white-500 dark:placeholder:text-white-500 dark:text-white-500 text-background focus:ring-0 focus:ring-offset-0"
                             tabIndex={2}
                             autoComplete="current-password"
                             value={data.password}
@@ -96,7 +98,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     <Button
                         type="submit"
-                        className="mt-10 w-full bg-background font-bold text-black transition-all duration-200 ease-in-out hover:bg-background-600 hover:text-black dark:bg-cfar-50 dark:text-white-500 dark:hover:bg-smoke-500 dark:hover:text-white-500"
+                        className="hover:bg-background-600 dark:text-white-500 dark:hover:bg-smoke-500 dark:hover:text-white-500 mt-10 w-full bg-background font-bold text-black transition-all duration-200 ease-in-out hover:text-black dark:bg-cfar-50"
                         tabIndex={4}
                         disabled={processing}
                     >
@@ -112,16 +114,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </TextLink>
                 </div> */}
             </form>
-            <div className="flex justify-center">   
-            <Button
-                type="button"
-                variant="link"
-                onClick={() => router.visit(route('home'))}
-            >
-                Cancel
-            </Button>
+            <div className="flex justify-center">
+                <Button type="button" variant="link" onClick={() => router.visit(route('home'))}>
+                    Cancel
+                </Button>
             </div>
-           
+
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
         </AuthLayout>
     );
