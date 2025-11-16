@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
@@ -27,7 +28,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Settings, Star, Trash2, UserCheck, UserCog, Users } from 'lucide-react';
 import { useState } from 'react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { EvaluationFrequencyManager } from './components/evaluation-frequency-manager';
 import { EvaluationSettingsManager } from './components/evaluation-settings-manager';
 
@@ -137,18 +138,21 @@ export default function SupervisorManagement({
 }: Props) {
     const [newAssignment, setNewAssignment] = useState({
         user_id: '',
-        department: '',
+        departments: [] as string[],
         can_evaluate: true,
+        selectAll: false,
     });
 
     const [newHRAssignment, setNewHRAssignment] = useState({
         user_id: '',
-        department: '',
+        departments: [] as string[],
+        selectAll: false,
     });
 
     const [newManagerAssignment, setNewManagerAssignment] = useState({
         user_id: '',
-        department: '',
+        departments: [] as string[],
+        selectAll: false,
     });
 
     // Use global departments instead of prop departments
@@ -157,20 +161,104 @@ export default function SupervisorManagement({
     const isAdmin = user_permissions?.is_super_admin || false;
     const isSupervisor = user_permissions?.is_supervisor || false;
 
+    // Helper functions for department selection
+    const handleSelectAllDepartments = (type: 'supervisor' | 'hr' | 'manager') => {
+        if (type === 'supervisor') {
+            const allSelected = newAssignment.selectAll;
+            setNewAssignment({
+                ...newAssignment,
+                departments: allSelected ? [] : [...availableDepartments],
+                selectAll: !allSelected,
+            });
+        } else if (type === 'hr') {
+            const allSelected = newHRAssignment.selectAll;
+            setNewHRAssignment({
+                ...newHRAssignment,
+                departments: allSelected ? [] : [...availableDepartments],
+                selectAll: !allSelected,
+            });
+        } else if (type === 'manager') {
+            const allSelected = newManagerAssignment.selectAll;
+            setNewManagerAssignment({
+                ...newManagerAssignment,
+                departments: allSelected ? [] : [...availableDepartments],
+                selectAll: !allSelected,
+            });
+        }
+    };
+
+    const handleDepartmentToggle = (department: string, type: 'supervisor' | 'hr' | 'manager') => {
+        if (type === 'supervisor') {
+            const isSelected = newAssignment.departments.includes(department);
+            const newDepartments = isSelected
+                ? newAssignment.departments.filter((d) => d !== department)
+                : [...newAssignment.departments, department];
+            setNewAssignment({
+                ...newAssignment,
+                departments: newDepartments,
+                selectAll: newDepartments.length === availableDepartments.length,
+            });
+        } else if (type === 'hr') {
+            const isSelected = newHRAssignment.departments.includes(department);
+            const newDepartments = isSelected
+                ? newHRAssignment.departments.filter((d) => d !== department)
+                : [...newHRAssignment.departments, department];
+            setNewHRAssignment({
+                ...newHRAssignment,
+                departments: newDepartments,
+                selectAll: newDepartments.length === availableDepartments.length,
+            });
+        } else if (type === 'manager') {
+            const isSelected = newManagerAssignment.departments.includes(department);
+            const newDepartments = isSelected
+                ? newManagerAssignment.departments.filter((d) => d !== department)
+                : [...newManagerAssignment.departments, department];
+            setNewManagerAssignment({
+                ...newManagerAssignment,
+                departments: newDepartments,
+                selectAll: newDepartments.length === availableDepartments.length,
+            });
+        }
+    };
+
     const handleCreateAssignment = () => {
-        if (!newAssignment.user_id || !newAssignment.department) {
-            toast.error('Please fill in all required fields');
+        if (!newAssignment.user_id || newAssignment.departments.length === 0) {
+            toast.error('Please select a supervisor and at least one department');
             return;
         }
 
-        router.post(route('evaluation.supervisor-management.store'), newAssignment, {
-            onSuccess: () => {
-                toast.success('Supervisor assignment created successfully');
-                setNewAssignment({ user_id: '', department: '', can_evaluate: true });
-            },
-            onError: (errors) => {
-                toast.error(Object.values(errors)[0] as string);
-            },
+        // Send each department as a separate assignment
+        const assignments = newAssignment.departments.map((department) => ({
+            user_id: newAssignment.user_id,
+            department: department,
+            can_evaluate: newAssignment.can_evaluate,
+        }));
+
+        // Process all assignments
+        let successCount = 0;
+        let errorCount = 0;
+
+        assignments.forEach((assignment) => {
+            router.post(route('evaluation.supervisor-management.store'), assignment, {
+                onSuccess: () => {
+                    successCount++;
+                    if (successCount + errorCount === assignments.length) {
+                        if (errorCount === 0) {
+                            toast.success(`Supervisor assignment created successfully for ${successCount} department(s)`);
+                            setNewAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
+                        } else {
+                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                        }
+                    }
+                },
+                onError: (errors) => {
+                    errorCount++;
+                    toast.error(Object.values(errors)[0] as string);
+                    if (successCount + errorCount === assignments.length && errorCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                    }
+                },
+            });
         });
     };
 
@@ -203,29 +291,52 @@ export default function SupervisorManagement({
     };
 
     const handleCreateHRAssignment = () => {
-        if (!newHRAssignment.user_id || !newHRAssignment.department) {
-            toast.error('Please fill in all required fields');
+        if (!newHRAssignment.user_id || newHRAssignment.departments.length === 0) {
+            toast.error('Please select HR Personnel and at least one department');
             return;
         }
 
-        // Check if this user is already assigned to this department
-        const existingAssignment = hr_assignments?.find(
-            (assignment) => assignment.user_id === parseInt(newHRAssignment.user_id) && assignment.department === newHRAssignment.department,
+        // Check for existing assignments
+        const existingAssignments = newHRAssignment.departments.filter((dept) =>
+            hr_assignments?.some((assignment) => assignment.user_id === parseInt(newHRAssignment.user_id) && assignment.department === dept),
         );
 
-        if (existingAssignment) {
-            toast.error('This HR Personnel is already assigned to this department');
+        if (existingAssignments.length > 0) {
+            toast.error(`This HR Personnel is already assigned to: ${existingAssignments.join(', ')}`);
             return;
         }
 
-        router.post(route('evaluation.hr-management.store'), newHRAssignment, {
-            onSuccess: () => {
-                toast.success('HR Personnel assignment created successfully');
-                setNewHRAssignment({ user_id: '', department: '' });
-            },
-            onError: (errors) => {
-                toast.error(Object.values(errors)[0] as string);
-            },
+        // Send each department as a separate assignment
+        const assignments = newHRAssignment.departments.map((department) => ({
+            user_id: newHRAssignment.user_id,
+            department: department,
+        }));
+
+        // Process all assignments
+        let successCount = 0;
+        let errorCount = 0;
+
+        assignments.forEach((assignment) => {
+            router.post(route('evaluation.hr-management.store'), assignment, {
+                onSuccess: () => {
+                    successCount++;
+                    if (successCount + errorCount === assignments.length) {
+                        if (errorCount === 0) {
+                            toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
+                            setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
+                        } else {
+                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                        }
+                    }
+                },
+                onError: (errors) => {
+                    errorCount++;
+                    toast.error(Object.values(errors)[0] as string);
+                    if (successCount + errorCount === assignments.length && errorCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                    }
+                },
+            });
         });
     };
 
@@ -241,30 +352,54 @@ export default function SupervisorManagement({
     };
 
     const handleCreateManagerAssignment = () => {
-        if (!newManagerAssignment.user_id || !newManagerAssignment.department) {
-            toast.error('Please fill in all required fields');
+        if (!newManagerAssignment.user_id || newManagerAssignment.departments.length === 0) {
+            toast.error('Please select Manager and at least one department');
             return;
         }
 
-        // Check if this user is already assigned to this department
-        const existingAssignment = manager_assignments?.find(
-            (assignment) =>
-                assignment.user_id === parseInt(newManagerAssignment.user_id) && assignment.department === newManagerAssignment.department,
+        // Check for existing assignments
+        const existingAssignments = newManagerAssignment.departments.filter((dept) =>
+            manager_assignments?.some(
+                (assignment) => assignment.user_id === parseInt(newManagerAssignment.user_id) && assignment.department === dept,
+            ),
         );
 
-        if (existingAssignment) {
-            toast.error('This Manager is already assigned to this department');
+        if (existingAssignments.length > 0) {
+            toast.error(`This Manager is already assigned to: ${existingAssignments.join(', ')}`);
             return;
         }
 
-        router.post(route('evaluation.manager-management.store'), newManagerAssignment, {
-            onSuccess: () => {
-                toast.success('Manager assignment created successfully');
-                setNewManagerAssignment({ user_id: '', department: '' });
-            },
-            onError: (errors) => {
-                toast.error(Object.values(errors)[0] as string);
-            },
+        // Send each department as a separate assignment
+        const assignments = newManagerAssignment.departments.map((department) => ({
+            user_id: newManagerAssignment.user_id,
+            department: department,
+        }));
+
+        // Process all assignments
+        let successCount = 0;
+        let errorCount = 0;
+
+        assignments.forEach((assignment) => {
+            router.post(route('evaluation.manager-management.store'), assignment, {
+                onSuccess: () => {
+                    successCount++;
+                    if (successCount + errorCount === assignments.length) {
+                        if (errorCount === 0) {
+                            toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
+                            setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
+                        } else {
+                            toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                        }
+                    }
+                },
+                onError: (errors) => {
+                    errorCount++;
+                    toast.error(Object.values(errors)[0] as string);
+                    if (successCount + errorCount === assignments.length && errorCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errorCount} failed`);
+                    }
+                },
+            });
         });
     };
 
@@ -333,7 +468,7 @@ export default function SupervisorManagement({
                                             <CardDescription>Assign a supervisor to a department</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                            <div className="grid grid-cols-1 gap-4">
                                                 <div>
                                                     <Label htmlFor="supervisor">Supervisor</Label>
                                                     <Select
@@ -353,22 +488,41 @@ export default function SupervisorManagement({
                                                     </Select>
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="department">Department</Label>
-                                                    <Select
-                                                        value={newAssignment.department}
-                                                        onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, department: value }))}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select department" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
+                                                    <Label htmlFor="department">Departments</Label>
+                                                    <div className="mt-2 max-h-60 space-y-3 overflow-y-auto rounded-lg border p-4">
+                                                        <div className="flex items-center space-x-2 border-b pb-2">
+                                                            <Checkbox
+                                                                id="select-all-supervisor"
+                                                                checked={newAssignment.selectAll}
+                                                                onCheckedChange={() => handleSelectAllDepartments('supervisor')}
+                                                            />
+                                                            <Label htmlFor="select-all-supervisor" className="cursor-pointer font-medium">
+                                                                Select All
+                                                            </Label>
+                                                        </div>
+                                                        <div className="space-y-2">
                                                             {availableDepartments.map((department) => (
-                                                                <SelectItem key={department} value={department}>
-                                                                    {department}
-                                                                </SelectItem>
+                                                                <div key={department} className="flex items-center space-x-2">
+                                                                    <Checkbox
+                                                                        id={`dept-${department}-supervisor`}
+                                                                        checked={newAssignment.departments.includes(department)}
+                                                                        onCheckedChange={() => handleDepartmentToggle(department, 'supervisor')}
+                                                                    />
+                                                                    <Label
+                                                                        htmlFor={`dept-${department}-supervisor`}
+                                                                        className="cursor-pointer text-sm"
+                                                                    >
+                                                                        {department}
+                                                                    </Label>
+                                                                </div>
                                                             ))}
-                                                        </SelectContent>
-                                                    </Select>
+                                                        </div>
+                                                    </div>
+                                                    {newAssignment.departments.length > 0 && (
+                                                        <div className="mt-2 text-sm text-muted-foreground">
+                                                            Selected: {newAssignment.departments.length} department(s)
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center space-x-2">
                                                     <Switch
@@ -489,7 +643,7 @@ export default function SupervisorManagement({
                                                 <CardDescription>Assign HR Personnel to a department</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                <div className="grid grid-cols-1 gap-4">
                                                     <div>
                                                         <Label htmlFor="hr-personnel">HR Personnel</Label>
                                                         <Select
@@ -509,22 +663,38 @@ export default function SupervisorManagement({
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="hr-department">Department</Label>
-                                                        <Select
-                                                            value={newHRAssignment.department}
-                                                            onValueChange={(value) => setNewHRAssignment((prev) => ({ ...prev, department: value }))}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Select department" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
+                                                        <Label htmlFor="hr-department">Departments</Label>
+                                                        <div className="mt-2 max-h-60 space-y-3 overflow-y-auto rounded-lg border p-4">
+                                                            <div className="flex items-center space-x-2 border-b pb-2">
+                                                                <Checkbox
+                                                                    id="select-all-hr"
+                                                                    checked={newHRAssignment.selectAll}
+                                                                    onCheckedChange={() => handleSelectAllDepartments('hr')}
+                                                                />
+                                                                <Label htmlFor="select-all-hr" className="cursor-pointer font-medium">
+                                                                    Select All
+                                                                </Label>
+                                                            </div>
+                                                            <div className="space-y-2">
                                                                 {availableDepartments.map((department) => (
-                                                                    <SelectItem key={department} value={department}>
-                                                                        {department}
-                                                                    </SelectItem>
+                                                                    <div key={department} className="flex items-center space-x-2">
+                                                                        <Checkbox
+                                                                            id={`dept-${department}-hr`}
+                                                                            checked={newHRAssignment.departments.includes(department)}
+                                                                            onCheckedChange={() => handleDepartmentToggle(department, 'hr')}
+                                                                        />
+                                                                        <Label htmlFor={`dept-${department}-hr`} className="cursor-pointer text-sm">
+                                                                            {department}
+                                                                        </Label>
+                                                                    </div>
                                                                 ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                            </div>
+                                                        </div>
+                                                        {newHRAssignment.departments.length > 0 && (
+                                                            <div className="mt-2 text-sm text-muted-foreground">
+                                                                Selected: {newHRAssignment.departments.length} department(s)
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <Button onClick={handleCreateHRAssignment} className="mt-4">
@@ -630,7 +800,7 @@ export default function SupervisorManagement({
                                                 <CardDescription>Assign Manager to a department</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                <div className="grid grid-cols-1 gap-4">
                                                     <div>
                                                         <Label htmlFor="manager">Manager</Label>
                                                         <Select
@@ -652,24 +822,41 @@ export default function SupervisorManagement({
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="manager-department">Department</Label>
-                                                        <Select
-                                                            value={newManagerAssignment.department}
-                                                            onValueChange={(value) =>
-                                                                setNewManagerAssignment((prev) => ({ ...prev, department: value }))
-                                                            }
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Select department" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
+                                                        <Label htmlFor="manager-department">Departments</Label>
+                                                        <div className="mt-2 max-h-60 space-y-3 overflow-y-auto rounded-lg border p-4">
+                                                            <div className="flex items-center space-x-2 border-b pb-2">
+                                                                <Checkbox
+                                                                    id="select-all-manager"
+                                                                    checked={newManagerAssignment.selectAll}
+                                                                    onCheckedChange={() => handleSelectAllDepartments('manager')}
+                                                                />
+                                                                <Label htmlFor="select-all-manager" className="cursor-pointer font-medium">
+                                                                    Select All
+                                                                </Label>
+                                                            </div>
+                                                            <div className="space-y-2">
                                                                 {availableDepartments.map((department) => (
-                                                                    <SelectItem key={department} value={department}>
-                                                                        {department}
-                                                                    </SelectItem>
+                                                                    <div key={department} className="flex items-center space-x-2">
+                                                                        <Checkbox
+                                                                            id={`dept-${department}-manager`}
+                                                                            checked={newManagerAssignment.departments.includes(department)}
+                                                                            onCheckedChange={() => handleDepartmentToggle(department, 'manager')}
+                                                                        />
+                                                                        <Label
+                                                                            htmlFor={`dept-${department}-manager`}
+                                                                            className="cursor-pointer text-sm"
+                                                                        >
+                                                                            {department}
+                                                                        </Label>
+                                                                    </div>
                                                                 ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                            </div>
+                                                        </div>
+                                                        {newManagerAssignment.departments.length > 0 && (
+                                                            <div className="mt-2 text-sm text-muted-foreground">
+                                                                Selected: {newManagerAssignment.departments.length} department(s)
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <Button onClick={handleCreateManagerAssignment} className="mt-4">

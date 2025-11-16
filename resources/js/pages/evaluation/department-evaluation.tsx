@@ -1606,7 +1606,7 @@ export default function DepartmentEvaluation({
                                                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                                                         <div className="mb-2 text-sm font-medium text-blue-700">Noted by:</div>
                                                         <div className="font-semibold text-blue-800">{getHRForDepartment()}</div>
-                                                        <div className="text-sm text-blue-700">HR Personnel</div>
+                                                        <div className="text-sm text-blue-700">HR</div>
                                                         <div className="text-xs text-blue-600">
                                                             {(() => {
                                                                 const hrAssignments = hr_assignments || [];
