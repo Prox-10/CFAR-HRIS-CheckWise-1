@@ -19,6 +19,10 @@ interface Leave {
     picture: string | null;
     supervisor_approver: { id: number; name: string } | null;
     hr_approver: { id: number; name: string } | null;
+    department_hr: { id: number; name: string } | null;
+    department_manager: { id: number; name: string } | null;
+    used_credits: number | null;
+    remaining_credits: number | null;
 }
 
 interface LeaveFormPDFProps {
@@ -37,24 +41,24 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     companyName: {
-        fontSize: 9,
+        fontSize: 11,
         textAlign: 'center',
         marginBottom: 2,
     },
     companyNameBold: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 2,
     },
     acronym: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 2,
     },
     address: {
-        fontSize: 9,
+        fontSize: 10,
         textAlign: 'center',
         marginBottom: 8,
     },
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
         minHeight: 15,
     },
     reasonText: {
-        fontSize: 9,
+        fontSize: 10,
         marginBottom: 2,
     },
     signatureSection: {
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
     },
     signatureLabel: {
         fontSize: 10,
-        marginBottom: 30,
+        marginBottom: 4,
     },
     signatureLine: {
         borderBottomWidth: 0.8,
@@ -156,8 +160,9 @@ export default function LeaveFormPDF({ leave }: LeaveFormPDFProps) {
                 {/* Body Text */}
                 <View style={styles.bodyText}>
                     <Text>
-                        I would like to render/apply for request for my {getLeaveTypeText(leave.leave_type)} effective{' '}
-                        <Text style={{ textDecoration: 'underline' }}>{leave.leave_days}</Text> days for the following reasons:
+                        I would like to render/apply for request for my Voluntary / Resignation / Vacation Leave / Emergency Leave / Maternity Leave /
+                        Paternity Leave effective <Text style={{ textDecoration: 'underline' }}>{leave.leave_days}</Text> days for the following
+                        reasons:
                     </Text>
                 </View>
 
@@ -173,17 +178,78 @@ export default function LeaveFormPDF({ leave }: LeaveFormPDFProps) {
                     })}
                 </View>
 
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 24 }}>
+                    <View style={styles.signatureBox}>
+                        {leave.employee_name && <Text style={{ fontSize: 9, marginTop: 4 }}>{leave.employee_name}</Text>}
+                        <View style={styles.signatureLine} />
+                        <Text style={{ fontSize: 9, marginTop: 4 }}>Name & Signature of Employee</Text>
+                    </View>
+                </View>
+
+                {/* Credits Section */}
+                <View style={{ marginTop: 24, width: '100%' }}>
+                    <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 6 }}>CREDITS:</Text>
+                    {/* Table Header */}
+                    <View style={{ flexDirection: 'row', borderBottomColor: '#666', paddingBottom: 3 }}>
+                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE TYPE</Text>
+                            
+                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginLeft: 45 }}>No. OF DAY</Text>
+                        </View>
+                        <View style={{ flex: 2, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE CREDITS TO BE TAKEN</Text>
+                        </View>
+                        <View style={{ flex: 2, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>EMPLOYEE LEAVE CREDIT BALANCE</Text>
+                        </View>
+                    </View>
+                    {/* Row Example - you may want to replace or repeat for additional rows */}
+                    <View style={{ flexDirection: 'row', paddingTop: 4, paddingBottom: 4 }}>
+                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9 }}>{leave.leave_type}</Text>
+                      
+                        
+                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginLeft: 85}}>{leave.leave_days}</Text>
+                        </View>
+                        <View style={{ flex: 2, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9 }}>{leave.used_credits !== null ? leave.used_credits : '-'}</Text>
+                        </View>
+                        <View style={{ flex: 2, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 9 }}>{leave.remaining_credits !== null ? leave.remaining_credits : '-'}</Text>
+                        </View>
+                    </View>
+                    {/* Date Reg, Year Applicable Section */}
+                    <View style={{ flexDirection: 'row', marginTop: 12, marginBottom: 6 }}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 11 }}>
+                                Date Reg:{' '}
+                                <Text style={{ fontWeight: 'bold' }}>
+                                    {leave.leave_date_reported ? format(new Date(leave.leave_date_reported), 'yyyy-MM-dd') : '-'}
+                                </Text>
+                            </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 10 }}>
+                                Year Applicable:{' '}
+                                <Text style={{ fontWeight: 'bold' }}>
+                                    {leave.leave_start_date ? format(new Date(leave.leave_start_date), 'yyyy') : '-'}
+                                </Text>
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
                 {/* Signatures */}
                 <View style={styles.signatureSection}>
                     <View style={styles.signatureBox}>
                         <Text style={styles.signatureLabel}>Prepared by:</Text>
+                        {leave.hr_approver?.name && <Text style={{ fontSize: 10}}>{leave.hr_approver.name}</Text>}
                         <View style={styles.signatureLine} />
-                        {leave.employee_name && <Text style={{ fontSize: 9, marginTop: 4 }}>{leave.employee_name}</Text>}
                     </View>
                     <View style={styles.signatureBox}>
                         <Text style={styles.signatureLabel}>Approved by:</Text>
+                        {leave.department_manager?.name && <Text style={{ fontSize: 10 }}>{leave.department_manager.name}</Text>}
                         <View style={styles.signatureLine} />
-                        {leave.hr_approver?.name && <Text style={{ fontSize: 9, marginTop: 4 }}>{leave.hr_approver.name}</Text>}
                     </View>
                 </View>
             </Page>

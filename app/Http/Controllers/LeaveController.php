@@ -6,6 +6,7 @@ use App\Models\Leave;
 use App\Models\Employee;
 use App\Models\LeaveCredit;
 use App\Models\User;
+use App\Models\ManagerDepartmentAssignment;
 use Illuminate\Http\Request;
 // use Inertia\Controller;
 use Inertia\Inertia;
@@ -921,6 +922,43 @@ class LeaveController extends Controller
             ->get();
 
         $approvedLeaves = $leaves->map(function ($leave) {
+            $department = $leave->employee ? $leave->employee->department : null;
+
+            // Get HR for the department
+            $departmentHR = null;
+            if ($department) {
+                $hrUser = User::getHRForDepartment($department);
+                if ($hrUser) {
+                    $departmentHR = [
+                        'id' => $hrUser->id,
+                        'name' => $hrUser->fullname,
+                    ];
+                }
+            }
+
+            // Get Manager for the department
+            $departmentManager = null;
+            if ($department) {
+                $managerAssignment = ManagerDepartmentAssignment::where('department', $department)
+                    ->with('user')
+                    ->first();
+                if ($managerAssignment && $managerAssignment->user) {
+                    $departmentManager = [
+                        'id' => $managerAssignment->user->id,
+                        'name' => $managerAssignment->user->fullname,
+                    ];
+                }
+            }
+
+            // Get leave credits for the employee
+            $usedCredits = null;
+            $remainingCredits = null;
+            if ($leave->employee) {
+                $leaveCredits = LeaveCredit::getOrCreateForEmployee($leave->employee->id);
+                $usedCredits = $leaveCredits->used_credits;
+                $remainingCredits = $leaveCredits->remaining_credits;
+            }
+
             return [
                 'id' => $leave->id,
                 'leave_type' => $leave->leave_type,
@@ -934,7 +972,7 @@ class LeaveController extends Controller
                 'leave_comments' => $leave->leave_comments,
                 'employee_name' => $leave->employee ? $leave->employee->employee_name : null,
                 'employeeid' => $leave->employee ? $leave->employee->employeeid : null,
-                'department' => $leave->employee ? $leave->employee->department : null,
+                'department' => $department,
                 'position' => $leave->employee ? $leave->employee->position : null,
                 'picture' => $leave->employee ? $leave->employee->picture : null,
                 'supervisor_approver' => $leave->supervisorApprover ? [
@@ -945,6 +983,10 @@ class LeaveController extends Controller
                     'id' => $leave->hrApprover->id,
                     'name' => $leave->hrApprover->fullname,
                 ] : null,
+                'department_hr' => $departmentHR,
+                'department_manager' => $departmentManager,
+                'used_credits' => $usedCredits,
+                'remaining_credits' => $remainingCredits,
             ];
         })->toArray();
 

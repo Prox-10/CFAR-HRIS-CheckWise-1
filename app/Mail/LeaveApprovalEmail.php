@@ -25,7 +25,6 @@ class LeaveApprovalEmail extends Mailable
   public function __construct(
     public Leave $leave
   ) {
-    // Load necessary relationships
     $this->leave->load(['employee', 'supervisorApprover', 'hrApprover']);
   }
 

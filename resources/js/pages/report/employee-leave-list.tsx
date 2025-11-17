@@ -44,6 +44,10 @@ interface Leave {
     picture: string | null;
     supervisor_approver: { id: number; name: string } | null;
     hr_approver: { id: number; name: string } | null;
+    department_hr: { id: number; name: string } | null;
+    department_manager: { id: number; name: string } | null;
+    used_credits: number | null;
+    remaining_credits: number | null;
 }
 
 interface PageProps {
@@ -132,7 +136,7 @@ export default function EmployeeLeaveListPage() {
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                     {leaves.map((leave) => (
-                                        <Card key={leave.id} className="border-main transition-shadow hover:shadow-green-500 hover:shadow-lg">
+                                        <Card key={leave.id} className="border-main transition-shadow hover:shadow-lg hover:shadow-green-500">
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-center gap-3">
                                                     {leave.picture ? (
