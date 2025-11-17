@@ -1,6 +1,15 @@
 // Evaluation Settings Configuration
 // This file contains department-specific settings for evaluations
 
+// Work function item with optional description
+export interface WorkFunctionItem {
+    name: string;
+    description?: string;
+}
+
+// Type for work function items - can be string (backward compatible) or object with name and description
+export type WorkFunctionItemType = string | WorkFunctionItem;
+
 export interface DepartmentEvaluationSettings {
     title: string;
     subtitle: string;
@@ -21,7 +30,7 @@ export interface DepartmentEvaluationSettings {
         | {
               sections: {
                   title: string;
-                  items: string[];
+                  items: WorkFunctionItemType[];
               }[];
           };
     category: 'operations' | 'functions' | 'maintenance' | 'specialized';
@@ -54,28 +63,11 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
                         'Perform other duties as may be assigned by his/her immediate superior and nor the manager',
                     ],
                 },
-                // {
-                //     title: 'Document Management',
-                //     items: [
-                //         'Update generation of documents for remittance/payment schedules',
-                //         'Prepare and furnish the bookkeeper summary of beneficiary deductions made against their respective prooneds',
-                //     ],
-                // },
-                // {
-                //     title: 'Reporting & Billing',
-                //     items: [
-                //         'Prepare individual billing of beneficiaries based on the individual production report summary submitted by the AGRI & PROD. Facilitator',
-                //     ],
-                // },
-                // {
-                //     title: 'Additional Duties',
-                //     items: ['Perform other duties as maybe assigned by his/her immediate superior and nor the manager'],
-                // },
             ],
         },
         category: 'functions',
     },
-    'Packing Plant': { 
+    'Packing Plant': {
         title: 'Work Operations',
         subtitle: 'Packing Plant Department',
         description: 'Evaluate employee performance in packaging and production operations',
@@ -90,39 +82,97 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             sections: [
                 {
                     title: '',
-                    items: ['Patio', 'Dehander', 'Selector'],
+                    items: [
+                        {
+                            name: 'Patio',
+                            description: 'Handles initial receiving and placement of harvested fruits in the patio area for sorting and processing.',
+                        },
+                        {
+                            name: 'Dehander',
+                            description: 'Removes hands (clusters) from banana bunches, preparing them for further processing and packaging.',
+                        },
+                        {
+                            name: 'Selector',
+                            description: 'Inspects and selects fruits based on quality standards, size, and ripeness for appropriate packaging.',
+                        },
+                    ],
                 },
                 {
                     title: 'WTS',
-                    items: ['Rejector/Utility'],
+                    items: [
+                        {
+                            name: 'Rejector/Utility',
+                            description:
+                                'Identifies and removes defective or substandard fruits, and performs utility tasks to maintain workflow efficiency.',
+                        },
+                    ],
                 },
                 {
                     title: '',
-                    items: ['Weigher'],
+                    items: [
+                        {
+                            name: 'Weigher',
+                            description: 'Accurately weighs fruits to ensure proper packaging weight and compliance with quality standards.',
+                        },
+                    ],
                 },
                 {
                     title: 'Labeller',
-                    items: ['Inspector'],
+                    items: [
+                        {
+                            name: 'Inspector',
+                            description: 'Examines fruits for quality, defects, and compliance with standards before labeling and packaging.',
+                        },
+                    ],
                 },
                 {
                     title: "CP'S",
-                    items: ['Crew'],
+                    items: [
+                        {
+                            name: 'Crew',
+                            description:
+                                'Performs various tasks as part of the CP (Crown Plant) crew, including handling, processing, and packaging operations.',
+                        },
+                    ],
                 },
                 {
                     title: '',
-                    items: ['Packer'],
+                    items: [
+                        {
+                            name: 'Packer',
+                            description:
+                                'Carefully packs selected fruits into containers, boxes, or packages according to specifications and quality standards.',
+                        },
+                    ],
                 },
                 {
                     title: 'Topper',
-                    items: ['Box Former'],
+                    items: [
+                        {
+                            name: 'Box Former',
+                            description:
+                                'Assembles and forms boxes or containers for packaging, ensuring proper structure and readiness for filling.',
+                        },
+                    ],
                 },
                 {
                     title: 'Final Weigher',
-                    items: ['Boxes Counter'],
+                    items: [
+                        {
+                            name: 'Boxes Counter',
+                            description: 'Counts and verifies the number of boxes or packages, ensuring accurate inventory and shipment quantities.',
+                        },
+                    ],
                 },
                 {
                     title: 'Box Former',
-                    items: ['Palletizer'],
+                    items: [
+                        {
+                            name: 'Palletizer',
+                            description:
+                                'Arranges and stacks packed boxes onto pallets for storage and transportation, ensuring stable and secure loading.',
+                        },
+                    ],
                 },
             ],
         },
@@ -139,14 +189,44 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             workAttitude: '4. Work Attitude/Performance',
             workOperations: '5. Work Operations',
         },
-        workFunctions: [
-            'Follow S.O.P. in calibrating the fruit',
-            'Proper cutting of bunch',
-            'Proper placement of harvested stumps',
-            'Use of latex in actual receiving',
-            'Observe ideal NO. of stems of Guyod/Trip',
-            'Timely delivery of roller',
-        ],
+        workFunctions: {
+            sections: [
+                {
+                    title: '',
+                    items: [
+                        {
+                            name: 'Follow S.O.P. in calibrating the fruit',
+                            description:
+                                'Adheres to Standard Operating Procedures when calibrating fruits to ensure proper size, quality, and ripeness standards.',
+                        },
+                        {
+                            name: 'Proper cutting of bunch',
+                            description: 'Performs accurate and careful cutting of banana bunches to minimize damage and maintain fruit quality.',
+                        },
+                        {
+                            name: 'Proper placement of harvested stumps',
+                            description:
+                                'Correctly positions and arranges harvested stumps to prevent damage and facilitate efficient collection and transport.',
+                        },
+                        {
+                            name: 'Use of latex in actual receiving',
+                            description:
+                                'Properly applies latex or protective coating during the receiving process to maintain fruit quality and prevent damage.',
+                        },
+                        {
+                            name: 'Observe ideal NO. of stems of Guyod/Trip',
+                            description:
+                                'Follows guidelines for the optimal number of stems per guyod or trip to ensure efficient harvesting and transportation.',
+                        },
+                        {
+                            name: 'Timely delivery of roller',
+                            description:
+                                'Ensures prompt and timely delivery of rollers or transportation equipment to support continuous harvesting operations.',
+                        },
+                    ],
+                },
+            ],
+        },
         category: 'operations',
     },
     'Pest & Decease': {
@@ -164,11 +244,53 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             sections: [
                 {
                     title: 'Monitoring',
-                    items: ['Area Survey', 'Aerial Spray', 'F.O.C. Area', 'Moko Area'],
+                    items: [
+                        {
+                            name: 'Area Survey',
+                            description:
+                                'Conducts regular field surveys to identify and monitor pest populations, disease outbreaks, and overall plant health conditions.',
+                        },
+                        {
+                            name: 'Aerial Spray',
+                            description:
+                                'Performs or assists in aerial spraying operations to apply pesticides or treatments over large field areas.',
+                        },
+                        {
+                            name: 'F.O.C. Area',
+                            description:
+                                'Monitors and manages F.O.C. (Fusarium Oxysporum f. sp. Cubense) affected areas to track disease spread and containment.',
+                        },
+                        {
+                            name: 'Moko Area',
+                            description: 'Monitors and tracks Moko disease affected areas, documenting infection patterns and containment measures.',
+                        },
+                    ],
                 },
                 {
                     title: 'Eradication',
-                    items: ['Fence/Repair', 'Footbath', 'Weed Slashing', 'Sticking', 'Digging Socker'],
+                    items: [
+                        {
+                            name: 'Fence/Repair',
+                            description: 'Maintains and repairs field fences to prevent pest entry and protect crops from external threats.',
+                        },
+                        {
+                            name: 'Footbath',
+                            description:
+                                'Maintains footbath stations and ensures proper disinfection protocols to prevent disease spread through footwear.',
+                        },
+                        {
+                            name: 'Weed Slashing',
+                            description: 'Removes weeds through slashing to eliminate pest habitats and reduce competition for plant resources.',
+                        },
+                        {
+                            name: 'Sticking',
+                            description: 'Marks or tags infected plants or areas for identification and targeted treatment or removal.',
+                        },
+                        {
+                            name: 'Digging Socker',
+                            description: 'Removes infected plant sockets by digging them out to prevent disease spread to healthy plants.',
+                        },
+                    ],
                 },
                 {
                     title: 'Maintenance',
@@ -195,19 +317,98 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             sections: [
                 {
                     title: 'Plant Care:',
-                    items: ['Weed Control', 'Cleaning/Cutting Stumps', 'Pruning', 'Replanting', 'Fertilization Application', 'Propping'],
+                    items: [
+                        {
+                            name: 'Weed Control',
+                            description: 'Removes and manages weeds around banana plants to prevent competition for nutrients and water.',
+                        },
+                        {
+                            name: 'Cleaning/Cutting Stumps',
+                            description: 'Cleans and cuts old stumps to maintain field cleanliness and prevent disease spread.',
+                        },
+                        {
+                            name: 'Pruning',
+                            description: 'Trims and removes unnecessary leaves and plant parts to promote healthy growth and fruit development.',
+                        },
+                        {
+                            name: 'Replanting',
+                            description: 'Replaces dead or diseased plants with new seedlings to maintain optimal plant density and productivity.',
+                        },
+                        {
+                            name: 'Fertilization Application',
+                            description: 'Applies fertilizers according to schedule and specifications to ensure proper plant nutrition and growth.',
+                        },
+                        {
+                            name: 'Propping',
+                            description: 'Provides support structures to banana plants to prevent toppling under the weight of developing bunches.',
+                        },
+                    ],
                 },
                 {
                     title: 'Fruit Care:',
-                    items: ['Bud Bugging', 'Caloco/DE & DE', 'Bunch Spray', 'Bagging', 'Hand Bagging/Soksok', 'Deleafing', 'Sigatoka Trimming'],
+                    items: [
+                        {
+                            name: 'Bud Bugging',
+                            description:
+                                'Removes flower buds or applies treatments to control bud-related pests and ensure proper fruit development.',
+                        },
+                        {
+                            name: 'Caloco/DE & DE',
+                            description: 'Applies Caloco or DE (Diatomaceous Earth) treatments to protect fruits from pests and maintain quality.',
+                        },
+                        {
+                            name: 'Bunch Spray',
+                            description: 'Sprays protective treatments on developing bunches to prevent pest infestation and disease.',
+                        },
+                        {
+                            name: 'Bagging',
+                            description:
+                                'Covers developing fruit bunches with protective bags to shield them from pests, diseases, and physical damage.',
+                        },
+                        {
+                            name: 'Hand Bagging/Soksok',
+                            description: 'Manually applies protective bags or covers to individual hands or clusters of fruits.',
+                        },
+                        {
+                            name: 'Deleafing',
+                            description: 'Removes old or damaged leaves to improve air circulation, reduce disease risk, and enhance fruit quality.',
+                        },
+                        {
+                            name: 'Sigatoka Trimming',
+                            description: 'Trims leaves affected by Sigatoka disease to prevent spread and maintain plant health.',
+                        },
+                    ],
                 },
                 {
                     title: 'Pest & Disease Control/Actual:',
-                    items: ['Moko Eradication', 'Fusarium Eradication', 'Scale Insect/Mealy Bug', 'Bunchy Top Eradication'],
+                    items: [
+                        {
+                            name: 'Moko Eradication',
+                            description: 'Identifies and removes plants infected with Moko disease to prevent spread and maintain field health.',
+                        },
+                        {
+                            name: 'Fusarium Eradication',
+                            description: 'Removes and disposes of plants affected by Fusarium wilt to control disease spread.',
+                        },
+                        {
+                            name: 'Scale Insect/Mealy Bug',
+                            description: 'Controls and eliminates scale insects and mealy bugs through appropriate treatment methods.',
+                        },
+                        {
+                            name: 'Bunchy Top Eradication',
+                            description: 'Removes plants infected with Bunchy Top virus to prevent disease transmission to healthy plants.',
+                        },
+                    ],
                 },
                 {
                     title: 'OHCP/Actual:',
-                    items: [''],
+                    items: [
+                        {
+                            name: 'Other Duties as Prescribed',
+                            description:
+                                'Other duties as prescribed by immediate superior related to OHCP (Operational Health and Care Program) activities.',
+                        },
+                    ],
                 },
             ],
         },
@@ -228,19 +429,69 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             sections: [
                 {
                     title: '',
-                    items: ['Welding', 'Electrical Wiring'],
+                    items: [
+                        // Example: Using string format (backward compatible)
+                        {
+                            name: 'Welding',
+                            description: 'Welding of metal components and structures for construction and repair.',
+                        },
+                        {
+                            name: 'Electrical Wiring',
+                            description: 'Installation, maintenance, and repair of electrical systems and wiring in facilities and equipment.',
+                        },
+                    ],
                 },
                 {
                     title: 'Maintenance',
-                    items: ['Glueing', 'Conveyor', 'Spray Can', 'Vacuum', 'Roller', 'Cable Way', 'Bridge'],
+                    items: [
+                        // You can mix string and object formats
+                        {
+                            name: 'Glueing',
+                            description: 'Glueing of metal components and structures for construction and repair.',
+                        },
+                        {
+                            name: 'Conveyor',
+                            description: 'Maintenance and repair of conveyor belt systems used in production lines.',
+                        },
+                        {
+                            name: 'Spray Can',
+                            description: 'Spraying of paint and other materials on surfaces for decoration and protection.',
+                        },
+                        {
+                            name: 'Vacuum',
+                            description: 'Maintenance of vacuum systems and equipment.',
+                        },
+                        {
+                            name: 'Roller',
+                            description: 'Rolling of metal components and structures for construction and repair.',
+                        },
+                        {
+                            name: 'Cable Way',
+                            description: 'Maintenance and repair of cable way systems for transportation.',
+                        },
+                        {
+                            name: 'Bridge',
+                            description: 'Maintenance and repair of bridges for transportation and operational purposes.',
+                        },
+                    ],
                 },
                 {
                     title: 'Obtructions',
-                    items: ['Trimming'],
+                    items: [
+                        {
+                            name: 'Trimming',
+                            description: 'Removal of obstructions and trimming of vegetation or materials that block pathways or equipment.',
+                        },
+                    ],
                 },
                 {
                     title: 'Spare',
-                    items: ['Driving'],
+                    items: [
+                        {
+                            name: 'Driving',
+                            description: 'Operating vehicles and equipment for transportation and operational purposes.',
+                        },
+                    ],
                 },
             ],
         },
@@ -262,7 +513,29 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
             sections: [
                 {
                     title: 'Sanitation For:',
-                    items: ['Office Areas', 'Garden', 'Kitchen Area', 'Toilet', 'Garbage Disposal'],
+                    items: [
+                        {
+                            name: 'Office Areas',
+                            description: 'Maintains cleanliness and sanitation of office spaces, including desks, floors, and common areas.',
+                        },
+                        {
+                            name: 'Garden',
+                            description: 'Keeps garden areas clean, maintains landscaping, and ensures proper waste disposal in outdoor spaces.',
+                        },
+                        {
+                            name: 'Kitchen Area',
+                            description: 'Maintains hygiene and cleanliness in kitchen facilities, including equipment, surfaces, and storage areas.',
+                        },
+                        {
+                            name: 'Toilet',
+                            description: 'Ensures restroom facilities are clean, sanitized, and well-maintained with adequate supplies.',
+                        },
+                        {
+                            name: 'Garbage Disposal',
+                            description:
+                                'Properly collects, segregates, and disposes of waste materials according to environmental and safety standards.',
+                        },
+                    ],
                 },
                 {
                     title: 'Office Beautification',
@@ -270,11 +543,30 @@ export const evaluationSettings: Record<string, DepartmentEvaluationSettings> = 
                 },
                 {
                     title: 'Safekeeping:',
-                    items: ['Office Equipment', 'Supplies', 'Kitchen Utensils'],
+                    items: [
+                        {
+                            name: 'Office Equipment',
+                            description: 'Safely stores, maintains, and protects office equipment such as computers, printers, and other devices.',
+                        },
+                        {
+                            name: 'Supplies',
+                            description: 'Manages and safeguards office supplies, ensuring proper storage and inventory control.',
+                        },
+                        {
+                            name: 'Kitchen Utensils',
+                            description: 'Maintains and secures kitchen utensils and equipment, ensuring they are clean and properly stored.',
+                        },
+                    ],
                 },
                 {
                     title: '',
-                    items: ['Other Duties Priscribed By Immediate Superior'],
+                    items: [
+                        {
+                            name: 'Other Duties Priscribed By Immediate Superior',
+                            description:
+                                'Performs additional tasks and responsibilities as assigned by immediate supervisor to support department operations.',
+                        },
+                    ],
                 },
             ],
         },
@@ -293,8 +585,32 @@ export const getAvailableDepartments = (): string[] => {
 };
 
 // Helper function to check if workFunctions is structured
-export const isStructuredWorkFunctions = (workFunctions: any): workFunctions is { sections: { title: string; items: string[] }[] } => {
+export const isStructuredWorkFunctions = (workFunctions: any): workFunctions is { sections: { title: string; items: WorkFunctionItemType[] }[] } => {
     return workFunctions && typeof workFunctions === 'object' && 'sections' in workFunctions;
+};
+
+// Helper function to get the name from a work function item (handles both string and object formats)
+export const getWorkFunctionName = (item: WorkFunctionItemType): string => {
+    if (typeof item === 'string') {
+        return item;
+    }
+    return item.name;
+};
+
+// Helper function to get the description from a work function item (returns empty string if not available)
+export const getWorkFunctionDescription = (item: WorkFunctionItemType): string => {
+    if (typeof item === 'string') {
+        return '';
+    }
+    return item.description || '';
+};
+
+// Helper function to check if an item has a description
+export const hasWorkFunctionDescription = (item: WorkFunctionItemType): boolean => {
+    if (typeof item === 'string') {
+        return false;
+    }
+    return !!item.description;
 };
 
 // Helper function to get all work functions as a flat array (for backward compatibility)
@@ -303,7 +619,7 @@ export const getAllWorkFunctions = (department: string): string[] => {
     if (!settings) return [];
 
     if (isStructuredWorkFunctions(settings.workFunctions)) {
-        return settings.workFunctions.sections.flatMap((section) => section.items);
+        return settings.workFunctions.sections.flatMap((section) => section.items.map((item) => getWorkFunctionName(item)));
     }
 
     return settings.workFunctions as string[];

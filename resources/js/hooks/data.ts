@@ -11,6 +11,15 @@ export const departments: string[] = [
     'Engineering',
     'Utility',
 ];
+export const evaluationDepartments: string[] = [
+    'Management & Staff(Admin)',
+    'Packing Plant',
+    'Harvesting',
+    'Pest & Decease',
+    'Coop Area',
+    'Engineering',
+    'Utility',
+];
 
 export const engineeringPositions: string[] = [
      'N/A'

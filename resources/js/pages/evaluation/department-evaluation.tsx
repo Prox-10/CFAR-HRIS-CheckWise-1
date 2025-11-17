@@ -11,7 +11,7 @@ import { ContentLoading } from '@/components/ui/loading';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { Textarea } from '@/components/ui/textarea';
-import { departments as globalDepartments } from '@/hooks/data';
+import { evaluationDepartments as globalDepartments } from '@/hooks/data';
 import { Employees } from '@/hooks/employees';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
@@ -20,7 +20,15 @@ import { Calendar, FileText, RotateCcw, Star, User, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { WorkFunctionsSection } from './components/work-functions-section';
-import { getAllWorkFunctions, getCriteriaLabel, getDefaultDepartmentSettings, getDepartmentSettings } from './types/evaluation-settings';
+import {
+    getAllWorkFunctions,
+    getCriteriaLabel,
+    getDefaultDepartmentSettings,
+    getDepartmentSettings,
+    getWorkFunctionDescription,
+    getWorkFunctionName,
+    hasWorkFunctionDescription,
+} from './types/evaluation-settings';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -1271,75 +1279,100 @@ export default function DepartmentEvaluation({
                                             </CardHeader>
                                             <CardContent className="p-6">
                                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                    <div className="space-y-4">
+                                                    <div className="space-y-2">
                                                         <div>
-                                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                                Responsible in Work Assignment
-                                                            </label>
-                                                            <StarRating
-                                                                rating={evaluationData.workAttitude.responsible}
-                                                                onRatingChange={(rating) =>
-                                                                    setEvaluationData((prev) => ({
-                                                                        ...prev,
-                                                                        workAttitude: { ...prev.workAttitude, responsible: rating },
-                                                                    }))
-                                                                }
-                                                                disabled={isFormReadOnly}
-                                                            />
+                                                            <div className="text-sm font-medium text-gray-700">Responsible in Work Assignment</div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Completes assigned tasks on time and follows instructions with minimal supervision.
+                                                            </p>
+                                                            <div className="mt-1">
+                                                                <StarRating
+                                                                    rating={evaluationData.workAttitude.responsible}
+                                                                    onRatingChange={(rating) =>
+                                                                        setEvaluationData((prev) => ({
+                                                                            ...prev,
+                                                                            workAttitude: { ...prev.workAttitude, responsible: rating },
+                                                                        }))
+                                                                    }
+                                                                    disabled={isFormReadOnly}
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div>
-                                                            <label className="mb-2 block text-sm font-medium text-gray-700">Job Knowledge</label>
-                                                            <StarRating
-                                                                rating={evaluationData.workAttitude.jobKnowledge}
-                                                                onRatingChange={(rating) =>
-                                                                    setEvaluationData((prev) => ({
-                                                                        ...prev,
-                                                                        workAttitude: { ...prev.workAttitude, jobKnowledge: rating },
-                                                                    }))
-                                                                }
-                                                                disabled={isFormReadOnly}
-                                                            />
+                                                            <div className="text-sm font-medium text-gray-700">Job Knowledge</div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Understands job duties, tools, and procedures necessary for effective work.
+                                                            </p>
+                                                            <div className="mt-1">
+                                                                <StarRating
+                                                                    rating={evaluationData.workAttitude.jobKnowledge}
+                                                                    onRatingChange={(rating) =>
+                                                                        setEvaluationData((prev) => ({
+                                                                            ...prev,
+                                                                            workAttitude: { ...prev.workAttitude, jobKnowledge: rating },
+                                                                        }))
+                                                                    }
+                                                                    disabled={isFormReadOnly}
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div>
-                                                            <label className="mb-2 block text-sm font-medium text-gray-700">Cooperation</label>
-                                                            <StarRating
-                                                                rating={evaluationData.workAttitude.cooperation}
-                                                                onRatingChange={(rating) =>
-                                                                    setEvaluationData((prev) => ({
-                                                                        ...prev,
-                                                                        workAttitude: { ...prev.workAttitude, cooperation: rating },
-                                                                    }))
-                                                                }
-                                                                disabled={isFormReadOnly}
-                                                            />
+                                                            <div className="text-sm font-medium text-gray-700">Cooperation</div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Works well with others, shares knowledge, and contributes to a positive work
+                                                                environment.
+                                                            </p>
+                                                            <div className="mt-1">
+                                                                <StarRating
+                                                                    rating={evaluationData.workAttitude.cooperation}
+                                                                    onRatingChange={(rating) =>
+                                                                        setEvaluationData((prev) => ({
+                                                                            ...prev,
+                                                                            workAttitude: { ...prev.workAttitude, cooperation: rating },
+                                                                        }))
+                                                                    }
+                                                                    disabled={isFormReadOnly}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-4">
+                                                    <div className="space-y-2">
                                                         <div>
-                                                            <label className="mb-2 block text-sm font-medium text-gray-700">Work Initiative</label>
-                                                            <StarRating
-                                                                rating={evaluationData.workAttitude.initiative}
-                                                                onRatingChange={(rating) =>
-                                                                    setEvaluationData((prev) => ({
-                                                                        ...prev,
-                                                                        workAttitude: { ...prev.workAttitude, initiative: rating },
-                                                                    }))
-                                                                }
-                                                                disabled={isFormReadOnly}
-                                                            />
+                                                            <div className="text-sm font-medium text-gray-700">Work Initiative</div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Takes initiative to complete tasks, identifies improvements, and proactively addresses
+                                                                issues.
+                                                            </p>
+                                                            <div className="mt-1">
+                                                                <StarRating
+                                                                    rating={evaluationData.workAttitude.initiative}
+                                                                    onRatingChange={(rating) =>
+                                                                        setEvaluationData((prev) => ({
+                                                                            ...prev,
+                                                                            workAttitude: { ...prev.workAttitude, initiative: rating },
+                                                                        }))
+                                                                    }
+                                                                    disabled={isFormReadOnly}
+                                                                />
+                                                            </div>
                                                         </div>
                                                         <div>
-                                                            <label className="mb-2 block text-sm font-medium text-gray-700">Dependability</label>
-                                                            <StarRating
-                                                                rating={evaluationData.workAttitude.dependability}
-                                                                onRatingChange={(rating) =>
-                                                                    setEvaluationData((prev) => ({
-                                                                        ...prev,
-                                                                        workAttitude: { ...prev.workAttitude, dependability: rating },
-                                                                    }))
-                                                                }
-                                                                disabled={isFormReadOnly}
-                                                            />
+                                                            <div className="text-sm font-medium text-gray-700">Dependability</div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Reliable, follows through on commitments, and consistently meets deadlines.
+                                                            </p>
+                                                            <div className="mt-1">
+                                                                <StarRating
+                                                                    rating={evaluationData.workAttitude.dependability}
+                                                                    onRatingChange={(rating) =>
+                                                                        setEvaluationData((prev) => ({
+                                                                            ...prev,
+                                                                            workAttitude: { ...prev.workAttitude, dependability: rating },
+                                                                        }))
+                                                                    }
+                                                                    disabled={isFormReadOnly}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1396,69 +1429,84 @@ export default function DepartmentEvaluation({
                                                                                 {section.title}
                                                                             </h3>
                                                                             <div className="space-y-4">
-                                                                                {section.items.map((workFunction: string, index: number) => (
-                                                                                    <div key={index} className="rounded-lg border bg-gray-50 p-4">
-                                                                                        <h4 className="mb-4 font-medium text-gray-800">
-                                                                                            {workFunction}
-                                                                                        </h4>
-                                                                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                                                            <div>
-                                                                                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                                                                    Work Quality (1-10)
-                                                                                                </label>
-                                                                                                <StarRating
-                                                                                                    rating={
-                                                                                                        evaluationData.workFunctions[workFunction]
-                                                                                                            ?.workQuality || 0
-                                                                                                    }
-                                                                                                    onRatingChange={(rating) =>
-                                                                                                        setEvaluationData((prev: any) => ({
-                                                                                                            ...prev,
-                                                                                                            workFunctions: {
-                                                                                                                ...prev.workFunctions,
-                                                                                                                [workFunction]: {
-                                                                                                                    ...prev.workFunctions[
-                                                                                                                        workFunction
-                                                                                                                    ],
-                                                                                                                    workQuality: rating,
-                                                                                                                },
-                                                                                                            },
-                                                                                                        }))
-                                                                                                    }
-                                                                                                    disabled={isFormReadOnly}
-                                                                                                />
-                                                                                            </div>
-                                                                                            <div>
-                                                                                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                                                                    Work Efficiency (1-10)
-                                                                                                </label>
-                                                                                                <StarRating
-                                                                                                    rating={
-                                                                                                        evaluationData.workFunctions[workFunction]
-                                                                                                            ?.workEfficiency || 0
-                                                                                                    }
-                                                                                                    onRatingChange={(rating) =>
-                                                                                                        setEvaluationData((prev: any) => {
-                                                                                                            return {
+                                                                                {section.items.map((workFunctionItem: any, index: number) => {
+                                                                                    const workFunctionName = getWorkFunctionName(workFunctionItem);
+                                                                                    const workFunctionDescription =
+                                                                                        getWorkFunctionDescription(workFunctionItem);
+                                                                                    const hasDescription =
+                                                                                        hasWorkFunctionDescription(workFunctionItem);
+
+                                                                                    return (
+                                                                                        <div key={index} className="rounded-lg border bg-gray-50 p-4">
+                                                                                            <h4 className="mb-2 font-medium text-gray-800">
+                                                                                                {workFunctionName}
+                                                                                            </h4>
+                                                                                            {hasDescription && (
+                                                                                                <p className="mb-4 text-sm text-gray-600 italic">
+                                                                                                    {workFunctionDescription}
+                                                                                                </p>
+                                                                                            )}
+                                                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                                                <div>
+                                                                                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                                                                                        Work Quality (1-10)
+                                                                                                    </label>
+                                                                                                    <StarRating
+                                                                                                        rating={
+                                                                                                            evaluationData.workFunctions[
+                                                                                                                workFunctionName
+                                                                                                            ]?.workQuality || 0
+                                                                                                        }
+                                                                                                        onRatingChange={(rating) =>
+                                                                                                            setEvaluationData((prev: any) => ({
                                                                                                                 ...prev,
                                                                                                                 workFunctions: {
                                                                                                                     ...prev.workFunctions,
-                                                                                                                    [workFunction]: {
+                                                                                                                    [workFunctionName]: {
                                                                                                                         ...prev.workFunctions[
-                                                                                                                            workFunction
+                                                                                                                            workFunctionName
                                                                                                                         ],
-                                                                                                                        workEfficiency: rating,
+                                                                                                                        workQuality: rating,
                                                                                                                     },
                                                                                                                 },
-                                                                                                            };
-                                                                                                        })
-                                                                                                    }
-                                                                                                    disabled={isFormReadOnly}
-                                                                                                />
+                                                                                                            }))
+                                                                                                        }
+                                                                                                        disabled={isFormReadOnly}
+                                                                                                    />
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                                                                                                        Work Efficiency (1-10)
+                                                                                                    </label>
+                                                                                                    <StarRating
+                                                                                                        rating={
+                                                                                                            evaluationData.workFunctions[
+                                                                                                                workFunctionName
+                                                                                                            ]?.workEfficiency || 0
+                                                                                                        }
+                                                                                                        onRatingChange={(rating) =>
+                                                                                                            setEvaluationData((prev: any) => {
+                                                                                                                return {
+                                                                                                                    ...prev,
+                                                                                                                    workFunctions: {
+                                                                                                                        ...prev.workFunctions,
+                                                                                                                        [workFunctionName]: {
+                                                                                                                            ...prev.workFunctions[
+                                                                                                                                workFunctionName
+                                                                                                                            ],
+                                                                                                                            workEfficiency: rating,
+                                                                                                                        },
+                                                                                                                    },
+                                                                                                                };
+                                                                                                            })
+                                                                                                        }
+                                                                                                        disabled={isFormReadOnly}
+                                                                                                    />
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                ))}
+                                                                                    );
+                                                                                })}
                                                                             </div>
                                                                         </div>
                                                                     ),
@@ -1618,10 +1666,10 @@ export default function DepartmentEvaluation({
                                                                           ) || [];
                                                                       if (hrAssignments.length === 0) {
                                                                           return 'No HR  Personnel';
-                                                                      } 
-                                                                    //   else if (hrAssignments.length === 1) {
-                                                                    //       return 'Auto-fetched from database HR assignment (hr_department_assignments table)';
-                                                                    //   } 
+                                                                      }
+                                                                      //   else if (hrAssignments.length === 1) {
+                                                                      //       return 'Auto-fetched from database HR assignment (hr_department_assignments table)';
+                                                                      //   }
                                                                       else {
                                                                           return `HR Personnel`;
                                                                       }

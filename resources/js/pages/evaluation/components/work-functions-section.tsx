@@ -5,6 +5,9 @@ import {
     getDefaultDepartmentSettings,
     getDepartmentSettings,
     getStructuredWorkFunctions,
+    getWorkFunctionDescription,
+    getWorkFunctionName,
+    hasWorkFunctionDescription,
 } from '../types/evaluation-settings';
 
 interface WorkFunctionsSectionProps {
@@ -84,53 +87,60 @@ export function WorkFunctionsSection({ selectedDepartment, evaluationData, setEv
                             <div key={sectionIndex} className="space-y-4">
                                 <h3 className="border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">{section.title}</h3>
                                 <div className="space-y-4">
-                                    {section.items.map((workFunction: string, index: number) => (
-                                        <div key={index} className="rounded-lg border bg-gray-50 p-4">
-                                            <h4 className="mb-4 font-medium text-gray-800">{workFunction}</h4>
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                <div>
-                                                    <label className="mb-2 block text-sm font-medium text-gray-700">Work Quality (1-10)</label>
-                                                    <StarRating
-                                                        rating={evaluationData.workFunctions[workFunction]?.workQuality || 0}
-                                                        onRatingChange={(rating) =>
-                                                            setEvaluationData((prev: any) => ({
-                                                                ...prev,
-                                                                workFunctions: {
-                                                                    ...prev.workFunctions,
-                                                                    [workFunction]: {
-                                                                        ...prev.workFunctions[workFunction],
-                                                                        workQuality: rating,
-                                                                    },
-                                                                },
-                                                            }))
-                                                        }
-                                                        disabled={isFormReadOnly}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="mb-2 block text-sm font-medium text-gray-700">Work Efficiency (1-10)</label>
-                                                    <StarRating
-                                                        rating={evaluationData.workFunctions[workFunction]?.workEfficiency || 0}
-                                                        onRatingChange={(rating) =>
-                                                            setEvaluationData((prev: any) => {
-                                                                return {
+                                    {section.items.map((workFunctionItem: any, index: number) => {
+                                        const workFunctionName = getWorkFunctionName(workFunctionItem);
+                                        const workFunctionDescription = getWorkFunctionDescription(workFunctionItem);
+                                        const hasDescription = hasWorkFunctionDescription(workFunctionItem);
+
+                                        return (
+                                            <div key={index} className="rounded-lg border bg-gray-50 p-4">
+                                                <h4 className="mb-2 font-medium text-gray-800">{workFunctionName}</h4>
+                                                {hasDescription && <p className="mb-4 text-sm text-gray-600 italic">{workFunctionDescription}</p>}
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium text-gray-700">Work Quality (1-10)</label>
+                                                        <StarRating
+                                                            rating={evaluationData.workFunctions[workFunctionName]?.workQuality || 0}
+                                                            onRatingChange={(rating) =>
+                                                                setEvaluationData((prev: any) => ({
                                                                     ...prev,
                                                                     workFunctions: {
                                                                         ...prev.workFunctions,
-                                                                        [workFunction]: {
-                                                                            ...prev.workFunctions[workFunction],
-                                                                            workEfficiency: rating,
+                                                                        [workFunctionName]: {
+                                                                            ...prev.workFunctions[workFunctionName],
+                                                                            workQuality: rating,
                                                                         },
                                                                     },
-                                                                };
-                                                            })
-                                                        }
-                                                        disabled={isFormReadOnly}
-                                                    />
+                                                                }))
+                                                            }
+                                                            disabled={isFormReadOnly}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium text-gray-700">Work Efficiency (1-10)</label>
+                                                        <StarRating
+                                                            rating={evaluationData.workFunctions[workFunctionName]?.workEfficiency || 0}
+                                                            onRatingChange={(rating) =>
+                                                                setEvaluationData((prev: any) => {
+                                                                    return {
+                                                                        ...prev,
+                                                                        workFunctions: {
+                                                                            ...prev.workFunctions,
+                                                                            [workFunctionName]: {
+                                                                                ...prev.workFunctions[workFunctionName],
+                                                                                workEfficiency: rating,
+                                                                            },
+                                                                        },
+                                                                    };
+                                                                })
+                                                            }
+                                                            disabled={isFormReadOnly}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}
