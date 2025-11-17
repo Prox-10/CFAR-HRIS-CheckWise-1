@@ -243,9 +243,9 @@ export default function DepartmentEvaluation({
         return supervisor_assignments.filter((assignment) => assignment.department === department && assignment.can_evaluate);
     };
 
-    // Function to get HR Personnel (for all departments, not filtered by department)
-    const getHRForDepartment = () => {
-        const assignments = hr_assignments || [];
+    // Function to get HR Personnel for a department (filtered by department from hr_department_assignments table)
+    const getHRForDepartment = (department: string) => {
+        const assignments = hr_assignments?.filter((assignment) => assignment.department === department) || [];
 
         if (assignments.length === 0) {
             return 'No HR Personnel Assigned';
@@ -1566,8 +1566,8 @@ export default function DepartmentEvaluation({
                                                         4. Displays the supervisor's actual employee name
                                                     */}
                                                     <div>
-                                                        <label className="mb-2 block text-sm font-medium text-gray-700">Evaluated by:</label>
                                                         <div className="rounded-lg border border-gray-300 bg-gray-50 p-3">
+                                                            <div className="mb-2 text-sm font-medium text-blue-700">Evaluated by:</div>
                                                             <div className="font-medium text-gray-800">
                                                                 {(() => {
                                                                     if (!selectedDepartment) {
@@ -1575,12 +1575,12 @@ export default function DepartmentEvaluation({
                                                                     }
 
                                                                     // DEBUG: Log when rendering supervisor name
-                                                                    console.log(
-                                                                        '🔍 [DEBUG] Rendering supervisor for department:',
-                                                                        selectedDepartment,
-                                                                    );
+                                                                    // console.log(
+                                                                    //     '🔍 [DEBUG] Rendering supervisor for department:',
+                                                                    //     selectedDepartment,
+                                                                    // );
                                                                     const supervisorName = getSupervisorForDepartment(selectedDepartment);
-                                                                    console.log('🔍 [DEBUG] Supervisor name to display:', supervisorName);
+                                                                    // console.log('🔍 [DEBUG] Supervisor name to display:', supervisorName);
 
                                                                     return supervisorName;
                                                                 })()}
@@ -1589,11 +1589,11 @@ export default function DepartmentEvaluation({
                                                                 {selectedDepartment
                                                                     ? (() => {
                                                                           const evaluators = getEvaluatorsForDepartment(selectedDepartment);
-                                                                          console.log('🔍 [DEBUG] Evaluators found for helper text:', evaluators);
+                                                                          // console.log('🔍 [DEBUG] Evaluators found for helper text:', evaluators);
                                                                           if (evaluators.length === 0) {
                                                                               return 'No supervisor assigned to this department in supervisor_departments table';
                                                                           } else if (evaluators.length === 1) {
-                                                                              return `Supervisor: ${evaluators[0].supervisor_name}`;
+                                                                              return `Supervisor`;
                                                                           } else {
                                                                               return `Supervisors: ${evaluators.map((e) => e.supervisor_name).join(', ')}`;
                                                                           }
@@ -1605,19 +1605,28 @@ export default function DepartmentEvaluation({
                                                     {/* Noted by - HR Personnel */}
                                                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                                                         <div className="mb-2 text-sm font-medium text-blue-700">Noted by:</div>
-                                                        <div className="font-semibold text-blue-800">{getHRForDepartment()}</div>
-                                                        <div className="text-sm text-blue-700">HR</div>
+                                                        <div className="font-semibold text-blue-800">
+                                                            {selectedDepartment ? getHRForDepartment(selectedDepartment) : 'Select Department First'}
+                                                        </div>
+                                                        {/* <div className="text-sm text-blue-700">HR</div> */}
                                                         <div className="text-xs text-blue-600">
-                                                            {(() => {
-                                                                const hrAssignments = hr_assignments || [];
-                                                                if (hrAssignments.length === 0) {
-                                                                    return 'No HR Personnel assigned';
-                                                                } else if (hrAssignments.length === 1) {
-                                                                    return 'Auto-fetched from database HR assignment (applies to all departments)';
-                                                                } else {
-                                                                    return `Auto-fetched from ${hrAssignments.length} database HR assignments (applies to all departments)`;
-                                                                }
-                                                            })()}
+                                                            {selectedDepartment
+                                                                ? (() => {
+                                                                      const hrAssignments =
+                                                                          hr_assignments?.filter(
+                                                                              (assignment) => assignment.department === selectedDepartment,
+                                                                          ) || [];
+                                                                      if (hrAssignments.length === 0) {
+                                                                          return 'No HR  Personnel';
+                                                                      } 
+                                                                    //   else if (hrAssignments.length === 1) {
+                                                                    //       return 'Auto-fetched from database HR assignment (hr_department_assignments table)';
+                                                                    //   } 
+                                                                      else {
+                                                                          return `HR Personnel`;
+                                                                      }
+                                                                  })()
+                                                                : 'Will be populated when department is selected'}
                                                         </div>
                                                     </div>
                                                     {/* Approved by - Manager */}
@@ -1628,7 +1637,6 @@ export default function DepartmentEvaluation({
                                                                 ? getManagerForDepartment(selectedDepartment)
                                                                 : 'Select Department First'}
                                                         </div>
-                                                        <div className="text-sm text-green-700">Manager</div>
                                                         <div className="text-xs text-green-600">
                                                             {selectedDepartment
                                                                 ? (() => {
@@ -1639,9 +1647,9 @@ export default function DepartmentEvaluation({
                                                                       if (managerAssignments.length === 0) {
                                                                           return 'No Manager assigned to this department';
                                                                       } else if (managerAssignments.length === 1) {
-                                                                          return 'Auto-fetched from database Manager assignment';
+                                                                          return 'Manager';
                                                                       } else {
-                                                                          return `Auto-fetched from ${managerAssignments.length} database Manager assignments`;
+                                                                          return `Manager`;
                                                                       }
                                                                   })()
                                                                 : 'Will be populated when department is selected'}
