@@ -21,7 +21,7 @@ import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Service Tenure',
-        href: '/service-tenure/employee',
+        href: '/service-tenure',
     },
 ];
 
@@ -51,7 +51,7 @@ export default function Index({ employees_all }: Props) {
 
     return (
         <SidebarProvider>
-            <Head title="Service Tenure Employee List" />
+            <Head title="Service Tenure" />
             <Toaster position="top-right" richColors />
             <SidebarHoverLogic>
                 <SidebarInset>
@@ -63,7 +63,7 @@ export default function Index({ employees_all }: Props) {
                                 <div className="ms-2 flex items-center">
                                     <Users className="size-11" />
                                     <div className="ms-2">
-                                        <h2 className="flex text-2xl font-bold tracking-tight">Employee List</h2>
+                                        <h2 className="flex text-2xl font-bold tracking-tight">Service Tenure</h2>
                                         <p className="text-muted-foreground">Manage your organization's service tenure</p>
                                     </div>
                                 </div>
@@ -76,19 +76,19 @@ export default function Index({ employees_all }: Props) {
                                     <div className="relative flex flex-1 flex-col">
                                         <div className="@container/main flex flex-1 flex-col gap-2">
                                             <div className="flex flex-col">
-                                                <SectionCards />
+                                                {/* <SectionCards /> */}
                                                 {/* <SectionCards totalRevenue={totalRevenue} payments={[]} totalEmployee={totalEmployee} /> */}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </TabsContent>
-                            <Separator className="shadow-sm" />
+                            {/* <Separator className="shadow-sm" /> */}
                         </Tabs>
                         <div className="m-3 no-scrollbar">
                             <Card className="border-main dark:bg-backgrounds bg-background drop-shadow-lg">
                                 <CardHeader>
-                                    <CardTitle>Service Tenure Employee List</CardTitle>
+                                    <CardTitle>Service Tenure</CardTitle>
                                     <CardDescription>List of Service Tenure Employee</CardDescription>
                                 </CardHeader>
                                 <CardContent>

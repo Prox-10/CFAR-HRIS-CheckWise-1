@@ -69,17 +69,17 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Users className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             {getBadgeText('employee')}
-                        </Badge>
+                        </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.employeeLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                         {employeeCount.toLocaleString()}
                     </CardTitle>
 
                     {/* Gender breakdown */}
-                    <div className="mt-4 flex items-center gap-4 absolute top-[185px] left-5">
+                    <div className="flex items-center gap-4 mt-10">
                         <div className="flex items-center gap-2">
                             <div className="rounded-full bg-blue-100 p-1.5">
                                 <Mars className="size-4 text-blue-600" />
@@ -110,12 +110,12 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Building2 className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             {getBadgeText('department')}
-                        </Badge>
+                        </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.departmentLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                         {departmentCount.toLocaleString()}
                     </CardTitle>
                 </CardHeader>
@@ -127,7 +127,7 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                     <div className="text-emerald-500">{isSupervisor ? 'Your areas of responsibility' : 'Organizational structure'}</div>
                 </CardFooter> */}
             </Card>
-        
+
             {/* Work Status Card */}
             <Card className="@container/card overflow-hidden border-l-4 border-emerald-500 bg-gradient-to-br from-emerald-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
                 <CardHeader className="relative">
@@ -135,9 +135,9 @@ export function SectionCards({ employee, totalDepartment, totalEmployee, workSta
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Briefcase className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             {isSupervisor ? 'Your' : 'Total'}
-                        </Badge>
+                        </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">Work Status Distribution</CardDescription>
 

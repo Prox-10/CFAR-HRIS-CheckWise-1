@@ -30,7 +30,7 @@ export default function Index() {
 
     return (
         <SidebarProvider>
-            <Head title="Evaluation" />
+            <Head title="Service Tenure" />
             <Toaster position="top-right" richColors />
             <SidebarHoverLogic>
                 <SidebarInset>
@@ -55,14 +55,14 @@ export default function Index() {
                                     <div className="relative flex flex-1 flex-col">
                                         <div className="@container/main flex flex-1 flex-col gap-2">
                                             <div className="flex flex-col">
-                                                <SectionCards />
+                                                {/* <SectionCards /> */}
                                                 {/* <SectionCards totalRevenue={totalRevenue} payments={[]} totalEmployee={totalEmployee} /> */}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </TabsContent>
-                            <Separator className="shadow-sm" />
+                            {/* <Separator className="shadow-sm" /> */}
                         </Tabs>
                         <div className="m-3 no-scrollbar">
                             <Card className="border-main dark:bg-backgrounds bg-background drop-shadow-lg">

@@ -10,7 +10,6 @@ import { ContentLoading } from '@/components/ui/loading';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarSeparator, useSidebar } from '@/components/ui/sidebar';
 // import { Toaster } from '@/components/ui/toaster';
-import { ChartBarLabel } from '@/components/chart-bar-label';
 import { ChartAreaInteractive } from '@/components/chartareainteractive';
 import { ChartLineLabel } from '@/components/chartlinelabel';
 import { ChartLineLabelLeave } from '@/components/chartlinelabel-leave';
@@ -18,7 +17,7 @@ import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MonthlyRecognition } from './components/monthly-recognition';
 import { SectionCards } from './components/section-cards';
@@ -391,12 +390,12 @@ function SidebarHoverLogic(
                                     <Separator className="shadow-sm" />
                                     <ChartAreaInteractive />
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-                                        <div className="flex h-full flex-col lg:col-span-3">
+                                        {/* <div className="flex h-full flex-col lg:col-span-3">
                                             <Card className="flex h-full flex-col p-5">
                                                 <div className="mb-4 flex items-center gap-2">
                                                     <Calendar className="h-5 w-5 text-muted-foreground" />
                                                     <h3 className="font-semibold">
-                                                        {props.isSupervisor ? 'Your Department Leave Trends' : 'Leave Trends'}
+                                                        {props.isSupervisor ? 'Your Department Leave Trends' : 'Leave Trendss'}
                                                     </h3>
                                                 </div>
                                                 <div className="mb-4 flex items-center gap-2">
@@ -418,8 +417,8 @@ function SidebarHoverLogic(
                                                     <ChartBarLabel chartData={props.leavesPerMonth} />
                                                 </div>
                                             </Card>
-                                        </div>
-                                        <div className="flex h-full flex-col lg:col-span-2 lg:row-span-2">
+                                        </div> */}
+                                        <div className="flex h-full flex-col lg:col-span-5 lg:row-span-2">
                                             <Card className="flex h-[700px] flex-col overflow-y-auto">
                                                 <CardHeader className="pb-3">
                                                     <div className="flex items-center justify-between">

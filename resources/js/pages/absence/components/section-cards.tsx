@@ -74,7 +74,7 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.employeeLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{employeeCount}</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{employeeCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
@@ -97,7 +97,7 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.departmentLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{departmentCount}</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{departmentCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
@@ -120,9 +120,7 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.activeLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
-                        {activeCount.toLocaleString()}
-                    </CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{activeCount.toLocaleString()}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
@@ -145,7 +143,7 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.growthLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{growthCount}%</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{growthCount}%</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">

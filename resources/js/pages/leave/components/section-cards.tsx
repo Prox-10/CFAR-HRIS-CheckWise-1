@@ -78,14 +78,14 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.totalLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{totalLeavesCount}</CardTitle>
+                    <CardTitle className=" font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{totalLeavesCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                         <FileText className="size-4" />
                         {isSupervisor ? 'Your leave requests' : 'Total leave requests'}
                     </div>
-                    <div className="text-emerald-500">{isSupervisor ? 'Your applications' : 'All time'}</div>
+                    {/* <div className="text-emerald-500">{isSupervisor ? 'Your applications' : 'All time'}</div> */}
                 </CardFooter>
             </Card>
 
@@ -101,14 +101,14 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                         <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.approvedLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{approvedLeavesCount}</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{approvedLeavesCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                         <CheckCircle className="size-4" />
                         {isSupervisor ? 'Your approved leaves' : 'Approved leaves'}
                     </div>
-                    <div className="text-emerald-500">{isSupervisor ? 'Successfully processed' : 'Successfully processed'}</div>
+                    {/* <div className="text-emerald-500">{isSupervisor ? 'Successfully processed' : 'Successfully processed'}</div> */}
                 </CardFooter>
             </Card>
 
@@ -124,14 +124,14 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.pendingLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{pendingLeavesCount}</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{pendingLeavesCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                         <Clock className="size-4" />
                         {isSupervisor ? 'Your pending approval' : 'Pending approval'}
                     </div>
-                    <div className="text-emerald-500">{isSupervisor ? 'Requires your review' : 'Awaiting action'}</div>
+                    {/* <div className="text-emerald-500">{isSupervisor ? 'Requires your review' : 'Awaiting action'}</div> */}
                 </CardFooter>
             </Card>
 
@@ -147,14 +147,14 @@ export function SectionCards({
                         </Badge> */}
                     </div>
                     <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.rejectedLabel}</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">{rejectedLeavesCount}</CardTitle>
+                    <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">{rejectedLeavesCount}</CardTitle>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                         <XCircle className="size-4" />
                         {isSupervisor ? 'Your rejected leaves' : 'Rejected leaves'}
                     </div>
-                    <div className="text-emerald-500">{isSupervisor ? 'Your not approved' : 'Not approved'}</div>
+                    {/* <div className="text-emerald-500">{isSupervisor ? 'Your not approved' : 'Not approved'}</div> */}
                 </CardFooter>
             </Card>
         </div>

@@ -111,9 +111,9 @@ export function SectionCards({ totalEmployee, totalDepartment, totalLeave, pendi
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Users className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             {getBadgeText('employee')}
-                        </Badge>
+                        </Badge> */}
                     </div>
                     {/* <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.employeeLabel}</CardDescription> */}
                     <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
@@ -138,9 +138,9 @@ export function SectionCards({ totalEmployee, totalDepartment, totalLeave, pendi
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Building2 className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             {getBadgeText('department')}
-                        </Badge>
+                        </Badge> */}
                     </div>
                     {/* <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.departmentLabel}</CardDescription> */}
                     <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
@@ -164,9 +164,9 @@ export function SectionCards({ totalEmployee, totalDepartment, totalLeave, pendi
                         <div className="rounded-lg bg-emerald-100 p-2">
                             <Users className="size-6 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                             Today
-                        </Badge>
+                        </Badge> */}
                     </div>
                     <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
                         {presentTodayCount.toLocaleString()}

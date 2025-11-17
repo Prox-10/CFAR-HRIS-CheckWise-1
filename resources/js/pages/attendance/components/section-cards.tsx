@@ -169,23 +169,23 @@ export function SectionCards({
 
             <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:shadow-xs lg:px-3 @xl/main:grid-cols-4 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
                 {/* Total Attendance Card */}
-                <Card className="@container/card border-l-4 border-green-500 bg-gradient-to-br from-green-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
+                <Card className="@container/card border-l-4 border-emerald-400 bg-gradient-to-br from-emerald-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
                     <CardHeader className="relative">
                         <div className="flex items-center justify-between">
-                            <div className="rounded-lg bg-green-100 p-2">
-                                <Users className="size-6 text-green-600" />
+                            <div className="rounded-lg bg-emerald-100 p-2">
+                                <Users className="size-6 text-emerald-600" />
                             </div>
-                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                            {/* <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
                                 {getBadgeText('attendance')}
-                            </Badge>
+                            </Badge> */}
                         </div>
-                        <CardDescription className="mt-3 font-semibold text-green-700">{labels.attendanceLabel}</CardDescription>
-                        <CardTitle className="text-3xl font-bold text-green-800 tabular-nums @[250px]/card:text-4xl">
+                        <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.attendanceLabel}</CardDescription>
+                        <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                             {totalAttendanceCount.toLocaleString()}
                         </CardTitle>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 text-sm">
-                        <div className="line-clamp-1 flex gap-2 font-medium text-green-600">
+                        <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                             <TrendingUpIcon className="size-4" />
                             {totalEmployee > 0 ? `${((attendanceCounts.totalAttendance / totalEmployee) * 100).toFixed(1)}%` : '0%'} of{' '}
                             {isSupervisor ? 'your' : 'total'} employees
@@ -201,12 +201,12 @@ export function SectionCards({
                             <div className="rounded-lg bg-emerald-100 p-2">
                                 <CheckCircle className="size-6 text-emerald-600" />
                             </div>
-                            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                            {/* <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
                                 {getBadgeText('present')}
-                            </Badge>
+                            </Badge> */}
                         </div>
                         <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.presentLabel}</CardDescription>
-                        <CardTitle className="text-3xl font-bold text-emerald-800 tabular-nums @[250px]/card:text-4xl">
+                        <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                             {presentCount.toLocaleString()}
                         </CardTitle>
                     </CardHeader>
@@ -223,23 +223,23 @@ export function SectionCards({
                 </Card>
 
                 {/* Late Card */}
-                <Card className="@container/card border-l-4 border-amber-500 bg-gradient-to-br from-amber-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
+                <Card className="@container/card border-l-4 border-emerald-500 bg-gradient-to-br from-emerald-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
                     <CardHeader className="relative">
                         <div className="flex items-center justify-between">
-                            <div className="rounded-lg bg-amber-100 p-2">
-                                <Clock className="size-6 text-amber-600" />
+                            <div className="rounded-lg bg-emerald-100 p-2">
+                                <Clock className="size-6 text-emerald-600" />
                             </div>
-                            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                            {/* <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
                                 {getBadgeText('late')}
-                            </Badge>
+                            </Badge> */}
                         </div>
-                        <CardDescription className="mt-3 font-semibold text-amber-700">{labels.lateLabel}</CardDescription>
-                        <CardTitle className="text-3xl font-bold text-amber-800 tabular-nums @[250px]/card:text-4xl">
+                        <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.lateLabel}</CardDescription>
+                        <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                             {lateCount.toLocaleString()}
                         </CardTitle>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 text-sm">
-                        <div className="line-clamp-1 flex gap-2 font-medium text-amber-600">
+                        <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                             <Clock className="size-4" />
                             {attendanceCounts.totalAttendance > 0
                                 ? `${((attendanceCounts.late / attendanceCounts.totalAttendance) * 100).toFixed(1)}%`
@@ -251,23 +251,23 @@ export function SectionCards({
                 </Card>
 
                 {/* On Leave Card */}
-                <Card className="@container/card border-l-4 border-blue-500 bg-gradient-to-br from-blue-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
+                <Card className="@container/card border-l-4 border-emerald-500 bg-gradient-to-br from-emerald-50 to-white shadow-lg transition-all duration-300 hover:shadow-xl">
                     <CardHeader className="relative">
                         <div className="flex items-center justify-between">
-                            <div className="rounded-lg bg-blue-100 p-2">
-                                <Clock className="size-6 text-blue-600" />
+                            <div className="rounded-lg bg-emerald-100 p-2">
+                                <Clock className="size-6 text-emerald-600" />
                             </div>
-                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                            {/* <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                                 {getBadgeText('leave')}
-                            </Badge>
+                            </Badge> */}
                         </div>
-                        <CardDescription className="mt-3 font-semibold text-blue-700">{labels.leaveLabel}</CardDescription>
-                        <CardTitle className="text-3xl font-bold text-blue-800 tabular-nums @[250px]/card:text-4xl">
+                        <CardDescription className="mt-3 font-semibold text-emerald-700">{labels.leaveLabel}</CardDescription>
+                        <CardTitle className="font-bold text-emerald-800 tabular-nums @[250px]/card:text-[3rem]">
                             {leaveCount.toLocaleString()}
                         </CardTitle>
                     </CardHeader>
                     <CardFooter className="flex-col items-start gap-1 text-sm">
-                        <div className="line-clamp-1 flex gap-2 font-medium text-blue-600">
+                        <div className="line-clamp-1 flex gap-2 font-medium text-emerald-600">
                             <Clock className="size-4" />
                             {totalEmployee > 0
                                 ? `${(((attendanceCounts.excuse + attendanceCounts.leave) / totalEmployee) * 100).toFixed(1)}%`

@@ -62,7 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Explicit routes for all service-tenure subpages
     Route::middleware(['permission:View Service Tenure'])->group(function () {
-        Route::get('service-tenure/employee', [ServiceTenureController::class, 'employee'])->name('service-tenure.employee');
+        Route::get('service-tenure', [ServiceTenureController::class, 'employee'])->name('service-tenure.employee');
         Route::get('service-tenure/index', [ServiceTenureController::class, 'index'])->name('service-tenure.index');
         Route::get('service-tenure/service-tenure', [ServiceTenureController::class, 'serviceTenure'])->name('service-tenure.service-tenure');
         Route::get('service-tenure/pay-advancement', [ServiceTenureController::class, 'payAdvancement'])->name('service-tenure.pay-advancement');
