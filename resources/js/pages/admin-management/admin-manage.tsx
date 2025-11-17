@@ -173,22 +173,26 @@ export default function SupervisorManagement({
             const successCount = parseInt(sessionStorage.getItem('assignment_queue_success') || '0');
             const errors = JSON.parse(sessionStorage.getItem('assignment_queue_errors') || '[]');
 
-            if (queue.length > 0) {
-                // Clean up
+            // Only show toast if we actually processed a queue
+            if (queue.length > 0 && successCount > 0) {
+                // Clean up first
                 sessionStorage.removeItem(queueKey);
                 sessionStorage.removeItem('assignment_queue_index');
                 sessionStorage.removeItem('assignment_queue_success');
                 sessionStorage.removeItem('assignment_queue_errors');
                 sessionStorage.removeItem(processingKey);
 
-                if (errors.length === 0) {
-                    toast.success(`Supervisor assignment created successfully for ${successCount} department(s)`);
-                    setNewAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
-                } else if (successCount > 0) {
-                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
-                } else {
-                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
-                }
+                // Show toast after a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    if (errors.length === 0) {
+                        toast.success(`Supervisor assignment created successfully for ${successCount} department(s)`);
+                        setNewAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
+                    } else if (successCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                    } else {
+                        toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                    }
+                }, 100);
             }
             return;
         }
@@ -240,22 +244,26 @@ export default function SupervisorManagement({
             const successCount = parseInt(sessionStorage.getItem('hr_assignment_queue_success') || '0');
             const errors = JSON.parse(sessionStorage.getItem('hr_assignment_queue_errors') || '[]');
 
-            if (queue.length > 0) {
-                // Clean up
+            // Only show toast if we actually processed a queue
+            if (queue.length > 0 && successCount > 0) {
+                // Clean up first
                 sessionStorage.removeItem(queueKey);
                 sessionStorage.removeItem('hr_assignment_queue_index');
                 sessionStorage.removeItem('hr_assignment_queue_success');
                 sessionStorage.removeItem('hr_assignment_queue_errors');
                 sessionStorage.removeItem(processingKey);
 
-                if (errors.length === 0) {
-                    toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
-                    setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
-                } else if (successCount > 0) {
-                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
-                } else {
-                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
-                }
+                // Show toast after a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    if (errors.length === 0) {
+                        toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
+                        setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
+                    } else if (successCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                    } else {
+                        toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                    }
+                }, 100);
             }
             return;
         }
@@ -299,8 +307,9 @@ export default function SupervisorManagement({
         const currentIndex = parseInt(sessionStorage.getItem('assignment_queue_index') || '0');
         const isProcessing = sessionStorage.getItem(processingKey) === 'true';
 
-        // Only continue if there's a queue, we haven't finished, and we're not already processing
-        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+        // Only continue if there's a queue, we haven't finished (or just finished), and we're not already processing
+        // Use <= instead of < to allow one final call when currentIndex === queue.length to trigger completion
+        if (queue.length > 0 && currentIndex <= queue.length && !isProcessing) {
             // Continue processing the queue after a short delay to ensure Inertia has finished updating
             const timeoutId = setTimeout(() => {
                 processAssignmentQueue(currentIndex);
@@ -326,22 +335,26 @@ export default function SupervisorManagement({
             const successCount = parseInt(sessionStorage.getItem('manager_assignment_queue_success') || '0');
             const errors = JSON.parse(sessionStorage.getItem('manager_assignment_queue_errors') || '[]');
 
-            if (queue.length > 0) {
-                // Clean up
+            // Only show toast if we actually processed a queue
+            if (queue.length > 0 && successCount > 0) {
+                // Clean up first
                 sessionStorage.removeItem(queueKey);
                 sessionStorage.removeItem('manager_assignment_queue_index');
                 sessionStorage.removeItem('manager_assignment_queue_success');
                 sessionStorage.removeItem('manager_assignment_queue_errors');
                 sessionStorage.removeItem(processingKey);
 
-                if (errors.length === 0) {
-                    toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
-                    setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
-                } else if (successCount > 0) {
-                    toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
-                } else {
-                    toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
-                }
+                // Show toast after a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    if (errors.length === 0) {
+                        toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
+                        setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
+                    } else if (successCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                    } else {
+                        toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                    }
+                }, 100);
             }
             return;
         }
@@ -385,8 +398,9 @@ export default function SupervisorManagement({
         const currentIndex = parseInt(sessionStorage.getItem('hr_assignment_queue_index') || '0');
         const isProcessing = sessionStorage.getItem(processingKey) === 'true';
 
-        // Only continue if there's a queue, we haven't finished, and we're not already processing
-        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+        // Only continue if there's a queue, we haven't finished (or just finished), and we're not already processing
+        // Use <= instead of < to allow one final call when currentIndex === queue.length to trigger completion
+        if (queue.length > 0 && currentIndex <= queue.length && !isProcessing) {
             // Continue processing the queue after a short delay to ensure Inertia has finished updating
             const timeoutId = setTimeout(() => {
                 processHRAssignmentQueue(currentIndex);
@@ -404,8 +418,9 @@ export default function SupervisorManagement({
         const currentIndex = parseInt(sessionStorage.getItem('manager_assignment_queue_index') || '0');
         const isProcessing = sessionStorage.getItem(processingKey) === 'true';
 
-        // Only continue if there's a queue, we haven't finished, and we're not already processing
-        if (queue.length > 0 && currentIndex < queue.length && !isProcessing) {
+        // Only continue if there's a queue, we haven't finished (or just finished), and we're not already processing
+        // Use <= instead of < to allow one final call when currentIndex === queue.length to trigger completion
+        if (queue.length > 0 && currentIndex <= queue.length && !isProcessing) {
             // Continue processing the queue after a short delay to ensure Inertia has finished updating
             const timeoutId = setTimeout(() => {
                 processManagerAssignmentQueue(currentIndex);
@@ -476,18 +491,47 @@ export default function SupervisorManagement({
     };
 
     const handleCreateAssignment = () => {
-        if (!newAssignment.user_id || newAssignment.departments.length === 0) {
-            toast.error('Please select a supervisor and at least one department');
+        if (!newAssignment.user_id) {
+            toast.error('Please select a supervisor');
+            return;
+        }
+        if (newAssignment.departments.length === 0) {
+            toast.error('Please select at least one department');
             return;
         }
 
-        // Check for existing assignments
+        // Check if this supervisor is already assigned to any of the selected departments
         const existingAssignments = newAssignment.departments.filter((dept) =>
             assignments.some((assignment) => assignment.user_id === parseInt(newAssignment.user_id) && assignment.department === dept),
         );
 
         if (existingAssignments.length > 0) {
             toast.error(`This supervisor is already assigned to: ${existingAssignments.join(', ')}`);
+            return;
+        }
+
+        // Check if any selected department already has a different supervisor assigned
+        const departmentsWithOtherSupervisors = newAssignment.departments
+            .map((dept) => {
+                const existingAssignment = assignments.find((assignment) => assignment.department === dept);
+                if (existingAssignment && existingAssignment.user_id !== parseInt(newAssignment.user_id)) {
+                    const supervisor = supervisors.find((s) => s.id === existingAssignment.user_id);
+                    return {
+                        department: dept,
+                        supervisorName: supervisor ? `${supervisor.firstname} ${supervisor.lastname}` : 'Another supervisor',
+                    };
+                }
+                return null;
+            })
+            .filter((item) => item !== null);
+
+        if (departmentsWithOtherSupervisors.length > 0) {
+            const departmentList = departmentsWithOtherSupervisors
+                .map((item) => `${item.department} (currently assigned to ${item.supervisorName})`)
+                .join(', ');
+            toast.error(
+                `The following department(s) already have a supervisor assigned: ${departmentList}. Only one supervisor per department is allowed.`,
+            );
             return;
         }
 
@@ -538,8 +582,12 @@ export default function SupervisorManagement({
     };
 
     const handleCreateHRAssignment = () => {
-        if (!newHRAssignment.user_id || newHRAssignment.departments.length === 0) {
-            toast.error('Please select HR Personnel and at least one department');
+        if (!newHRAssignment.user_id) {
+            toast.error('Please select HR Personnel');
+            return;
+        }
+        if (newHRAssignment.departments.length === 0) {
+            toast.error('Please select at least one department');
             return;
         }
 
@@ -582,8 +630,12 @@ export default function SupervisorManagement({
     };
 
     const handleCreateManagerAssignment = () => {
-        if (!newManagerAssignment.user_id || newManagerAssignment.departments.length === 0) {
-            toast.error('Please select Manager and at least one department');
+        if (!newManagerAssignment.user_id) {
+            toast.error('Please select Manager');
+            return;
+        }
+        if (newManagerAssignment.departments.length === 0) {
+            toast.error('Please select at least one department');
             return;
         }
 
@@ -630,7 +682,6 @@ export default function SupervisorManagement({
     return (
         <SidebarProvider>
             <Head title="Admin Management" />
-            {/* <Toaster position="top-right" richColors closeButton /> */}
             <SidebarHoverLogic>
                 <SidebarInset>
                     <SiteHeader breadcrumbs={breadcrumbs} title={''} />
@@ -762,7 +813,7 @@ export default function SupervisorManagement({
                                             <CardDescription>Manage existing supervisor-department assignments</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="max-h-96 space-y-4 overflow-y-auto pr-2 ">
+                                            <div className="max-h-96 space-y-4 overflow-y-auto pr-2">
                                                 {assignments.map((assignment) => (
                                                     <div key={assignment.id} className="flex items-center justify-between rounded-lg border p-4">
                                                         <div>
@@ -827,24 +878,24 @@ export default function SupervisorManagement({
                                             (dept) => !hr_assignments?.some((assignment) => assignment.department === dept),
                                         );
 
-                                        if (departmentsWithoutHR.length > 0) {
-                                            return (
-                                                <Card className="border-orange-200 bg-orange-50">
-                                                    <CardContent className="p-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="text-orange-600">⚠️</div>
-                                                            <div>
-                                                                <div className="font-medium text-orange-800">Missing HR Personnel Assignments</div>
-                                                                <div className="text-sm text-orange-700">
-                                                                    The following departments need HR Personnel assigned:{' '}
-                                                                    {departmentsWithoutHR.join(', ')}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            );
-                                        }
+                                        // if (departmentsWithoutHR.length > 0) {
+                                        //     return (
+                                        //         <Card className="border-orange-200 bg-orange-50">
+                                        //             <CardContent className="p-4">
+                                        //                 <div className="flex items-center gap-2">
+                                        //                     <div className="text-orange-600">⚠️</div>
+                                        //                     <div>
+                                        //                         <div className="font-medium text-orange-800">Missing HR Personnel Assignments</div>
+                                        //                         <div className="text-sm text-orange-700">
+                                        //                             The following departments need HR Personnel assigned:{' '}
+                                        //                             {departmentsWithoutHR.join(', ')}
+                                        //                         </div>
+                                        //                     </div>
+                                        //                 </div>
+                                        //             </CardContent>
+                                        //         </Card>
+                                        //     );
+                                        // }
                                         return null;
                                     })()}
 
@@ -984,24 +1035,24 @@ export default function SupervisorManagement({
                                             (dept) => !manager_assignments?.some((assignment) => assignment.department === dept),
                                         );
 
-                                        if (departmentsWithoutManager.length > 0) {
-                                            return (
-                                                <Card className="border-orange-200 bg-orange-50">
-                                                    <CardContent className="p-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="text-orange-600">⚠️</div>
-                                                            <div>
-                                                                <div className="font-medium text-orange-800">Missing Manager Assignments</div>
-                                                                <div className="text-sm text-orange-700">
-                                                                    The following departments need Manager assigned:{' '}
-                                                                    {departmentsWithoutManager.join(', ')}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            );
-                                        }
+                                        // if (departmentsWithoutManager.length > 0) {
+                                        //     return (
+                                        //         <Card className="border-orange-200 bg-orange-50">
+                                        //             <CardContent className="p-4">
+                                        //                 <div className="flex items-center gap-2">
+                                        //                     <div className="text-orange-600">⚠️</div>
+                                        //                     <div>
+                                        //                         <div className="font-medium text-orange-800">Missing Manager Assignments</div>
+                                        //                         <div className="text-sm text-orange-700">
+                                        //                             The following departments need Manager assigned:{' '}
+                                        //                             {departmentsWithoutManager.join(', ')}
+                                        //                         </div>
+                                        //                     </div>
+                                        //                 </div>
+                                        //             </CardContent>
+                                        //         </Card>
+                                        //     );
+                                        // }
                                         return null;
                                     })()}
 
