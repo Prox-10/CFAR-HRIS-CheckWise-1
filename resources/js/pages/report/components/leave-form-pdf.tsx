@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
 interface Leave {
@@ -35,10 +35,35 @@ const styles = StyleSheet.create({
         padding: 40,
         fontFamily: 'Helvetica',
         fontSize: 10,
+        position: 'relative',
+    },
+    backgroundLogo: {
+        position: 'absolute',
+        top: 150,
+        left: 50,
+        width: 500,
+        height: 500,
+        opacity: 0.02,
+        zIndex: 0,
+    },
+    content: {
+        position: 'relative',
+        zIndex: 1,
     },
     header: {
+        flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 20,
+        gap: 15,
+    },
+    headerLogo: {
+        width: 80,
+        height: 80,
+    },
+    headerText: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     companyName: {
         fontSize: 11,
@@ -96,10 +121,18 @@ const styles = StyleSheet.create({
     signatureSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 40,
+        marginTop: 50,
     },
     signatureBox: {
         width: '45%',
+    },
+    signatureBoxLeft: {
+        width: '45%',
+        alignItems: 'flex-start',
+    },
+    signatureBoxRight: {
+        width: '45%',
+        alignItems: 'flex-end',
     },
     signatureLabel: {
         fontSize: 10,
@@ -110,6 +143,9 @@ const styles = StyleSheet.create({
         borderColor: '#000',
         marginBottom: 4,
         height: 1,
+    },
+    employeeSignature: {
+        alignItems: 'flex-end',
     },
 });
 
@@ -135,6 +171,14 @@ export default function LeaveFormPDF({ leave }: LeaveFormPDFProps) {
         }
     };
 
+    // Capitalize name (convert to all uppercase)
+    const capitalizeName = (name: string | null | undefined): string => {
+        if (!name || typeof name !== 'string') {
+            return '';
+        }
+        return name.trim().toUpperCase();
+    };
+
     // Split reason into lines for display
     const reasonLines = leave.leave_reason ? leave.leave_reason.split('\n').filter((line) => line.trim()) : [];
     // Ensure at least 3 lines for the form
@@ -143,113 +187,139 @@ export default function LeaveFormPDF({ leave }: LeaveFormPDFProps) {
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.companyName}>Checkered Farms Agrarian Reform Beneficiaries</Text>
-                    <Text style={styles.companyNameBold}>Multi Purpose Cooperative</Text>
-                    <Text style={styles.acronym}>CFARBEMPCO</Text>
-                    <Text style={styles.address}>Purok 3, Tibungol, Panabo City, Davao del Norte</Text>
-                </View>
+                {/* Background Logo */}
+                <Image src="/Logo.png" style={styles.backgroundLogo} />
 
-                {/* Separator */}
-                <View style={styles.separator} />
+                {/* Content */}
+                <View style={styles.content}>
+                    {/* Header */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between' }}>
+                        <Image src="/Logo.png" style={[styles.headerLogo, { marginLeft: 5 }]} />
+                        <View style={styles.headerText}>
+                            <Text style={styles.companyName}>Checkered Farms Agrarian Reform Beneficiaries</Text>
+                            <Text style={styles.companyNameBold}>Multi Purpose Cooperative</Text>
+                            <Text style={styles.acronym}>CFARBEMPCO</Text>
+                            <Text style={styles.address}>Purok 3, Tibungol, Panabo City, Davao del Norte</Text>
+                        </View>
+                        <View style={{ width: 80, height: 80, marginRight: 5 }} />
+                    </View>
 
-                {/* Title */}
-                <Text style={styles.title}>LEAVE FORM</Text>
+                    {/* Separator */}
+                    <View style={styles.separator} />
 
-                {/* Body Text */}
-                <View style={styles.bodyText}>
-                    <Text>
-                        I would like to render/apply for request for my Voluntary / Resignation / Vacation Leave / Emergency Leave / Maternity Leave /
-                        Paternity Leave effective <Text style={{ textDecoration: 'underline' }}>{leave.leave_days}</Text> days for the following
-                        reasons:
-                    </Text>
-                </View>
+                    {/* Title */}
+                    <Text style={styles.title}>LEAVE FORM</Text>
 
-                {/* Reason Lines */}
-                <View style={styles.reasonLines}>
-                    {Array.from({ length: displayLines }).map((_, index) => {
-                        const lineText = reasonLines[index] || '';
-                        return (
-                            <View key={index} style={styles.reasonLine}>
-                                {lineText ? <Text style={styles.reasonText}>{lineText}</Text> : <Text style={styles.reasonText}> </Text>}
+                    {/* Body Text */}
+                    <View style={styles.bodyText}>
+                        <Text>
+                            I would like to render/apply for request for my Voluntary / Resignation / Vacation Leave / Emergency Leave / Maternity
+                            Leave / Paternity Leave effective{' '}
+                            <Text style={{ textDecoration: 'underline', fontWeight: 'bold' }}>{leave.leave_days}</Text> days for the following
+                            reasons:
+                        </Text>
+                    </View>
+
+                    {/* Reason Lines */}
+                    <View style={styles.reasonLines}>
+                        {Array.from({ length: displayLines }).map((_, index) => {
+                            const lineText = reasonLines[index] || '';
+                            return (
+                                <View key={index} style={styles.reasonLine}>
+                                    {lineText ? <Text style={styles.reasonText}>{lineText}</Text> : <Text style={styles.reasonText}> </Text>}
+                                </View>
+                            );
+                        })}
+                    </View>
+
+                    <View style={{ width: '100%', marginTop: 24, alignItems: 'flex-end' }}>
+                        <View style={styles.employeeSignature}>
+                            {leave.employee_name && (
+                                <Text style={{ fontSize: 9, marginTop: 4, textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {capitalizeName(leave.employee_name)}
+                                </Text>
+                            )}
+                            {/* <View style={styles.signatureLine} /> */}
+                            <Text style={{ fontSize: 9, marginTop: 4 }}>Name & Signature of Employee</Text>
+                        </View>
+                    </View>
+
+                    {/* Credits Section */}
+                    <View style={{ marginTop: 24, width: '100%' }}>
+                        <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 6 }}>CREDITS:</Text>
+                        {/* Table Header */}
+                        <View style={{ flexDirection: 'row', borderBottomColor: '#666', paddingBottom: 3 }}>
+                            <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE TYPE</Text>
+
+                                <Text style={{ fontSize: 9, fontWeight: 'bold', marginLeft: 45 }}>No. OF DAY</Text>
                             </View>
-                        );
-                    })}
-                </View>
-
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 24 }}>
-                    <View style={styles.signatureBox}>
-                        {leave.employee_name && <Text style={{ fontSize: 9, marginTop: 4 }}>{leave.employee_name}</Text>}
-                        <View style={styles.signatureLine} />
-                        <Text style={{ fontSize: 9, marginTop: 4 }}>Name & Signature of Employee</Text>
-                    </View>
-                </View>
-
-                {/* Credits Section */}
-                <View style={{ marginTop: 24, width: '100%' }}>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 6 }}>CREDITS:</Text>
-                    {/* Table Header */}
-                    <View style={{ flexDirection: 'row', borderBottomColor: '#666', paddingBottom: 3 }}>
-                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE TYPE</Text>
-                            
-                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginLeft: 45 }}>No. OF DAY</Text>
+                            <View style={{ flex: 2, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE CREDITS TO BE TAKEN</Text>
+                            </View>
+                            <View style={{ flex: 2, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 9, fontWeight: 'bold' }}>EMPLOYEE LEAVE CREDIT BALANCE</Text>
+                            </View>
                         </View>
-                        <View style={{ flex: 2, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>LEAVE CREDITS TO BE TAKEN</Text>
-                        </View>
-                        <View style={{ flex: 2, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9, fontWeight: 'bold' }}>EMPLOYEE LEAVE CREDIT BALANCE</Text>
-                        </View>
-                    </View>
-                    {/* Row Example - you may want to replace or repeat for additional rows */}
-                    <View style={{ flexDirection: 'row', paddingTop: 4, paddingBottom: 4 }}>
-                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9 }}>{leave.leave_type}</Text>
-                      
-                        
-                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginLeft: 85}}>{leave.leave_days}</Text>
-                        </View>
-                        <View style={{ flex: 2, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9 }}>{leave.used_credits !== null ? leave.used_credits : '-'}</Text>
-                        </View>
-                        <View style={{ flex: 2, alignItems: 'center' }}>
-                            <Text style={{ fontSize: 9 }}>{leave.remaining_credits !== null ? leave.remaining_credits : '-'}</Text>
-                        </View>
-                    </View>
-                    {/* Date Reg, Year Applicable Section */}
-                    <View style={{ flexDirection: 'row', marginTop: 12, marginBottom: 6 }}>
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 11 }}>
-                                Date Reg:{' '}
-                                <Text style={{ fontWeight: 'bold' }}>
-                                    {leave.leave_date_reported ? format(new Date(leave.leave_date_reported), 'yyyy-MM-dd') : '-'}
+                        {/* Row Example - you may want to replace or repeat for additional rows */}
+                        <View style={{ flexDirection: 'row', paddingTop: 4, paddingBottom: 4 }}>
+                            <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>
+                                    {capitalizeName(leave.leave_type)}
                                 </Text>
-                            </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 10 }}>
-                                Year Applicable:{' '}
-                                <Text style={{ fontWeight: 'bold' }}>
-                                    {leave.leave_start_date ? format(new Date(leave.leave_start_date), 'yyyy') : '-'}
-                                </Text>
-                            </Text>
-                        </View>
-                    </View>
-                </View>
 
-                {/* Signatures */}
-                <View style={styles.signatureSection}>
-                    <View style={styles.signatureBox}>
-                        <Text style={styles.signatureLabel}>Prepared by:</Text>
-                        {leave.hr_approver?.name && <Text style={{ fontSize: 10}}>{leave.hr_approver.name}</Text>}
-                        <View style={styles.signatureLine} />
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', marginLeft: 70 }}>{leave.leave_days}</Text>
+                            </View>
+                            <View style={{ flex: 2, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>{leave.used_credits !== null ? leave.used_credits : '-'}</Text>
+                            </View>
+                            <View style={{ flex: 2, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>
+                                    {leave.remaining_credits !== null ? leave.remaining_credits : '-'}
+                                </Text>
+                            </View>
+                        </View>
+                        {/* Date Reg, Year Applicable Section */}
+                        <View style={{ flexDirection: 'row', marginTop: 40, marginBottom: 6 }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 11 }}>
+                                    Date Reg:{' '}
+                                    <Text style={{ fontWeight: 'bold' }}>
+                                        {leave.leave_date_reported ? format(new Date(leave.leave_date_reported), 'yyyy-MM-dd') : '-'}
+                                    </Text>
+                                </Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 10 }}>
+                                    Year Applicable:{' '}
+                                    <Text style={{ fontWeight: 'bold' }}>
+                                        {leave.leave_start_date ? format(new Date(leave.leave_start_date), 'yyyy') : '-'}
+                                    </Text>
+                                </Text>
+                            </View>
+                        </View>
                     </View>
-                    <View style={styles.signatureBox}>
-                        <Text style={styles.signatureLabel}>Approved by:</Text>
-                        {leave.department_manager?.name && <Text style={{ fontSize: 10 }}>{leave.department_manager.name}</Text>}
-                        <View style={styles.signatureLine} />
+
+                    {/* Signatures */}
+                    <View style={styles.signatureSection}>
+                        <View style={styles.signatureBoxLeft}>
+                            <Text style={styles.signatureLabel}>Prepared by:</Text>
+                            {leave.department_hr?.name && (
+                                <Text style={{ fontSize: 10, textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {capitalizeName(leave.department_hr.name)}
+                                </Text>
+                            )}
+                            {/* <View style={styles.signatureLine} /> */}
+                        </View>
+                        <View style={styles.signatureBoxRight}>
+                            <Text style={[styles.signatureLabel, { marginRight: 30 }]}>Approved by:</Text>
+                            {leave.department_manager?.name && (
+                                <Text style={{ fontSize: 10, textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {capitalizeName(leave.department_manager.name)}
+                                </Text>
+                            )}
+                            {/* <View style={styles.signatureLine} /> */}
+                        </View>
                     </View>
                 </View>
             </Page>
