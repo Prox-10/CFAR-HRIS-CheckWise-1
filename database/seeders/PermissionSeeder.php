@@ -113,6 +113,7 @@ class PermissionSeeder extends Seeder
       'View Access',
 
       'View Resume to Work',
+      'Add Password',
     ];
 
     foreach ($permissions as $permission) {
@@ -170,6 +171,7 @@ class PermissionSeeder extends Seeder
         'Absence Request',
         'View Absence Credit Summary',
         'View Resume to Work',
+        'Add Password',
       ],
       'Supervisor' => [
         // Dashboard permissions

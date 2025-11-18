@@ -64,7 +64,7 @@ export function DataTable<TData, TValue>({ columns, data, onRefresh, refreshing 
         <div className="space-y-4">
             <div className="flex items-center py-4">
                 <DataTableToolbar table={table} />
-
+ 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <DataTableViewOptions table={table} />
