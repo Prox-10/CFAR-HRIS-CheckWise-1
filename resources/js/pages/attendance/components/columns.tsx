@@ -1,6 +1,5 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { CircleCheck, CircleCheckBig, CircleEllipsis, Edit, Eye } from 'lucide-react';
@@ -94,6 +93,23 @@ const columns = (
             const department = row.getValue(columnId);
 
             return filterValue.includes(department);
+        },
+    },
+    {
+        accessorKey: 'attendanceDate',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+        cell: ({ row }) => {
+            const date = row.original.attendanceDate;
+            return (
+                <div className="w-32">
+                    <span className="text-sm font-medium text-gray-900">{formatDate(date)}</span>
+                </div>
+            );
+        },
+        filterFn: (row, columnId, filterValue) => {
+            if (!filterValue || filterValue.length === 0) return true;
+            const date = row.getValue(columnId);
+            return filterValue.includes(date);
         },
     },
     {
@@ -247,6 +263,24 @@ function formatTimeTo12Hour(timeStr: string) {
     h = h % 12;
     if (h === 0) h = 12;
     return `${h.toString().padStart(2, '0')}:${minute} ${ampm}`;
+}
+
+// Helper to format date string to readable format
+function formatDate(dateStr: string) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr; // Return original if invalid date
+
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        };
+        return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+        return dateStr; // Return original string if parsing fails
+    }
 }
 
 export { columns, type Attendance };
