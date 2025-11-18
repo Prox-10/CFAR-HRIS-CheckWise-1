@@ -24,7 +24,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'firstname' => 'RJ Kyle',
         'lastname' => 'Labrador',
         'email' => 'rjkylegepolongcalabrador@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Management & Staff(Admin)',
       ],
       [
@@ -32,16 +32,16 @@ class SupervisorDepartmentSeeder extends Seeder
         'middlename' => '',
         'lastname' => 'Mulato',
         'email' => 'ronelitomulato@gmail.com',
-        'password' => bcrypt('10282001'),
-         'department' => 'Harvesting',
-        
+        'password' => bcrypt('75595328'),
+        'department' => 'Harvesting',
+
       ],
       [
         'firstname' => 'Nestor',
         'middlename' => 'C.',
         'lastname' => 'Geraga',
         'email' => 'nestorcgeraga@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Pest & Decease',
       ],
       [
@@ -49,7 +49,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'middlename' => '',
         'lastname' => 'Milana',
         'email' => 'marcelomilana@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Packing Plant',
       ],
       [
@@ -57,7 +57,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'middlename' => '',
         'lastname' => 'Cabal',
         'email' => 'jeahpearlcabal@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Packing Plant',
       ],
       [
@@ -65,7 +65,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'middlename' => 'O.',
         'lastname' => 'Aguilar',
         'email' => 'norbertooaguilar@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Harvesting',
       ],
       [
@@ -73,7 +73,7 @@ class SupervisorDepartmentSeeder extends Seeder
         'middlename' => '',
         'lastname' => 'Subayno',
         'email' => 'lpsubayno@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'department' => 'Management & Staff(Admin)',
       ],
     ];

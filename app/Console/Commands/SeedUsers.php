@@ -41,7 +41,7 @@ class SeedUsers extends Command
     $this->info('Database seeded successfully!');
     $this->info('');
     $this->info('Default login credentials:');
-    $this->info('Developer: kyledev10282001@gmail.com / 10282001');
+    $this->info('Developer: kyledev10282001@gmail.com / 75595328');
     $this->info('Admin: admin@example.com / password');
     $this->info('HR Manager: hr@example.com / password');
     $this->info('Supervisor: supervisor@example.com / password');

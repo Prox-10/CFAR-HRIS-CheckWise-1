@@ -103,7 +103,7 @@ class EmployeeFactory extends Factory
             // Keep country consistent with project context
             'country' => 'Philippines',
             'zip_code' => $this->faker->postcode(),
-            
+
         ];
     }
 
@@ -113,7 +113,7 @@ class EmployeeFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'email' => 'rjkylegepolongcalabrador@gmail.com',
-                'employeeid' => '10282001',
+                'employeeid' => '75595328',
                 'employee_name' => 'RJ Kyle Gepolongca Labrador',
                 'gender' => 'Male',
                 'date_of_birth' => '2001-10-28',
@@ -132,8 +132,8 @@ class EmployeeFactory extends Factory
                 'state' => 'Anytown',
                 'country' => 'Philippines',
                 'zip_code' => '12345',
-              
-                
+
+
             ];
         });
     }

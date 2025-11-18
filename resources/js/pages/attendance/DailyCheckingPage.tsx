@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
@@ -751,8 +751,10 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             // SUPPORT: ABSENT - Only show Add Crew employees
             filtered = employees.filter((emp) => emp.work_status === 'Add Crew');
         } else {
-            // All other positions - Exclude Add Crew employees
-            filtered = employees.filter((emp) => emp.work_status !== 'Add Crew');
+            // All other positions - Include Packing Plant and Coop Area employees, exclude Add Crew employees
+            filtered = employees.filter(
+                (emp) => emp.work_status !== 'Add Crew' && (emp.department === 'Packing Plant' || emp.department === 'Coop Area'),
+            );
         }
 
         // Then filter by attendance records for the selected week
@@ -779,6 +781,14 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         });
 
         return filtered;
+    };
+
+    // Group employees by department for dropdown display
+    const getGroupedEmployees = (positionField: string): { packingPlant: Employee[]; coopArea: Employee[] } => {
+        const filtered = getFilteredEmployees(positionField);
+        const packingPlant = filtered.filter((emp) => emp.department === 'Packing Plant');
+        const coopArea = filtered.filter((emp) => emp.department === 'Coop Area');
+        return { packingPlant, coopArea };
     };
 
     const handleLeaveChange = (type: string, value: string) => {
@@ -1297,45 +1307,116 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                         }
                                                                     />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {getFilteredEmployees(position.field).map((emp) => {
-                                                                        const selectedEmployees = getSelectedEmployees();
-                                                                        const isSelectedInCurrent = selectedEmployees.includes(emp.employee_name);
-                                                                        const isSelectedInSameMicroteamAndDate = isEmployeeSelectedGlobally(
-                                                                            emp.employee_name,
-                                                                        );
-                                                                        const isCurrentSelection =
-                                                                            assignmentData[position.field]?.[slotIndex] === emp.employee_name;
+                                                                <SelectContent className={position.field !== 'supportAbsent' ? 'min-w-[400px]' : ''}>
+                                                                    {position.field === 'supportAbsent'
+                                                                        ? // Support Absent: Show Add Crew employees without grouping
+                                                                          getFilteredEmployees(position.field).map((emp) => {
+                                                                              const selectedEmployees = getSelectedEmployees();
+                                                                              const isSelectedInCurrent = selectedEmployees.includes(
+                                                                                  emp.employee_name,
+                                                                              );
+                                                                              const isSelectedInSameMicroteamAndDate = isEmployeeSelectedGlobally(
+                                                                                  emp.employee_name,
+                                                                              );
+                                                                              const isCurrentSelection =
+                                                                                  assignmentData[position.field]?.[slotIndex] === emp.employee_name;
 
-                                                                        // Check if this is an Add Crew employee
-                                                                        const isAddCrewEmployee =
-                                                                            emp.work_status === 'Add Crew' || position.field === 'supportAbsent';
+                                                                              const shouldDisable =
+                                                                                  (isSelectedInCurrent && !isCurrentSelection) ||
+                                                                                  (isSelectedInSameMicroteamAndDate &&
+                                                                                      !isCurrentSelection &&
+                                                                                      !isSelectedInCurrent);
 
-                                                                        // Disable only if:
-                                                                        // 1. Employee is already selected in current form (same microteam, same date) AND it's not the current selection
-                                                                        // 2. Employee is selected on the same date in ANY microteam (from saved data) AND it's not the current selection
-                                                                        // This prevents selecting the same employee on the same date across different microteams
-                                                                        // But allows selecting the same employee on different dates (regardless of microteam)
-                                                                        // IMPORTANT: For Add Crew employees, this ensures they cannot be selected in different microteams on the same date
-                                                                        // Example: If Add Crew employee Mr. Kyle is selected in M1 on 2025-11-14, he CANNOT be selected in M2 on 2025-11-14
-                                                                        // But if date changes to 2025-11-15, Mr. Kyle can be selected again in any microteam
-                                                                        const shouldDisable =
-                                                                            (isSelectedInCurrent && !isCurrentSelection) ||
-                                                                            (isSelectedInSameMicroteamAndDate &&
-                                                                                !isCurrentSelection &&
-                                                                                !isSelectedInCurrent);
+                                                                              return (
+                                                                                  <SelectItem
+                                                                                      key={emp.id}
+                                                                                      value={emp.employee_name}
+                                                                                      className="text-xs"
+                                                                                      disabled={shouldDisable}
+                                                                                  >
+                                                                                      {formatEmployeeDisplayName(emp)}
+                                                                                  </SelectItem>
+                                                                              );
+                                                                          })
+                                                                        : // All other positions: Display in two columns (Packing Plant | Coop Area)
+                                                                          (() => {
+                                                                              const { packingPlant, coopArea } = getGroupedEmployees(position.field);
+                                                                              const selectedEmployees = getSelectedEmployees();
 
-                                                                        return (
-                                                                            <SelectItem
-                                                                                key={emp.id}
-                                                                                value={emp.employee_name}
-                                                                                className="text-xs"
-                                                                                disabled={shouldDisable}
-                                                                            >
-                                                                                {formatEmployeeDisplayName(emp)}
-                                                                            </SelectItem>
-                                                                        );
-                                                                    })}
+                                                                              return (
+                                                                                  <div className="flex">
+                                                                                      {/* Packing Plant Column */}
+                                                                                      <div className="flex-1 border-r border-gray-200">
+                                                                                          <SelectGroup>
+                                                                                              <SelectLabel className="flex items-center justify-center py-2 text-xs font-semibold text-gray-700">
+                                                                                                  Packing Plant
+                                                                                              </SelectLabel>
+                                                                                              {packingPlant.map((emp) => {
+                                                                                                  const isSelectedInCurrent =
+                                                                                                      selectedEmployees.includes(emp.employee_name);
+                                                                                                  const isSelectedInSameMicroteamAndDate =
+                                                                                                      isEmployeeSelectedGlobally(emp.employee_name);
+                                                                                                  const isCurrentSelection =
+                                                                                                      assignmentData[position.field]?.[slotIndex] ===
+                                                                                                      emp.employee_name;
+
+                                                                                                  const shouldDisable =
+                                                                                                      (isSelectedInCurrent && !isCurrentSelection) ||
+                                                                                                      (isSelectedInSameMicroteamAndDate &&
+                                                                                                          !isCurrentSelection &&
+                                                                                                          !isSelectedInCurrent);
+
+                                                                                                  return (
+                                                                                                      <SelectItem
+                                                                                                          key={emp.id}
+                                                                                                          value={emp.employee_name}
+                                                                                                          className="text-xs"
+                                                                                                          disabled={shouldDisable}
+                                                                                                      >
+                                                                                                          {formatEmployeeDisplayName(emp)}
+                                                                                                      </SelectItem>
+                                                                                                  );
+                                                                                              })}
+                                                                                          </SelectGroup>
+                                                                                      </div>
+
+                                                                                      {/* Coop Area Column */}
+                                                                                      <div className="flex-1">
+                                                                                          <SelectGroup>
+                                                                                              <SelectLabel className="flex items-center justify-center py-2 text-xs font-semibold text-gray-700">
+                                                                                                  Coop Area
+                                                                                              </SelectLabel>
+                                                                                              {coopArea.map((emp) => {
+                                                                                                  const isSelectedInCurrent =
+                                                                                                      selectedEmployees.includes(emp.employee_name);
+                                                                                                  const isSelectedInSameMicroteamAndDate =
+                                                                                                      isEmployeeSelectedGlobally(emp.employee_name);
+                                                                                                  const isCurrentSelection =
+                                                                                                      assignmentData[position.field]?.[slotIndex] ===
+                                                                                                      emp.employee_name;
+
+                                                                                                  const shouldDisable =
+                                                                                                      (isSelectedInCurrent && !isCurrentSelection) ||
+                                                                                                      (isSelectedInSameMicroteamAndDate &&
+                                                                                                          !isCurrentSelection &&
+                                                                                                          !isSelectedInCurrent);
+
+                                                                                                  return (
+                                                                                                      <SelectItem
+                                                                                                          key={emp.id}
+                                                                                                          value={emp.employee_name}
+                                                                                                          className="text-xs"
+                                                                                                          disabled={shouldDisable}
+                                                                                                      >
+                                                                                                          {formatEmployeeDisplayName(emp)}
+                                                                                                      </SelectItem>
+                                                                                                  );
+                                                                                              })}
+                                                                                          </SelectGroup>
+                                                                                      </div>
+                                                                                  </div>
+                                                                              );
+                                                                          })()}
                                                                 </SelectContent>
                                                             </Select>
                                                         </td>

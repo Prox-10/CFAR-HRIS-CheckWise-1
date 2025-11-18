@@ -46,9 +46,10 @@ Route::get('/employees/packing-plant', function (Request $request) {
             ->distinct()
             ->pluck('employee_id');
 
-        // Include Packing Plant department employees AND Add Crew employees
+        // Include Packing Plant and Coop Area department employees AND Add Crew employees
         $employees = Employee::where(function ($query) {
             $query->where('department', 'Packing Plant')
+                ->orWhere('department', 'Coop Area')
                 ->orWhere('work_status', 'Add Crew');
         })
             ->whereIn('id', $employeeIds)
@@ -87,9 +88,10 @@ Route::get('/employees/packing-plant', function (Request $request) {
         return response()->json($employeesWithAttendance);
     }
 
-    // If no date range, return all Packing Plant employees AND Add Crew employees
+    // If no date range, return all Packing Plant and Coop Area employees AND Add Crew employees
     $employees = Employee::where(function ($query) {
         $query->where('department', 'Packing Plant')
+            ->orWhere('department', 'Coop Area')
             ->orWhere('work_status', 'Add Crew');
     })
         ->select('id', 'employeeid', 'employee_name', 'firstname', 'middlename', 'lastname', 'department', 'position', 'work_status')

@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
                 'middlename' => 'Dev',
                 'lastname' => 'Labz',
                 'email' => 'kyledev10282001@gmail.com',
-                'password' => Hash::make('10282001'),
+                'password' => Hash::make('75595328'),
                 'email_verified_at' => now(),
             ],
             [
@@ -33,10 +33,10 @@ class DatabaseSeeder extends Seeder
                 'middlename' => 'Q',
                 'lastname' => 'Concha',
                 'email' => 'philiproyconcha@gmail.com',
-                'password' => Hash::make('10282001'),
+                'password' => Hash::make('75595328'),
                 'email_verified_at' => now(),
             ],
-           
+
         ];
 
         foreach ($users as $userData) {
@@ -70,7 +70,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SupervisorDepartmentSeeder::class,
             // EvaluationConfigurationSeeder::class, // Add this before EvaluationSeeder
-        // Add recognition award test data
+            // Add recognition award test data
         ]);
     }
 }

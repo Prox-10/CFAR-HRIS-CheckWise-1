@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
         'firstname' => 'Super',
         'lastname' => 'Admin',
         'email' => 'superadmin@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'email_verified_at' => now(),
         'department' => 'Management & Staff(Admin)',
       ]
@@ -44,7 +44,7 @@ class UserSeeder extends Seeder
         'firstname' => 'HR',
         'lastname' => 'Manager',
         'email' => 'hr@gmail.com',
-        'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'email_verified_at' => now(),
         'department' => 'Management & Staff(Admin)',
       ]
@@ -63,9 +63,10 @@ class UserSeeder extends Seeder
         'firstname' => 'Department',
         'lastname' => 'Supervisor',
         'email' => 'ppsupervisor@gmail.com',
-          'password' => bcrypt('10282001'),
+        'password' => bcrypt('75595328'),
         'email_verified_at' => now(),
         'department' => 'Packing Plant',
+        'roles' => ['Packing Plant']
       ]
     );
 
@@ -100,7 +101,7 @@ class UserSeeder extends Seeder
       $user = User::firstOrCreate(
         ['email' => $employeeData['email']],
         array_merge($employeeData, [
-          'password' => bcrypt('10282001'),
+          'password' => bcrypt('75595328'),
           'email_verified_at' => now(),
         ])
       );
@@ -225,8 +226,8 @@ class UserSeeder extends Seeder
 
     $this->command->info('Users seeded successfully!');
     $this->command->info('Default login credentials:');
-    $this->command->info('Super Admin: superadmin@gmail.com / 10282001');
-    $this->command->info('HR: hr@gmail.com / 10282001');
-    $this->command->info('Supervisor: ppsupervisor@gmail.com / 10282001');
+    $this->command->info('Super Admin: superadmin@gmail.com / 75595328');
+    $this->command->info('HR: hr@gmail.com / 75595328');
+    $this->command->info('Supervisor: ppsupervisor@gmail.com / 75595328');
   }
 }
