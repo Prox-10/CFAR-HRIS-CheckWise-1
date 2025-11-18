@@ -172,6 +172,7 @@ class PermissionSeeder extends Seeder
         'View Absence Credit Summary',
         'View Resume to Work',
         'Add Password',
+        'View Password',
       ],
       'Supervisor' => [
         // Dashboard permissions

@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Employee } from '@/hooks/employees';
+import { usePermission } from '@/hooks/user-permission';
 import { useForm } from '@inertiajs/react';
-import { Briefcase, Building, Calendar, Edit, Fingerprint, Mail, MapPin, Phone, Trash2, User } from 'lucide-react';
+import { Briefcase, Building, Calendar, Edit, Fingerprint, Key, Mail, MapPin, Phone, Trash2, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FingerprintCapture from './fingerprintcapture';
 
@@ -23,7 +24,7 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
     const [fingerprintData, setFingerprintData] = useState<any | null>(null);
     const [fingerprintSaved, setFingerprintSaved] = useState(false);
     const [savingFingerprint, setSavingFingerprint] = useState(false);
-
+    const { can } = usePermission();
     // Add WebSocket logic to listen for fingerprint_data and display it
     const [wsFingerprintData, setWsFingerprintData] = useState<any | null>(null);
     useEffect(() => {
@@ -86,6 +87,7 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
         hdmf_password: '',
         gmail_password: '',
         recommendation_letter: '',
+        pin: '',
     };
 
     const { data, setData, errors, processing, reset, post } = useForm<Employee>(initialEmployeeViewData);
@@ -132,6 +134,7 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                 hdmf_password: employee.hdmf_password || '',
                 gmail_password: employee.gmail_password || '',
                 recommendation_letter: employee.recommendation_letter || '',
+                pin: employee.pin || '',
             });
 
             if (employee.picture) {
@@ -228,45 +231,49 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                             <div className="flex min-w-0 items-center space-x-3">
                                                 <User className="h-5 w-5 flex-shrink-0 text-green-600" />
                                                 <span className="flex-shrink-0 text-sm font-medium text-gray-600">Gender:</span>
-                                                <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.gender}>
+                                                <span className="min-w-0 truncate text-sm text-gray-800" title={data.gender}>
                                                     {data.gender}
-                                                </Badge>
+                                                </span>
                                             </div>
 
                                             {!isAddCrew && (
                                                 <div className="flex min-w-0 items-center space-x-3">
                                                     <Building className="h-5 w-5 flex-shrink-0 text-green-600" />
                                                     <span className="flex-shrink-0 text-sm font-medium text-gray-600">Department:</span>
-                                                    <Badge
-                                                        className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                        title={data.department}
-                                                    >
+                                                    <span className="min-w-0 truncate text-sm text-gray-800" title={data.department}>
                                                         {data.department}
-                                                    </Badge>
+                                                    </span>
                                                 </div>
                                             )}
 
                                             <div className="flex min-w-0 items-center space-x-3">
                                                 <Calendar className="h-5 w-5 flex-shrink-0 text-green-600" />
                                                 <span className="flex-shrink-0 text-sm font-medium text-gray-600">Birth Date:</span>
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                                <span
+                                                    className="min-w-0 truncate text-sm text-gray-800"
                                                     title={data.date_of_birth ? formatDate(data.date_of_birth) : 'N/A'}
                                                 >
                                                     {data.date_of_birth ? formatDate(data.date_of_birth) : 'N/A'}
-                                                </Badge>
+                                                </span>
                                             </div>
 
                                             {!isAddCrew && (
                                                 <div className="flex min-w-0 items-center space-x-3">
                                                     <Briefcase className="h-5 w-5 flex-shrink-0 text-green-600" />
                                                     <span className="flex-shrink-0 text-sm font-medium text-gray-600">Position:</span>
-                                                    <Badge
-                                                        className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                        title={data.position}
-                                                    >
+                                                    <span className="min-w-0 truncate text-sm text-gray-800" title={data.position}>
                                                         {data.position}
-                                                    </Badge>
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {!isAddCrew && (
+                                                <div className="flex min-w-0 items-center space-x-3">
+                                                    <User className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                    <span className="flex-shrink-0 text-sm font-medium text-gray-600">Marital Status:</span>
+                                                    <span className="min-w-0 truncate text-sm text-gray-800" title={data.marital_status}>
+                                                        {data.marital_status}
+                                                    </span>
                                                 </div>
                                             )}
 
@@ -283,6 +290,14 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                                 <span className="flex-shrink-0 text-sm font-medium text-gray-600">Phone:</span>
                                                 <span className="min-w-0 truncate text-sm text-gray-800" title={data.phone}>
                                                     {data.phone}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex min-w-0 items-center space-x-3 sm:col-span-2">
+                                                <Key className="h-5 w-5 flex-shrink-0 text-green-600" />
+                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">PIN:</span>
+                                                <span className="min-w-0 truncate font-mono text-sm text-gray-800" title={data.pin || 'Not set'}>
+                                                    {data.pin || 'Not set'}
                                                 </span>
                                             </div>
                                         </div>
@@ -302,23 +317,20 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                         <div className="flex min-w-0 items-center space-x-3">
                                             <Calendar className="h-5 w-5 flex-shrink-0 text-green-600" />
                                             <span className="flex-shrink-0 text-sm font-medium text-gray-600">Hired Date:</span>
-                                            <Badge
-                                                className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
+                                            <span
+                                                className="min-w-0 truncate text-sm text-gray-800"
                                                 title={data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}
                                             >
                                                 {data.service_tenure ? formatDate(data.service_tenure) : 'N/A'}
-                                            </Badge>
+                                            </span>
                                         </div>
 
                                         <div className="flex min-w-0 flex-col items-start space-y-2">
                                             <span className="text-sm font-medium text-gray-600">Employee Rating:</span>
                                             {employee && employee.latest_rating ? (
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                    title={employee.latest_rating}
-                                                >
+                                                <span className="min-w-0 truncate text-sm text-gray-800" title={employee.latest_rating}>
                                                     {employee.latest_rating}
-                                                </Badge>
+                                                </span>
                                             ) : (
                                                 <span className="text-sm text-gray-500">No rating</span>
                                             )}
@@ -327,40 +339,6 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                 </CardContent>
                             </Card>
                         )}
-
-                        {/* Personal Section - Bottom Card */}
-                        <Card className="border-2 border-green-200 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-lg font-semibold text-green-800">Personal</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    {!isAddCrew && (
-                                        <div className="flex min-w-0 items-center space-x-3">
-                                            <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                            <span className="flex-shrink-0 text-sm font-medium text-gray-600">Marital Status:</span>
-                                            <Badge
-                                                className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                title={data.marital_status}
-                                            >
-                                                {data.marital_status}
-                                            </Badge>
-                                        </div>
-                                    )}
-
-                                    <div className="flex min-w-0 items-center space-x-3">
-                                        <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                        <span className="flex-shrink-0 text-sm font-medium text-gray-600">Nationality:</span>
-                                        <Badge
-                                            className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                            title={data.nationality || 'Not specified'}
-                                        >
-                                            {data.nationality || 'Not specified'}
-                                        </Badge>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
 
                         {/* Contact Information Section */}
                         <Card className="border-2 border-green-200 shadow-sm">
@@ -372,103 +350,208 @@ const ViewEmployeeDetails = ({ isOpen, onClose, employee, onEdit, onDelete, onRe
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <MapPin className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">Address:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.address}>
+                                        <span className="min-w-0 truncate text-sm text-gray-800" title={data.address}>
                                             {data.address}
-                                        </Badge>
+                                        </span>
                                     </div>
 
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <MapPin className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">City:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.city}>
+                                        <span className="min-w-0 truncate text-sm text-gray-800" title={data.city}>
                                             {data.city}
-                                        </Badge>
+                                        </span>
                                     </div>
 
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <MapPin className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">State:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.state}>
+                                        <span className="min-w-0 truncate text-sm text-gray-800" title={data.state}>
                                             {data.state}
-                                        </Badge>
+                                        </span>
                                     </div>
 
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <MapPin className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">Country:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.country}>
+                                        <span className="min-w-0 truncate text-sm text-gray-800" title={data.country}>
                                             {data.country}
-                                        </Badge>
+                                        </span>
                                     </div>
 
                                     <div className="flex min-w-0 items-center space-x-3">
                                         <MapPin className="h-5 w-5 flex-shrink-0 text-green-600" />
                                         <span className="flex-shrink-0 text-sm font-medium text-gray-600">Zip Code:</span>
-                                        <Badge className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800" title={data.zip_code}>
+                                        <span className="min-w-0 truncate text-sm text-gray-800" title={data.zip_code}>
                                             {data.zip_code}
-                                        </Badge>
+                                        </span>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Government IDs Section - Only for non-Add Crew */}
+                        {/* Government Accounts Section - Only for non-Add Crew */}
                         {!isAddCrew && (data.philhealth_user_id || data.sss_user_id || data.hdmf_user_id || data.tin_user_id) && (
                             <Card className="border-2 border-green-200 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle className="text-lg font-semibold text-green-800">Government IDs</CardTitle>
+                                    <CardTitle className="text-lg font-semibold text-green-800">Government Accounts</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        {data.philhealth_user_id && (
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">Philhealth ID:</span>
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                    title={data.philhealth_user_id}
-                                                >
-                                                    {data.philhealth_user_id}
-                                                </Badge>
+                                    <div className="space-y-6">
+                                        {/* HDMF Section */}
+                                        {(data.hdmf_user_id || data.hdmf_username) && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <h4 className="mb-3 text-base font-semibold text-green-800">HDMF (Pag-IBIG)</h4>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {data.hdmf_user_id && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">ID:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.hdmf_user_id}>
+                                                                {data.hdmf_user_id}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {data.hdmf_username && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Username/Email:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.hdmf_username}>
+                                                                {data.hdmf_username}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {can('View Password') && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Password:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800">
+                                                                {'•'.repeat(Math.min(data.hdmf_password.length, 12))}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
 
-                                        {data.sss_user_id && (
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">SSS ID:</span>
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                    title={data.sss_user_id}
-                                                >
-                                                    {data.sss_user_id}
-                                                </Badge>
+                                        {/* SSS Section */}
+                                        {(data.sss_user_id || data.sss_username) && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <h4 className="mb-3 text-base font-semibold text-green-800">SSS</h4>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {data.sss_user_id && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">ID:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.sss_user_id}>
+                                                                {data.sss_user_id}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {data.sss_username && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Username/Email:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.sss_username}>
+                                                                {data.sss_username}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {can('View Password') && (
+                                                        <div className="flex min-w-0 flex-col space-y-1 sm:col-span-2">
+                                                            <span className="text-xs font-medium text-gray-600">Password:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800">
+                                                                {'•'.repeat(Math.min(data.sss_password.length, 12))}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
 
-                                        {data.hdmf_user_id && (
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">HDMF ID:</span>
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                    title={data.hdmf_user_id}
-                                                >
-                                                    {data.hdmf_user_id}
-                                                </Badge>
+                                        {/* Philhealth Section */}
+                                        {(data.philhealth_user_id || data.philhealth_username) && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <h4 className="mb-3 text-base font-semibold text-green-800">Philhealth</h4>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {data.philhealth_user_id && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">ID:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.philhealth_user_id}>
+                                                                {data.philhealth_user_id}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {data.philhealth_username && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Username/Email:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.philhealth_username}>
+                                                                {data.philhealth_username}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {can('View Password') && (
+                                                        <div className="flex min-w-0 flex-col space-y-1 sm:col-span-2">
+                                                            <span className="text-xs font-medium text-gray-600">Password:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800">
+                                                                {'•'.repeat(Math.min(data.philhealth_password.length, 12))}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
 
-                                        {data.tin_user_id && (
-                                            <div className="flex min-w-0 items-center space-x-3">
-                                                <User className="h-5 w-5 flex-shrink-0 text-green-600" />
-                                                <span className="flex-shrink-0 text-sm font-medium text-gray-600">TIN ID:</span>
-                                                <Badge
-                                                    className="min-w-0 truncate bg-green-100 px-3 py-1 text-sm text-green-800"
-                                                    title={data.tin_user_id}
-                                                >
-                                                    {data.tin_user_id}
-                                                </Badge>
+                                        {/* TIN Section */}
+                                        {(data.tin_user_id || data.tin_username) && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <h4 className="mb-3 text-base font-semibold text-green-800">TIN</h4>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {data.tin_user_id && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">ID:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.tin_user_id}>
+                                                                {data.tin_user_id}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {data.tin_username && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Username/Email:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.tin_username}>
+                                                                {data.tin_username}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {can('View Password') && (
+                                                        <div className="flex min-w-0 flex-col space-y-1 sm:col-span-2">
+                                                            <span className="text-xs font-medium text-gray-600">Password:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800">
+                                                                {'•'.repeat(Math.min(data.tin_password.length, 12))}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Gmail Account (PIN) Section */}
+                                        {(data.email || data.gmail_password) && (
+                                            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <h4 className="mb-3 text-base font-semibold text-green-800">Gmail Account (PIN)</h4>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {data.email && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Email:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800" title={data.email}>
+                                                                {data.email}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {can('View Password') && (
+                                                        <div className="flex min-w-0 flex-col space-y-1">
+                                                            <span className="text-xs font-medium text-gray-600">Password/PIN:</span>
+                                                            <span className="min-w-0 truncate text-sm text-gray-800">
+                                                                {'•'.repeat(Math.min(data.gmail_password.length, 12))}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
