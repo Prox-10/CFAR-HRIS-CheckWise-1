@@ -8,7 +8,6 @@ import { CircleEllipsis, Edit, Eye, Fingerprint, Key } from 'lucide-react';
 import { Employee, Employees } from '@/hooks/employees';
 
 import { DataTableColumnHeader } from './data-table-column-header';
-
 // Permission checks are passed in from the parent to avoid calling hooks here
 
 // Function to calculate age from date of birth
@@ -235,20 +234,24 @@ const columns = (
                 return filterValue.includes(workStatus);
             },
         },
-        {
-            accessorKey: 'pin',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="PIN" />,
-            cell: ({ row }) => {
-                const pin = row.original.pin;
+        ...(can('View Password')
+            ? [
+                  {
+                      accessorKey: 'pin',
+                      header: ({ column }) => <DataTableColumnHeader column={column} title="PIN" />,
+                      cell: ({ row }) => {
+                          const pin = row.original.pin;
 
-                return (
-                    <div className="flex items-center space-x-2">
-                        <Key className="h-4 w-4 text-gray-500" />
-                        <span className="rounded bg-gray-100 px-2 py-1 font-mono text-sm">{pin ? pin : 'Not set'}</span>
-                    </div>
-                );
-            },
-        },
+                          return (
+                              <div className="flex items-center space-x-2">
+                                  <Key className="h-4 w-4 text-gray-500" />
+                                  <span className="rounded bg-gray-100 px-2 py-1 font-mono text-sm">{pin ? pin : 'Not set'}</span>
+                              </div>
+                          );
+                      },
+                  },
+              ]
+            : []),
         {
             accessorKey: 'action',
             header: () => <div>Action</div>,

@@ -445,8 +445,15 @@ export default function DepartmentEvaluation({
     };
 
     // Fetch employee attendance data when employee is selected
-    const fetchEmployeeAttendance = async (employeeId: string) => {
+    const fetchEmployeeAttendance = async (employeeId: string, department?: string) => {
         if (!employeeId) return;
+
+        // Use provided department or fall back to selectedDepartment state
+        const dept = department || selectedDepartment;
+        if (!dept) {
+            console.warn('⚠️ No department available for attendance fetch');
+            return;
+        }
 
         try {
             // Get current period and year for attendance calculation
@@ -455,7 +462,7 @@ export default function DepartmentEvaluation({
             const currentYear = now.getFullYear();
 
             // Get department frequency to determine attendance period
-            const departmentFrequency = evaluation_configs.find((cfg) => cfg.department === selectedDepartment)?.evaluation_frequency || 'annual';
+            const departmentFrequency = evaluation_configs.find((cfg) => cfg.department === dept)?.evaluation_frequency || 'annual';
 
             let startDate, endDate;
             if (departmentFrequency === 'annual') {
@@ -473,27 +480,56 @@ export default function DepartmentEvaluation({
                 }
             }
 
+            console.log('🔍 [DEBUG] Fetching attendance for:', {
+                employeeId,
+                department: dept,
+                startDate,
+                endDate,
+                frequency: departmentFrequency,
+            });
+
             const response = await fetch(`/api/employee-attendance/${employeeId}?start_date=${startDate}&end_date=${endDate}`);
+
+            // Check if response is OK before parsing
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [DEBUG] API returned non-OK status:', response.status, errorText);
+                throw new Error(`API returned ${response.status}: ${errorText}`);
+            }
+
             const data = await response.json();
 
-            console.log('🔍 DEBUG: Attendance API Response:', data);
+            console.log('🔍 [DEBUG] Attendance API Response:', data);
 
-            if (data.success) {
-                console.log('✅ DEBUG: Setting attendance data:', {
-                    daysLate: data.attendance.days_late,
-                    daysAbsent: data.attendance.days_absent,
+            if (data.success && data.attendance) {
+                const daysLate = Number(data.attendance.days_late) || 0;
+                const daysAbsent = Number(data.attendance.days_absent) || 0;
+
+                console.log('✅ [DEBUG] Setting attendance data:', {
+                    daysLate,
+                    daysAbsent,
                 });
 
                 setEvaluationData((prev) => ({
                     ...prev,
                     attendance: {
                         ...prev.attendance,
-                        daysLate: data.attendance.days_late || 0,
-                        daysAbsent: data.attendance.days_absent || 0,
+                        daysLate,
+                        daysAbsent,
+                    },
+                }));
+
+                // Also update Inertia form data
+                setData((prev) => ({
+                    ...prev,
+                    attendance: {
+                        ...prev.attendance,
+                        daysLate,
+                        daysAbsent,
                     },
                 }));
             } else {
-                console.log('❌ DEBUG: API failed, setting default values');
+                console.warn('⚠️ [DEBUG] API response missing success or attendance data:', data);
                 // If API fails, set default values
                 setEvaluationData((prev) => ({
                     ...prev,
@@ -505,7 +541,7 @@ export default function DepartmentEvaluation({
                 }));
             }
         } catch (error) {
-            console.error('Error fetching employee attendance:', error);
+            console.error('❌ [DEBUG] Error fetching employee attendance:', error);
             // Set default values on error
             setEvaluationData((prev) => ({
                 ...prev,
@@ -930,11 +966,12 @@ export default function DepartmentEvaluation({
                                                         setSelectedEmployee(value);
                                                         setData((prev) => ({ ...prev, employee_id: value }));
                                                         if (value && selectedDepartment) {
-                                                            // Check for existing evaluation
+                                                            // Check for existing evaluation first
                                                             await checkExistingEvaluation(value, selectedDepartment);
 
-                                                            // Fetch employee attendance data
-                                                            await fetchEmployeeAttendance(value);
+                                                            // Fetch fresh employee attendance data
+                                                            // This will update the attendance fields with current data from the attendance table
+                                                            await fetchEmployeeAttendance(value, selectedDepartment);
                                                         }
                                                     }}
                                                     disabled={!selectedDepartment}
@@ -1108,7 +1145,7 @@ export default function DepartmentEvaluation({
                                                             readOnly={true}
                                                             disabled={true}
                                                         />
-                                                        <p className="text-xs text-gray-500">Auto-fetched from attendance records</p>
+                                                       
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-sm font-medium text-gray-700">Days Absent</label>
@@ -1120,7 +1157,7 @@ export default function DepartmentEvaluation({
                                                             readOnly={true}
                                                             disabled={true}
                                                         />
-                                                        <p className="text-xs text-gray-500">Auto-fetched from attendance records</p>
+                                                       
                                                     </div>
                                                 </div>
 
