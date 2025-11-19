@@ -751,17 +751,17 @@ export default function DailyAttendancePage() {
                                         {/* Signatories */}
                                         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
                                             <div className="text-center text-[10px]">
-                                                <div className="mb-6">Prepared by:</div>
+                                                <div className="mb-1">Prepared by:</div>
                                                 <div className="">PHMC</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
                                             </div>
                                             <div className="text-center text-[10px]">
-                                                <div className="mb-6">Noted by:</div>
+                                                <div className="mb-1">Noted by:</div>
                                                 <div className="">{hrName}</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
                                             </div>
                                             <div className="text-center text-[10px]">
-                                                <div className="mb-6">Approved by:</div>
+                                                <div className="mb-1">Approved by:</div>
                                                 <div className="">{managerName}</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
                                             </div>

@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     signatories: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginTop: 15,
+        marginTop: 5,
     },
     signatory: {
         alignItems: 'center',
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     },
     signatoryLabel: {
         fontSize: 10,
-        marginBottom: 12,
+        marginBottom: 1,
     },
     signatoryLine: {
         width: '80%',
