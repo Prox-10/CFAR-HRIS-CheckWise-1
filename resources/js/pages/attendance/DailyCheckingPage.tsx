@@ -14,10 +14,10 @@ import { Switch } from '@/components/ui/switch';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { pdf, PDFViewer } from '@react-pdf/renderer';
 import axios from 'axios';
-import { CalendarIcon, Download, Eye, Loader2, Printer, Save, Settings } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Download, Eye, Loader2, Save, Settings } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -36,6 +36,8 @@ interface Employee {
 
 interface DailyCheckingPageProps {
     employees?: Employee[];
+    preparedBy?: string;
+    checkedBy?: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -125,7 +127,11 @@ const formatTimeWithAMPM = (time: string | undefined | null): string => {
     return `${String(hour12).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
 };
 
-export default function DailyCheckingPage({ employees: initialEmployees = [] }: DailyCheckingPageProps) {
+export default function DailyCheckingPage({
+    employees: initialEmployees = [],
+    preparedBy: initialPreparedBy = '',
+    checkedBy: initialCheckedBy = '',
+}: DailyCheckingPageProps) {
     const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [date, setDate] = useState(formatDateLocal(new Date()));
     const [assignmentData, setAssignmentData] = useState<{ [key: string]: string[] }>({});
@@ -136,8 +142,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
     const [leaveData, setLeaveData] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [preparedBy, setPreparedBy] = useState('');
-    const [checkedBy, setCheckedBy] = useState('');
+    const [preparedBy, setPreparedBy] = useState(initialPreparedBy);
+    const [checkedBy, setCheckedBy] = useState(initialCheckedBy);
     const [showPreview, setShowPreview] = useState(false);
     const [selectedMicroteam, setSelectedMicroteam] = useState<'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null>(null);
     // Track selected employees by microteam and date: { microteam: { date: Set<employeeNames> } }
@@ -1184,16 +1190,23 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
             // Import the PDF component dynamically
             const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+            const weekStartDate = date ? parseDateLocal(date) : new Date();
             const PackingPlantDocument = PackingPlantPDF({
-                weekStart: new Date(date),
+                weekStart: weekStartDate,
                 workers: assignmentData,
                 timeData: timeData,
                 employees: employees,
                 leaveData: leaveData,
+                preparedBy: preparedBy || '',
+                checkedBy: checkedBy || '',
             });
 
             // Generate PDF blob
-            const instance = pdf(PackingPlantDocument());
+            const documentComponent = PackingPlantDocument();
+            if (!documentComponent) {
+                throw new Error('Failed to generate PDF document');
+            }
+            const instance = pdf(documentComponent);
             const blob = await instance.toBlob();
 
             // Dismiss loading toast
@@ -1228,16 +1241,23 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
             // Import the PDF component dynamically
             const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+            const weekStartDate = date ? parseDateLocal(date) : new Date();
             const PackingPlantDocument = PackingPlantPDF({
-                weekStart: new Date(date),
+                weekStart: weekStartDate,
                 workers: assignmentData,
                 timeData: timeData,
                 employees: employees,
                 leaveData: leaveData,
+                preparedBy: preparedBy || '',
+                checkedBy: checkedBy || '',
             });
 
             // Generate PDF blob
-            const instance = pdf(PackingPlantDocument());
+            const documentComponent = PackingPlantDocument();
+            if (!documentComponent) {
+                throw new Error('Failed to generate PDF document');
+            }
+            const instance = pdf(documentComponent);
             const blob = await instance.toBlob();
 
             // Dismiss loading toast
@@ -1278,10 +1298,23 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
             // Import the PDF component dynamically
             const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
-            const PackingPlantDocument = PackingPlantPDF({ weekStart: new Date(date), workers: assignmentData });
+            const weekStartDate = date ? parseDateLocal(date) : new Date();
+            const PackingPlantDocument = PackingPlantPDF({
+                weekStart: weekStartDate,
+                workers: assignmentData,
+                timeData: timeData,
+                employees: employees,
+                leaveData: leaveData,
+                preparedBy: preparedBy || '',
+                checkedBy: checkedBy || '',
+            });
 
             // Generate PDF blob
-            const instance = pdf(PackingPlantDocument());
+            const documentComponent = PackingPlantDocument();
+            if (!documentComponent) {
+                throw new Error('Failed to generate PDF document');
+            }
+            const instance = pdf(documentComponent);
             const blob = await instance.toBlob();
 
             // Dismiss loading toast
@@ -1589,8 +1622,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                           {formatEmployeeDisplayName(emp)}
                                                                                                           {isLocked && lockInfo && (
                                                                                                               <span className="ml-2 text-xs text-emerald-500">
-                                                                                                                  ({lockInfo.days_remaining}d
-                                                                                                                  left)
+                                                                                                                  ({lockInfo.days_remaining}d left)
                                                                                                               </span>
                                                                                                           )}
                                                                                                       </SelectItem>
@@ -1644,8 +1676,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                           {formatEmployeeDisplayName(emp)}
                                                                                                           {isLocked && lockInfo && (
                                                                                                               <span className="ml-2 text-xs text-emerald-500">
-                                                                                                                  ({lockInfo.days_remaining}d
-                                                                                                                  left)
+                                                                                                                  ({lockInfo.days_remaining}d left)
                                                                                                               </span>
                                                                                                           )}
                                                                                                       </SelectItem>
@@ -1721,7 +1752,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                         placeholder="Name"
                                     />
                                 </div>
-                                <div className="w-1/2 text-right">
+                                <div className="ml-[60%] w-1/2">
                                     <p className="mb-2 font-semibold">Checked by:</p>
                                     <Input
                                         value={checkedBy}
@@ -1732,39 +1763,42 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                 </div>
                             </div>
                             <div className="mt-4 flex justify-start gap-2 print:hidden">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setShowPreview(true)}
-                                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                                >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View
-                                </Button>
-                                <Button variant="outline" onClick={handleExport} className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Export PDF
-                                </Button>
-                                <Button variant="outline" onClick={handlePrint} className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                    <Printer className="mr-2 h-4 w-4" />
-                                    Print
-                                </Button>
-                                <Button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    {saving ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="mr-2 h-4 w-4" />
-                                            Save
-                                        </>
-                                    )}
-                                </Button>
+                                {/* Back Button */}
+                                <div className="flex w-full justify-between">
+                                    <div>
+                                        <Button variant="outline" onClick={() => router.visit('/attendance')} className="border-gray-300">
+                                            <ArrowLeft className="mr-2 h-4 w-4" />
+                                            Back
+                                        </Button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" onClick={() => setShowPreview(true)} className="hover:bg-blue-50">
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View
+                                        </Button>
+                                        <Button variant="outline" onClick={handleExport} className="hover:bg-blue-50">
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Export PDF
+                                        </Button>
+                                        <Button
+                                            onClick={handleSave}
+                                            disabled={saving}
+                                            className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                                        >
+                                            {saving ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="mr-2 h-4 w-4" />
+                                                    Save
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </Main>
@@ -1849,6 +1883,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                 timeData={timeData}
                                 employees={employees}
                                 leaveData={leaveData}
+                                preparedBy={preparedBy}
+                                checkedBy={checkedBy}
                             />
                         )}
                     </div>
@@ -1865,6 +1901,8 @@ function PDFViewerWrapper({
     timeData,
     employees,
     leaveData,
+    preparedBy,
+    checkedBy,
 }: {
     date: string;
     assignmentData: { [key: string]: string[] };
@@ -1873,24 +1911,29 @@ function PDFViewerWrapper({
     };
     employees: Employee[];
     leaveData: { [key: string]: string };
+    preparedBy: string;
+    checkedBy: string;
 }) {
     const [PackingPlantPDFComponent, setPackingPlantPDFComponent] = useState<React.ComponentType<any> | null>(null);
 
     useEffect(() => {
         import('./components/packing-plant-pdf').then((module) => {
             const PackingPlantPDF = module.default;
+            const weekStartDate = date ? parseDateLocal(date) : new Date();
             const PackingPlantDocument = PackingPlantPDF({
-                weekStart: new Date(date),
+                weekStart: weekStartDate,
                 workers: assignmentData,
                 timeData: timeData,
                 employees: employees,
                 leaveData: leaveData,
+                preparedBy: preparedBy || '',
+                checkedBy: checkedBy || '',
             });
             // Create a component that renders the document
             const PDFComponent = () => PackingPlantDocument();
             setPackingPlantPDFComponent(() => PDFComponent);
         });
-    }, [date, assignmentData, timeData, employees, leaveData]);
+    }, [date, assignmentData, timeData, employees, leaveData, preparedBy, checkedBy]);
 
     if (!PackingPlantPDFComponent) {
         return <div>Loading PDF...</div>;

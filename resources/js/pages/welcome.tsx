@@ -29,8 +29,9 @@ export default function Welcome() {
           backgroundImage: `url('/bgcfar.jpg')`
         }}
       >
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-700/5 via-green-400/10 to-green-900/80"></div>
+        {/* Overlay for darkening */}
+        <div className="absolute inset-0 bg-black/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-700/10 via-green-400/20 to-green-900/100"></div>
       </div>
 
       {/* Content */}

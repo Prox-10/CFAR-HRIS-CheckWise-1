@@ -176,6 +176,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f0f0',
         fontWeight: 'bold',
     },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 15,
+        paddingHorizontal: 5,
+    },
+    footerSection: {
+        width: '45%',
+    },
+    footerSectionLeft: {
+        width: '45%',
+    },
+    footerSectionRight: {
+        width: '45%',
+        marginLeft: '60%',
+    },
+    footerLabel: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    footerLine: {
+        // borderBottomWidth: 0.5,
+        borderColor: '#000',
+        paddingBottom: 1,
+        minHeight: 12,
+    },
+    footerText: {
+        fontSize: 8,
+    },
 });
 
 // --- Configuration matching your table ---
@@ -212,6 +242,8 @@ interface PackingPlantPDFProps {
     };
     employees?: any[];
     leaveData?: { [key: string]: string };
+    preparedBy?: string;
+    checkedBy?: string;
 }
 
 export default function PackingPlantPDF({
@@ -220,6 +252,8 @@ export default function PackingPlantPDF({
     timeData = {},
     employees = [],
     leaveData = {},
+    preparedBy = '',
+    checkedBy = '',
 }: PackingPlantPDFProps = {}) {
     const PackingPlantDocument = () => {
         // Get position field names
@@ -387,6 +421,38 @@ export default function PackingPlantPDF({
                                     </View>
                                 </View>
                             ))}
+                        </View>
+                    </View>
+
+                    {/* Footer - Prepared by and Checked by */}
+                    <View style={styles.footer}>
+                        <View style={styles.footerSectionLeft}>
+                            <Text style={styles.footerLabel}>Prepared by:</Text>
+                            <View style={styles.footerLine}>
+                                <Text
+                                    style={{
+                                        ...styles.footerText,
+                                        textDecoration: 'underline',
+                                        textDecorationStyle: 'solid',
+                                    }}
+                                >
+                                    {preparedBy || ''}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={styles.footerSectionRight}>
+                            <Text style={styles.footerLabel}>Checked by:</Text>
+                            <View style={styles.footerLine}>
+                                <Text
+                                    style={{
+                                        ...styles.footerText,
+                                        textDecoration: 'underline',
+                                        textDecorationStyle: 'solid',
+                                    }}
+                                >
+                                    {checkedBy || ''}
+                                </Text>
+                            </View>
                         </View>
                     </View>
                 </Page>

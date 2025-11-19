@@ -51,7 +51,7 @@ const Header = ({ className, fixed, children, ...props }: HeaderProps) => {
                                 Check
                                 <span className="text-cfar-50">Wise</span>
                             </h1>
-                            <p className="motion-rotate-in-45 text-xs font-semibold text-black">by CFARBEMCO</p>
+                            <p className="motion-rotate-in-45 text-xs font-semibold text-cfar-50">by CFARBEMCO</p>
                         </div>
                     </div>
                 </div>

@@ -18,10 +18,10 @@ const Hero = () => {
       <section className="relative flex min-h-screen items-center justify-center px-4">
           <div className="container mx-auto max-w-4xl text-center">
               <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-                  <h1 className="mb-6 text-5xl leading-tight font-bold text-cfar-400 md:text-7xl">
+                  <h1 className="mb-6 text-5xl leading-tight font-bold text-cfar-300 md:text-7xl text-shadow-lg shadow-black/100">
                       Check
                       <span className="text-cfar-50">Wise</span>
-                      <span className="text-cfar-400 mt-4 block text-3xl font-normal md:text-4xl">Biometric Attendance Management System</span>
+                      <span className="text-cfar-50 mt-4 block text-3xl font-normal md:text-4xl">Biometric Attendance Management System</span>
                   </h1>
                   <p className="mx-auto mb-8 max-w-2xl text-xl font-sans text-white/90 md:text-2xl">
                       Streamline your workforce management with cutting-edge biometric technology

@@ -3,7 +3,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import '../css/app.css';
-import './bootstrap2'; // Import bootstrap.ts - initializes Echo with Reverb
+import './bootstrap'; // Import bootstrap.ts - initializes Echo with Reverb
 import './echo'; // Import echo.js for module exports
 import { initializeTheme } from './hooks/use-appearance';
 

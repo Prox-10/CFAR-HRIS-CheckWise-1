@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\HRDepartmentAssignment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -67,8 +68,27 @@ class AttendanceController extends Controller
             ->orderBy('employee_name', 'asc')
             ->get();
 
+        // Get Supervisor for Packing Plant
+        $packingPlantSupervisor = \App\Models\User::getSupervisorForDepartment('Packing Plant');
+        $preparedBy = $packingPlantSupervisor
+            ? trim(($packingPlantSupervisor->firstname ?? '') . ' ' . ($packingPlantSupervisor->lastname ?? ''))
+            : '';
+
+        // Get HR personnel from hr_department_assignments table for Packing Plant
+        $hrAssignment = HRDepartmentAssignment::where('department', 'Packing Plant')
+            ->with('user')
+            ->first();
+
+        $checkedBy = '';
+        if ($hrAssignment && $hrAssignment->user) {
+            $hrUser = $hrAssignment->user;
+            $checkedBy = trim(($hrUser->firstname ?? '') . ' ' . ($hrUser->lastname ?? ''));
+        }
+
         return Inertia::render('attendance/DailyCheckingPage', [
             'employees' => $employees,
+            'preparedBy' => $preparedBy,
+            'checkedBy' => $checkedBy,
         ]);
     }
 
