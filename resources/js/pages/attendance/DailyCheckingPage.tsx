@@ -3,16 +3,21 @@ import { Main } from '@/components/customize/main';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { Switch } from '@/components/ui/switch';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { pdf, PDFViewer } from '@react-pdf/renderer';
 import axios from 'axios';
-import { Download, Eye, Loader2, Printer, Save } from 'lucide-react';
+import { CalendarIcon, Download, Eye, Loader2, Printer, Save, Settings } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -90,6 +95,20 @@ const formatTimeForInput = (time: string | undefined | null): string => {
     return time;
 };
 
+// Helper function to format date to YYYY-MM-DD using local timezone
+const formatDateLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Helper function to parse date string as local date (not UTC)
+const parseDateLocal = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+};
+
 // Helper function to format time to 12-hour format with AM/PM
 const formatTimeWithAMPM = (time: string | undefined | null): string => {
     if (!time) return '--:--';
@@ -108,7 +127,7 @@ const formatTimeWithAMPM = (time: string | undefined | null): string => {
 
 export default function DailyCheckingPage({ employees: initialEmployees = [] }: DailyCheckingPageProps) {
     const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(formatDateLocal(new Date()));
     const [assignmentData, setAssignmentData] = useState<{ [key: string]: string[] }>({});
     // Store time_in and time_out for each position field, slot index, and day index
     const [timeData, setTimeData] = useState<{
@@ -126,6 +145,11 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         [microteam: string]: { [date: string]: Set<string> };
     }>({});
     const [loadingMicroteam, setLoadingMicroteam] = useState(false);
+    const [calendarOpen, setCalendarOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [lockPeriod7Days, setLockPeriod7Days] = useState(false);
+    const [lockPeriod14Days, setLockPeriod14Days] = useState(false);
+    const [savingSettings, setSavingSettings] = useState(false);
 
     // Initialize assignment data structure
     useEffect(() => {
@@ -175,19 +199,131 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
     // State to track employees with attendance for the selected week
     const [employeesWithAttendance, setEmployeesWithAttendance] = useState<Set<string>>(new Set());
+    // State to track locked employees (within 14 days of assignment)
+    const [lockedEmployees, setLockedEmployees] = useState<Map<string, { assignment_date: string; lock_until: string; days_remaining: number }>>(
+        new Map(),
+    );
 
     // Fetch employees when date changes - only those with attendance for the selected week
     useEffect(() => {
         const days = getDaysOfWeek();
-        const startDate = days[0].toISOString().split('T')[0];
-        const endDate = days[6].toISOString().split('T')[0];
+        const startDate = formatDateLocal(days[0]);
+        const endDate = formatDateLocal(days[6]);
 
         // Fetch employees with attendance for this specific week
         fetchPackingPlantEmployees(startDate, endDate);
 
         // Also fetch daily checking assignments to get employees assigned for this week
         fetchEmployeesForWeek(startDate);
+
+        // Fetch locked employees
+        fetchLockedEmployees();
     }, [date]);
+
+    // Load settings on component mount
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    // Load settings from API
+    const loadSettings = async () => {
+        try {
+            const response = await axios.get('/api/daily-checking/settings');
+            if (response.data) {
+                setLockPeriod7Days(response.data.lock_period_7_days || false);
+                setLockPeriod14Days(response.data.lock_period_14_days || false);
+            } else {
+                // If no settings exist, both are off (no lock)
+                setLockPeriod7Days(false);
+                setLockPeriod14Days(false);
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            // If API fails, both are off (no lock) - no default
+            setLockPeriod7Days(false);
+            setLockPeriod14Days(false);
+        }
+    };
+
+    // Save settings
+    const saveSettings = async (sevenDays: boolean, fourteenDays: boolean) => {
+        try {
+            setSavingSettings(true);
+            await axios.post('/api/daily-checking/settings', {
+                lock_period_7_days: sevenDays,
+                lock_period_14_days: fourteenDays,
+            });
+
+            // Refresh locked employees after settings change
+            fetchLockedEmployees();
+
+            toast.success('Settings saved successfully');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            toast.error('Failed to save settings');
+        } finally {
+            setSavingSettings(false);
+        }
+    };
+
+    // Handle 7 days toggle
+    const handle7DaysToggle = async (checked: boolean) => {
+        // If turning on 7 days, turn off 14 days
+        // If turning off 7 days, keep 14 days as is (unless it's also off)
+        const new7Days = checked;
+        const new14Days = checked ? false : lockPeriod14Days; // If 7 days is on, turn off 14 days
+
+        setLockPeriod7Days(new7Days);
+        setLockPeriod14Days(new14Days);
+
+        // Auto-save
+        await saveSettings(new7Days, new14Days);
+    };
+
+    // Handle 14 days toggle
+    const handle14DaysToggle = async (checked: boolean) => {
+        // If turning on 14 days, turn off 7 days
+        // If turning off 14 days, keep 7 days as is (unless it's also off)
+        const new14Days = checked;
+        const new7Days = checked ? false : lockPeriod7Days; // If 14 days is on, turn off 7 days
+
+        setLockPeriod14Days(new14Days);
+        setLockPeriod7Days(new7Days);
+
+        // Auto-save
+        await saveSettings(new7Days, new14Days);
+    };
+
+    // Fetch locked employees (based on selected lock period)
+    const fetchLockedEmployees = async () => {
+        try {
+            // Get the current lock period setting
+            // If both are off, lock period is 0 (no lock)
+            const lockPeriod = lockPeriod7Days ? 7 : lockPeriod14Days ? 14 : 0;
+
+            const response = await axios.get('/api/daily-checking/locked-employees', {
+                params: { lock_period: lockPeriod },
+            });
+
+            const lockedMap = new Map<string, { assignment_date: string; lock_until: string; days_remaining: number }>();
+
+            if (response.data?.locked_employees) {
+                response.data.locked_employees.forEach((emp: any) => {
+                    lockedMap.set(emp.employee_name, {
+                        assignment_date: emp.assignment_date,
+                        lock_until: emp.lock_until,
+                        days_remaining: emp.days_remaining,
+                    });
+                });
+            }
+
+            setLockedEmployees(lockedMap);
+        } catch (error) {
+            console.error('Error fetching locked employees:', error);
+            // On error, clear the map
+            setLockedEmployees(new Map());
+        }
+    };
 
     // Fetch employees who have daily checking assignments for the selected week
     const fetchEmployeesForWeek = async (weekStartDate: string) => {
@@ -254,7 +390,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
                 // For each day in the week, fetch assignments to get the date-specific selections
                 const fetchPromises = weekDays.map(async (day) => {
-                    const dayDateStr = day.toISOString().split('T')[0];
+                    const dayDateStr = formatDateLocal(day);
                     try {
                         const dayResponse = await axios.get('/api/daily-checking/for-date', {
                             params: { date: dayDateStr },
@@ -329,7 +465,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             // Only reload if we have a microteam selected
             const loadData = async () => {
                 const days = getDaysOfWeek();
-                const weekStartDate = days[0].toISOString().split('T')[0];
+                const weekStartDate = formatDateLocal(days[0]);
 
                 // Initialize structures
                 const initialData: { [key: string]: string[] } = {};
@@ -473,7 +609,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                 }
 
                 days.forEach((day, dayIndex) => {
-                    const dateStr = day.toISOString().split('T')[0];
+                    const dateStr = formatDateLocal(day);
                     const attendance = selectedEmployee.attendances?.[dateStr];
                     if (attendance) {
                         newTimeData[field][slotIndex][dayIndex] = {
@@ -526,7 +662,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
         try {
             const days = getDaysOfWeek();
-            const weekStartDate = days[0].toISOString().split('T')[0];
+            const weekStartDate = formatDateLocal(days[0]);
 
             // Initialize assignment data and time data structures
             const initialData: { [key: string]: string[] } = {};
@@ -614,7 +750,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
                 // For each day in the week, fetch assignments to get the date-specific selections
                 const fetchPromises = days.map(async (day) => {
-                    const dayDateStr = day.toISOString().split('T')[0];
+                    const dayDateStr = formatDateLocal(day);
                     try {
                         const dayResponse = await axios.get('/api/daily-checking/for-date', {
                             params: { date: dayDateStr },
@@ -766,7 +902,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
         filtered = filtered.filter((emp) => {
             // Check if employee has attendance records for any day in the week
             const hasAttendance = days.some((day) => {
-                const dateStr = day.toISOString().split('T')[0];
+                const dateStr = formatDateLocal(day);
                 return emp.attendances?.[dateStr] !== undefined;
             });
 
@@ -822,7 +958,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             setSaving(true);
             // Calculate Monday of the week
             const days = getDaysOfWeek();
-            const weekStartDate = days[0].toISOString().split('T')[0];
+            const weekStartDate = formatDateLocal(days[0]);
 
             // Count assignments for better messaging
             let addCrewCount = 0;
@@ -900,6 +1036,8 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             toast.dismiss('save-daily-checking');
 
             if (response.data.success) {
+                // Refresh locked employees after successful save
+                fetchLockedEmployees();
                 // Build success message with details
                 const details: string[] = [];
 
@@ -928,7 +1066,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
 
                     // For each day in the week, fetch assignments to get the date-specific selections
                     const fetchPromises = days.map(async (day) => {
-                        const dayDateStr = day.toISOString().split('T')[0];
+                        const dayDateStr = formatDateLocal(day);
                         try {
                             const dayResponse = await axios.get('/api/daily-checking/for-date', {
                                 params: { date: dayDateStr },
@@ -1062,7 +1200,7 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
             toast.dismiss('pdf-export');
 
             // Create download link
-            const dateStr = date ? new Date(date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+            const dateStr = date ? date : formatDateLocal(new Date());
             const filename = `Daily_Checking_PP_Crew_${dateStr}.pdf`;
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -1208,34 +1346,78 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                 </div>
                             </div>
 
-                            {/* Microteam Selection */}
-                            <div className="mb-4 print:hidden">
-                                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                                    Select Microteam:
-                                    {loadingMicroteam && <span className="ml-2 text-xs text-gray-500">Loading...</span>}
-                                </label>
-                                <Select
-                                    value={selectedMicroteam || ''}
-                                    onValueChange={(value) =>
-                                        handleMicroteamChange(value as 'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null)
-                                    }
-                                    disabled={loadingMicroteam}
-                                >
-                                    <SelectTrigger className="w-64 border-gray-300">
-                                        <SelectValue placeholder="Select Microteam..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="MICROTEAM - 01">Microteam 1</SelectItem>
-                                        <SelectItem value="MICROTEAM - 02">Microteam 2</SelectItem>
-                                        <SelectItem value="MICROTEAM - 03">Microteam 3</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            {/* Controls Row */}
+                            <div className="mb-4 flex items-end gap-4 print:hidden">
+                                {/* Microteam Selection */}
+                                <div className="flex-1">
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                        Select Microteam:
+                                        {loadingMicroteam && <span className="ml-2 text-xs text-gray-500">Loading...</span>}
+                                    </label>
+                                    <Select
+                                        value={selectedMicroteam || ''}
+                                        onValueChange={(value) =>
+                                            handleMicroteamChange(value as 'MICROTEAM - 01' | 'MICROTEAM - 02' | 'MICROTEAM - 03' | null)
+                                        }
+                                        disabled={loadingMicroteam}
+                                    >
+                                        <SelectTrigger className="w-64 border-gray-300">
+                                            <SelectValue placeholder="Select Microteam..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="MICROTEAM - 01">Microteam 1</SelectItem>
+                                            <SelectItem value="MICROTEAM - 02">Microteam 2</SelectItem>
+                                            <SelectItem value="MICROTEAM - 03">Microteam 3</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Settings Button */}
+                                <Button variant="outline" onClick={() => setShowSettings(true)} className="border-gray-300">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    Settings
+                                </Button>
                             </div>
 
                             {/* Date Selection */}
                             <div className="mb-4 print:hidden">
                                 <label className="mb-2 block text-sm font-semibold text-gray-700">Select Week Date:</label>
-                                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-64 border-gray-300" />
+                                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn('w-64 justify-start text-left font-normal', !date && 'text-muted-foreground')}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {date
+                                                ? parseDateLocal(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                                                : 'Pick a date'}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={date ? parseDateLocal(date) : undefined}
+                                            onSelect={(selectedDate) => {
+                                                if (selectedDate) {
+                                                    setDate(formatDateLocal(selectedDate));
+                                                    setCalendarOpen(false);
+                                                }
+                                            }}
+                                            captionLayout="dropdown"
+                                            initialFocus
+                                            disabled={(date) => {
+                                                // Disable future dates (tomorrow and beyond)
+                                                // Allow only today and past dates
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+                                                const checkDate = new Date(date);
+                                                checkDate.setHours(0, 0, 0, 0);
+                                                return checkDate > today;
+                                            }}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             {/* Main Table */}
@@ -1321,11 +1503,18 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                               const isCurrentSelection =
                                                                                   assignmentData[position.field]?.[slotIndex] === emp.employee_name;
 
+                                                                              // Check if employee is locked (within 14 days)
+                                                                              const isLocked = lockedEmployees.has(emp.employee_name);
+                                                                              const lockInfo = isLocked
+                                                                                  ? lockedEmployees.get(emp.employee_name)
+                                                                                  : null;
+
                                                                               const shouldDisable =
                                                                                   (isSelectedInCurrent && !isCurrentSelection) ||
                                                                                   (isSelectedInSameMicroteamAndDate &&
                                                                                       !isCurrentSelection &&
-                                                                                      !isSelectedInCurrent);
+                                                                                      !isSelectedInCurrent) ||
+                                                                                  (isLocked && !isCurrentSelection);
 
                                                                               return (
                                                                                   <SelectItem
@@ -1333,8 +1522,18 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                       value={emp.employee_name}
                                                                                       className="text-xs"
                                                                                       disabled={shouldDisable}
+                                                                                      title={
+                                                                                          isLocked && lockInfo
+                                                                                              ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
+                                                                                              : undefined
+                                                                                      }
                                                                                   >
                                                                                       {formatEmployeeDisplayName(emp)}
+                                                                                      {isLocked && lockInfo && (
+                                                                                          <span className="ml-2 text-xs text-emerald-500">
+                                                                                              ({lockInfo.days_remaining}d left)
+                                                                                          </span>
+                                                                                      )}
                                                                                   </SelectItem>
                                                                               );
                                                                           })
@@ -1360,11 +1559,20 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                       assignmentData[position.field]?.[slotIndex] ===
                                                                                                       emp.employee_name;
 
+                                                                                                  // Check if employee is locked (within 14 days)
+                                                                                                  const isLocked = lockedEmployees.has(
+                                                                                                      emp.employee_name,
+                                                                                                  );
+                                                                                                  const lockInfo = isLocked
+                                                                                                      ? lockedEmployees.get(emp.employee_name)
+                                                                                                      : null;
+
                                                                                                   const shouldDisable =
                                                                                                       (isSelectedInCurrent && !isCurrentSelection) ||
                                                                                                       (isSelectedInSameMicroteamAndDate &&
                                                                                                           !isCurrentSelection &&
-                                                                                                          !isSelectedInCurrent);
+                                                                                                          !isSelectedInCurrent) ||
+                                                                                                      (isLocked && !isCurrentSelection);
 
                                                                                                   return (
                                                                                                       <SelectItem
@@ -1372,8 +1580,19 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                           value={emp.employee_name}
                                                                                                           className="text-xs"
                                                                                                           disabled={shouldDisable}
+                                                                                                          title={
+                                                                                                              isLocked && lockInfo
+                                                                                                                  ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
+                                                                                                                  : undefined
+                                                                                                          }
                                                                                                       >
                                                                                                           {formatEmployeeDisplayName(emp)}
+                                                                                                          {isLocked && lockInfo && (
+                                                                                                              <span className="ml-2 text-xs text-emerald-500">
+                                                                                                                  ({lockInfo.days_remaining}d
+                                                                                                                  left)
+                                                                                                              </span>
+                                                                                                          )}
                                                                                                       </SelectItem>
                                                                                                   );
                                                                                               })}
@@ -1395,11 +1614,20 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                       assignmentData[position.field]?.[slotIndex] ===
                                                                                                       emp.employee_name;
 
+                                                                                                  // Check if employee is locked (within 14 days)
+                                                                                                  const isLocked = lockedEmployees.has(
+                                                                                                      emp.employee_name,
+                                                                                                  );
+                                                                                                  const lockInfo = isLocked
+                                                                                                      ? lockedEmployees.get(emp.employee_name)
+                                                                                                      : null;
+
                                                                                                   const shouldDisable =
                                                                                                       (isSelectedInCurrent && !isCurrentSelection) ||
                                                                                                       (isSelectedInSameMicroteamAndDate &&
                                                                                                           !isCurrentSelection &&
-                                                                                                          !isSelectedInCurrent);
+                                                                                                          !isSelectedInCurrent) ||
+                                                                                                      (isLocked && !isCurrentSelection);
 
                                                                                                   return (
                                                                                                       <SelectItem
@@ -1407,8 +1635,19 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                                                                                                           value={emp.employee_name}
                                                                                                           className="text-xs"
                                                                                                           disabled={shouldDisable}
+                                                                                                          title={
+                                                                                                              isLocked && lockInfo
+                                                                                                                  ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
+                                                                                                                  : undefined
+                                                                                                          }
                                                                                                       >
                                                                                                           {formatEmployeeDisplayName(emp)}
+                                                                                                          {isLocked && lockInfo && (
+                                                                                                              <span className="ml-2 text-xs text-emerald-500">
+                                                                                                                  ({lockInfo.days_remaining}d
+                                                                                                                  left)
+                                                                                                              </span>
+                                                                                                          )}
                                                                                                       </SelectItem>
                                                                                                   );
                                                                                               })}
@@ -1531,6 +1770,45 @@ export default function DailyCheckingPage({ employees: initialEmployees = [] }: 
                     </Main>
                 </SidebarInset>
             </SidebarHoverLogic>
+
+            {/* Settings Dialog */}
+            <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Daily Checking Settings</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="lock-7-days" className="text-base font-semibold">
+                                        Lock Period: 7 Days
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">Employees will be locked for 7 days after assignment</p>
+                                </div>
+                                <Switch id="lock-7-days" checked={lockPeriod7Days} onCheckedChange={handle7DaysToggle} disabled={savingSettings} />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="lock-14-days" className="text-base font-semibold">
+                                        Lock Period: 14 Days
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">Employees will be locked for 14 days after assignment</p>
+                                </div>
+                                <Switch id="lock-14-days" checked={lockPeriod14Days} onCheckedChange={handle14DaysToggle} disabled={savingSettings} />
+                            </div>
+                        </div>
+
+                        {savingSettings && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Saving settings...
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* PDF Preview Dialog */}
             <Dialog open={showPreview} onOpenChange={setShowPreview}>

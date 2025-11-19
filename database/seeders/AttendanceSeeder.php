@@ -11,99 +11,134 @@ class AttendanceSeeder extends Seeder
 {
   public function run()
   {
-    $departments = [
-      'Packing Plant' => 10,
-      'Management & Staff(Admin)' => 5,
-      'Harvesting' => 5,
-      'Pest & Decease' => 5,
-      'Miscellaneous' => 5,
-      'Coop Area' => 5,
-      'Security Forces' => 5,
-      'Engineering' => 5,
-      'Utility' => 5,
-    ];
-
     $totalCreated = 0;
 
-    // Department-specific positions from data.ts
-    $departmentPositions = [
-      'Packing Plant' => ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal'],
-      'Management & Staff(Admin)' => ['Manager', 'Farm Superintendent', 'HR', 'Packing Plant Supervisor', 'Harvesting Supervisor', 'P&D Supervisor', 'M&S Supervisor', 'Accounting Supervisor', 'Cashier', 'Office Employees Main', 'Packing Plant Assistant', 'Packing Plant Maintenance', 'Driver', 'M&S Aide', 'Security Supervisor', 'Coop Area/Manage Coop Supervisor', 'Probationary Office Staff'],
-      'Harvesting' => ['Regular Hired Workers', 'Probitionary', 'Spare'],
-      'Pest & Decease' => ['Regular Hired Workers', 'Footbath Maintenance', 'Probitionary PDC', 'PDC Seasonal'],
-      'Coop Area' => ['Regular Hired Workers', 'Probitionary'],
-      'Miscellaneous' => ['Utility/Janitorial', 'Field Surveyor', 'Field Surveyor/Spare', 'Miscellaneous - Probitionary', 'Sigatoka Deleafer', 'Sigatoka Monitoring'],
-      'Security Forces' => ['Security Guard: Agency-MINVITS', 'Security Guard: SECURUS', 'Spray Man (Main Gate)'],
-      'Engineering' => ['N/A'],
-      'Utility' => ['N/A'],
-    ];
+    // Create employees and attendance for Daily Checking Page
+    // Packing Plant: 10 employees
+    $packingPlantEmployees = $this->createEmployeesForDepartment('Packing Plant', 10, ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal']);
 
-    foreach ($departments as $department => $count) {
-      // Get or create employees for this department
-      $employees = Employee::where('department', $department)->get();
+    // Coop Area: 8 employees
+    $coopAreaEmployees = $this->createEmployeesForDepartment('Coop Area', 8, ['Regular Hired Workers', 'Probitionary']);
 
-      // If no employees exist for this department, create them
-      if ($employees->isEmpty()) {
-        $this->output("No employees found for {$department}, creating {$count} employees...");
-        $positions = $departmentPositions[$department] ?? ['N/A'];
+    // Add Crew: 20 employees
+    $addCrewEmployees = $this->createAddCrewEmployees(20);
 
-        $employees = collect();
-        for ($i = 0; $i < $count; $i++) {
-          $employees->push(Employee::factory()->create([
-            'department' => $department,
-            'position' => $positions[array_rand($positions)],
-          ]));
-        }
-      } else {
-        // Use existing employees, but limit to the required count
-        $employees = $employees->take($count);
+    // Generate attendance records for 2025 dates
+    // Create records for multiple weeks in 2025 (November and December for example)
+    $startDate = Carbon::parse('2025-11-01');
+    $endDate = Carbon::parse('2025-12-31');
 
-        // If we need more employees, create them
-        if ($employees->count() < $count) {
-          $needed = $count - $employees->count();
-          $positions = $departmentPositions[$department] ?? ['N/A'];
+    $allEmployees = $packingPlantEmployees->merge($coopAreaEmployees)->merge($addCrewEmployees);
 
-          $newEmployees = collect();
-          for ($i = 0; $i < $needed; $i++) {
-            $newEmployees->push(Employee::factory()->create([
-              'department' => $department,
-              'position' => $positions[array_rand($positions)],
-            ]));
+    foreach ($allEmployees as $employee) {
+      $currentDate = $startDate->copy();
+
+      while ($currentDate <= $endDate) {
+        // Skip weekends (Saturday = 6, Sunday = 0)
+        if ($currentDate->dayOfWeek !== 0 && $currentDate->dayOfWeek !== 6) {
+          // Randomly create attendance (80% chance to have attendance)
+          if (rand(1, 100) <= 80) {
+            $existing = Attendance::where('employee_id', $employee->id)
+              ->where('attendance_date', $currentDate->format('Y-m-d'))
+              ->first();
+
+            if (!$existing) {
+              $session = $this->getRandomSession();
+              Attendance::create([
+                'employee_id' => $employee->id,
+                'time_in' => $this->generateTimeIn($session),
+                'time_out' => $this->generateTimeOut($session),
+                'break_time' => $this->generateBreakTime($session),
+                'attendance_status' => $this->generateAttendanceStatus(),
+                'actual_attendance_status' => null,
+                'attendance_date' => $currentDate->format('Y-m-d'),
+                'session' => $session,
+              ]);
+              $totalCreated++;
+            }
           }
-          $employees = $employees->merge($newEmployees);
         }
+
+        $currentDate->addDay();
       }
-
-      // Create attendance records for each employee
-      foreach ($employees as $employee) {
-        $session = $this->getRandomSession();
-        $attendanceDate = Carbon::now()->subDays(rand(0, 30))->format('Y-m-d');
-
-        // Check if attendance already exists for this employee and date
-        $existing = Attendance::where('employee_id', $employee->id)
-          ->where('attendance_date', $attendanceDate)
-          ->first();
-
-        if (!$existing) {
-          Attendance::create([
-            'employee_id' => $employee->id,
-            'time_in' => $this->generateTimeIn($session),
-            'time_out' => $this->generateTimeOut($session),
-            'break_time' => $this->generateBreakTime($session),
-            'attendance_status' => $this->generateAttendanceStatus(),
-            'actual_attendance_status' => null,
-            'attendance_date' => $attendanceDate,
-            'session' => $session,
-          ]);
-          $totalCreated++;
-        }
-      }
-
-      $this->output("Created attendance records for {$department}: {$employees->count()} employees");
     }
 
-    $this->output("\nTotal attendance records created: {$totalCreated}");
+    $this->output("\n=== Daily Checking Page Data ===");
+    $this->output("Packing Plant employees: {$packingPlantEmployees->count()}");
+    $this->output("Coop Area employees: {$coopAreaEmployees->count()}");
+    $this->output("Add Crew employees: {$addCrewEmployees->count()}");
+    $this->output("\nTotal attendance records created for 2025: {$totalCreated}");
     $this->displayStatistics();
+  }
+
+  /**
+   * Create employees for a specific department
+   */
+  private function createEmployeesForDepartment($department, $count, $positions)
+  {
+    $employees = Employee::where('department', $department)
+      ->where('work_status', '!=', 'Add Crew')
+      ->get();
+
+    if ($employees->count() < $count) {
+      $needed = $count - $employees->count();
+      $this->output("Creating {$needed} employees for {$department}...");
+
+      $newEmployees = collect();
+      for ($i = 0; $i < $needed; $i++) {
+        $newEmployees->push(Employee::factory()->create([
+          'department' => $department,
+          'position' => $positions[array_rand($positions)],
+          'work_status' => collect(['Regular', 'Probationary'])->random(),
+        ]));
+      }
+      $employees = $employees->merge($newEmployees);
+    }
+
+    return $employees->take($count);
+  }
+
+  /**
+   * Create Add Crew employees
+   */
+  private function createAddCrewEmployees($count)
+  {
+    $employees = Employee::where('work_status', 'Add Crew')->get();
+
+    if ($employees->count() < $count) {
+      $needed = $count - $employees->count();
+      $this->output("Creating {$needed} Add Crew employees...");
+
+      $newEmployees = collect();
+      for ($i = 0; $i < $needed; $i++) {
+        // Generate Add Crew employee ID
+        $employeeId = 'AC' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+        // Check if ID already exists
+        while (Employee::where('employeeid', $employeeId)->exists()) {
+          $employeeId = 'AC' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        }
+
+        $faker = \Faker\Factory::create();
+        $firstname = $faker->firstName;
+        $middlename = $faker->firstName;
+        $lastname = $faker->lastName;
+
+        $newEmployees->push(Employee::factory()->create([
+          'employeeid' => $employeeId,
+          'firstname' => $firstname,
+          'middlename' => $middlename,
+          'lastname' => $lastname,
+          'employee_name' => "{$firstname} {$middlename} {$lastname}",
+          'work_status' => 'Add Crew',
+          'department' => null, // Add Crew can have null department
+          'position' => null, // Add Crew can have null position
+        ]));
+      }
+      $employees = $employees->merge($newEmployees);
+    }
+
+    return $employees->take($count);
   }
 
   /**

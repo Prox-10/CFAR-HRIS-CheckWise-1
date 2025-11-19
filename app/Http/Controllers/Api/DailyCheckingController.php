@@ -51,6 +51,69 @@ class DailyCheckingController extends Controller
 
         DB::beginTransaction();
         try {
+            // Check for locked employees (based on configurable lock period)
+            // Employees can only be assigned to a NEW position if lock period has passed
+            // If lock period is 0, no employees are locked
+            $lockedEmployees = [];
+            $lockPeriod = $this->getLockPeriod();
+
+            // If lock period is 0, skip lock validation (no restrictions)
+            if ($lockPeriod > 0) {
+                foreach ($request->assignments as $assignment) {
+                    $employee = Employee::where('employee_name', $assignment['employee_name'])->first();
+
+                    if (!$employee) {
+                        continue;
+                    }
+
+                    // Check if employee has an assignment within the lock period
+                    // Get the most recent assignment_date for this employee
+                    $recentAssignment = DailyCheckingAssignment::where('employee_id', $employee->id)
+                        ->whereNotNull('assignment_date')
+                        ->orderBy('assignment_date', 'desc')
+                        ->first();
+
+                    if ($recentAssignment) {
+                        $assignmentDate = \Carbon\Carbon::parse($recentAssignment->assignment_date);
+                        $lockUntil = $assignmentDate->copy()->addDays($lockPeriod);
+                        $today = \Carbon\Carbon::today();
+
+                        // Check if employee is still locked (within lock period)
+                        $isStillLocked = $today->lte($lockUntil);
+
+                        if ($isStillLocked) {
+                            // Check if this is a different assignment (different position, slot, or microteam)
+                            // Allow same assignment (editing existing assignment)
+                            $isDifferentAssignment =
+                                $recentAssignment->position_field !== $assignment['position_field'] ||
+                                $recentAssignment->slot_index !== $assignment['slot_index'] ||
+                                $recentAssignment->microteam !== ($assignment['microteam'] ?? null);
+
+                            if ($isDifferentAssignment) {
+                                $lockedEmployees[] = [
+                                    'employee_name' => $employee->employee_name,
+                                    'assignment_date' => $assignmentDate->format('Y-m-d'),
+                                    'lock_until' => $lockUntil->format('Y-m-d'),
+                                ];
+                            }
+                        }
+                        // If lock period has passed, employee is unlocked and can be assigned again
+                    }
+                }
+            }
+
+            // If there are locked employees, return error
+            if (!empty($lockedEmployees)) {
+                DB::rollBack();
+                $lockedNames = implode(', ', array_column($lockedEmployees, 'employee_name'));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot assign employees within 14 days of previous assignment',
+                    'locked_employees' => $lockedEmployees,
+                    'details' => "The following employees are locked: {$lockedNames}. They cannot be reassigned until 14 days have passed from their last assignment date.",
+                ], 400);
+            }
+
             // Delete existing assignments ONLY for the specific day_index and microteam
             // This ensures we only delete records for the selected date, not the whole week
             if (!empty($request->assignments)) {
@@ -93,6 +156,18 @@ class DailyCheckingController extends Controller
                 $timeIn = ($timeIn === '' || $timeIn === null) ? null : $timeIn;
                 $timeOut = ($timeOut === '' || $timeOut === null) ? null : $timeOut;
 
+                // Set assignment_date to the current day_of_save when saving
+                // This tracks when the employee was assigned for the 14-day lock period
+                // Update assignment_date for ALL existing assignments of this employee to reset the lock period
+                // This ensures the 14-day lock starts from the most recent assignment
+                $assignmentDate = $dayOfSave;
+
+                // Update all existing assignments for this employee to have the same assignment_date
+                // This ensures consistent lock period calculation
+                DailyCheckingAssignment::where('employee_id', $employee->id)
+                    ->whereNotNull('assignment_date')
+                    ->update(['assignment_date' => $assignmentDate]);
+
                 // Save ONLY for the selected date (day_index)
                 DailyCheckingAssignment::create([
                     'week_start_date' => $weekStartDate,
@@ -103,6 +178,7 @@ class DailyCheckingController extends Controller
                     'is_add_crew' => $assignment['is_add_crew'] ?? false,
                     'day_index' => $dayIndex, // Only save for the selected date's day_index
                     'day_of_save' => $dayOfSave, // Store the selected date (e.g., 2025-11-11)
+                    'assignment_date' => $assignmentDate, // Store assignment date for 14-day lock
                     'time_in' => $timeIn,
                     'time_out' => $timeOut,
                     'prepared_by' => $preparedBy,
@@ -380,5 +456,146 @@ class DailyCheckingController extends Controller
             'prepared_by' => $preparedBy,
             'checked_by' => $checkedBy,
         ]);
+    }
+
+    /**
+     * Get locked employees (based on configurable lock period)
+     * Returns list of employees who cannot be assigned to new positions
+     */
+    public function getLockedEmployees(Request $request)
+    {
+        $today = \Carbon\Carbon::today();
+
+        // Get lock period from request or settings (default to 14 days)
+        $lockPeriod = (int)($request->query('lock_period') ?? $this->getLockPeriod());
+
+        // If lock period is 0, no employees are locked
+        if ($lockPeriod === 0) {
+            return response()->json([
+                'locked_employees' => [],
+            ]);
+        }
+
+        // Get all employees with assignments and check if they're still locked
+        $allAssignments = DailyCheckingAssignment::with('employee')
+            ->whereNotNull('assignment_date')
+            ->get();
+
+        // Group by employee and get the most recent assignment date
+        $employeeAssignments = [];
+        foreach ($allAssignments as $assignment) {
+            if (!$assignment->employee) {
+                continue;
+            }
+
+            $employeeName = $assignment->employee->employee_name;
+            $assignmentDateObj = \Carbon\Carbon::parse($assignment->assignment_date);
+
+            // Keep the most recent assignment date for each employee
+            if (
+                !isset($employeeAssignments[$employeeName]) ||
+                $assignmentDateObj->gt(\Carbon\Carbon::parse($employeeAssignments[$employeeName]['assignment_date']))
+            ) {
+                $employeeAssignments[$employeeName] = [
+                    'employee_name' => $employeeName,
+                    'employee_id' => $assignment->employee_id,
+                    'assignment_date' => $assignmentDateObj,
+                ];
+            }
+        }
+
+        // Filter to only include employees still within the lock period
+        $lockedEmployees = [];
+        foreach ($employeeAssignments as $employeeName => $data) {
+            $assignmentDate = $data['assignment_date'];
+            $lockUntil = $assignmentDate->copy()->addDays($lockPeriod);
+
+            // Only include if still locked (today is before or equal to lock_until)
+            if ($today->lte($lockUntil)) {
+                $daysRemaining = max(0, $today->diffInDays($lockUntil, false));
+
+                $lockedEmployees[$employeeName] = [
+                    'employee_name' => $employeeName,
+                    'employee_id' => $data['employee_id'],
+                    'assignment_date' => $assignmentDate->format('Y-m-d'),
+                    'lock_until' => $lockUntil->format('Y-m-d'),
+                    'days_remaining' => $daysRemaining,
+                ];
+            }
+            // If lock period has passed, employee is not included (unlocked)
+        }
+
+        return response()->json([
+            'locked_employees' => array_values($lockedEmployees),
+        ]);
+    }
+
+    /**
+     * Get daily checking settings
+     */
+    public function getSettings(Request $request)
+    {
+        $settings = DB::table('daily_checking_settings')->first();
+
+        if (!$settings) {
+            // Return no lock (both off) if no settings exist
+            return response()->json([
+                'lock_period_7_days' => false,
+                'lock_period_14_days' => false,
+            ]);
+        }
+
+        return response()->json([
+            'lock_period_7_days' => (bool)$settings->lock_period_7_days,
+            'lock_period_14_days' => (bool)$settings->lock_period_14_days,
+        ]);
+    }
+
+    /**
+     * Save daily checking settings
+     */
+    public function saveSettings(Request $request)
+    {
+        $request->validate([
+            'lock_period_7_days' => 'required|boolean',
+            'lock_period_14_days' => 'required|boolean',
+        ]);
+
+        DB::table('daily_checking_settings')->updateOrInsert(
+            ['id' => 1],
+            [
+                'lock_period_7_days' => $request->lock_period_7_days ? 1 : 0,
+                'lock_period_14_days' => $request->lock_period_14_days ? 1 : 0,
+                'updated_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Settings saved successfully',
+        ]);
+    }
+
+    /**
+     * Get current lock period from settings
+     * Returns 7, 14, or 0 (no lock)
+     */
+    private function getLockPeriod(): int
+    {
+        $settings = DB::table('daily_checking_settings')->first();
+
+        if (!$settings) {
+            return 0; // No lock if no settings exist
+        }
+
+        if ($settings->lock_period_7_days) {
+            return 7;
+        }
+
+        if ($settings->lock_period_14_days) {
+            return 14;
+        }
+
+        return 0; // No lock if both are off
     }
 }

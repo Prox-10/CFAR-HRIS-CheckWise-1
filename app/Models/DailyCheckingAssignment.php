@@ -18,6 +18,7 @@ class DailyCheckingAssignment extends Model
         'is_add_crew',
         'day_index',
         'day_of_save',
+        'assignment_date',
         'time_in',
         'time_out',
         'prepared_by',
@@ -27,6 +28,7 @@ class DailyCheckingAssignment extends Model
     protected $casts = [
         'week_start_date' => 'date',
         'day_of_save' => 'date',
+        'assignment_date' => 'date',
         'slot_index' => 'integer',
         'day_index' => 'integer',
         'is_add_crew' => 'boolean',

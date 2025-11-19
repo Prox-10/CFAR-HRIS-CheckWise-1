@@ -66,7 +66,7 @@ class UserSeeder extends Seeder
         'password' => bcrypt('75595328'),
         'email_verified_at' => now(),
         'department' => 'Packing Plant',
-        'roles' => ['Packing Plant']
+       
       ]
     );
 

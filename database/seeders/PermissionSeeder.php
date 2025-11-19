@@ -114,6 +114,7 @@ class PermissionSeeder extends Seeder
 
       'View Resume to Work',
       'Add Password',
+      'View Password',
     ];
 
     foreach ($permissions as $permission) {
@@ -123,7 +124,6 @@ class PermissionSeeder extends Seeder
     // Create roles and assign permissions
     $roles = [
       'Super Admin' => $permissions, // All permissions
-      'HR' => $permissions, // All permissions
       'Manager' => $permissions, // All permissions
       'HR Manager' => $permissions, // All permissions
       'Employee' => [

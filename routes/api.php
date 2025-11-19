@@ -111,6 +111,9 @@ Route::put('/attendance-sessions/{attendanceSession}', [AttendanceSessionControl
 Route::post('/daily-checking/store', [DailyCheckingController::class, 'store']);
 Route::get('/daily-checking/for-date', [DailyCheckingController::class, 'getForDate']);
 Route::get('/daily-checking/by-microteam', [DailyCheckingController::class, 'getByMicroteam']);
+Route::get('/daily-checking/locked-employees', [DailyCheckingController::class, 'getLockedEmployees']);
+Route::get('/daily-checking/settings', [DailyCheckingController::class, 'getSettings']);
+Route::post('/daily-checking/settings', [DailyCheckingController::class, 'saveSettings']);
 
 // Gender Development Report API
 Route::get('/gender-development/hr', [GenderDevelopmentReportController::class, 'getHR'])->middleware('web');
