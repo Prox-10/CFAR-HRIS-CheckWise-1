@@ -93,6 +93,8 @@ export default function DailyAttendancePage() {
     const [showPreview, setShowPreview] = useState(false);
     const [microteamSort, setMicroteamSort] = useState<'none' | 'asc' | 'desc'>('none');
     const [addCrewSort, setAddCrewSort] = useState<'none' | 'asc' | 'desc'>('none');
+    const [hrName, setHrName] = useState<string>('HR Personnel');
+    const [managerName, setManagerName] = useState<string>('Manager');
     const reportCardRef = useRef<HTMLDivElement>(null);
     const phInputRef = useRef<HTMLInputElement>(null);
     const currentFetchDateRef = useRef<string | null>(null);
@@ -116,6 +118,34 @@ export default function DailyAttendancePage() {
             fetchMicroteamData();
         }
     }, [reportDate]);
+
+    // Fetch HR and Manager data on component mount
+    useEffect(() => {
+        fetchHRAndManager();
+    }, []);
+
+    const fetchHRAndManager = async () => {
+        try {
+            // Fetch HR
+            const hrResponse = await axios.get('/api/daily-checking/hr', {
+                params: { department: 'Packing Plant' },
+            });
+            if (hrResponse.data?.name) {
+                setHrName(hrResponse.data.name);
+            }
+
+            // Fetch Manager
+            const managerResponse = await axios.get('/api/daily-checking/manager', {
+                params: { department: 'Packing Plant' },
+            });
+            if (managerResponse.data?.name) {
+                setManagerName(managerResponse.data.name);
+            }
+        } catch (error: any) {
+            console.error('Error fetching HR and Manager data:', error);
+            // Keep default values on error
+        }
+    };
 
     const fetchMicroteamData = async () => {
         if (!reportDate) return;
@@ -306,7 +336,16 @@ export default function DailyAttendancePage() {
                     'ADD CREW - 03': sortEmployees(addCrew['ADD CREW - 03'] || [], addCrewSort),
                 };
 
-                const pdfDocument = <DailyAttendancePDF reportDate={reportDate} microteams={sortedMicroteams} addCrew={sortedAddCrew} ph={ph} />;
+                const pdfDocument = (
+                    <DailyAttendancePDF
+                        reportDate={reportDate}
+                        microteams={sortedMicroteams}
+                        addCrew={sortedAddCrew}
+                        ph={ph}
+                        hrName={hrName}
+                        managerName={managerName}
+                    />
+                );
                 const instance = pdf(pdfDocument);
                 const blob = await instance.toBlob();
 
@@ -713,18 +752,18 @@ export default function DailyAttendancePage() {
                                         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
                                             <div className="text-center text-[10px]">
                                                 <div className="mb-6">Prepared by:</div>
+                                                <div className="">PHMC</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
-                                                <div>PW&C</div>
                                             </div>
                                             <div className="text-center text-[10px]">
                                                 <div className="mb-6">Noted by:</div>
+                                                <div className="">{hrName}</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
-                                                <div>Manager</div>
                                             </div>
                                             <div className="text-center text-[10px]">
                                                 <div className="mb-6">Approved by:</div>
+                                                <div className="">{managerName}</div>
                                                 <div className="mx-auto mb-1 h-px w-40 bg-black" />
-                                                <div>____________________</div>
                                             </div>
                                         </div>
                                     </div>
@@ -823,6 +862,8 @@ export default function DailyAttendancePage() {
                                         'ADD CREW - 03': getSortedAddCrewEmployees('ADD CREW - 03'),
                                     }}
                                     ph={phValue}
+                                    hrName={hrName}
+                                    managerName={managerName}
                                 />
                             </PDFViewer>
                         )}

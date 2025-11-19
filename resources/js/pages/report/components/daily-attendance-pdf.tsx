@@ -28,6 +28,8 @@ interface DailyAttendancePDFProps {
     microteams: MicroteamData;
     addCrew?: AddCrewData;
     ph?: string;
+    hrName?: string;
+    managerName?: string;
 }
 
 // Helper function to format time
@@ -246,7 +248,14 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function DailyAttendancePDF({ reportDate, microteams, addCrew, ph = '' }: DailyAttendancePDFProps) {
+export default function DailyAttendancePDF({
+    reportDate,
+    microteams,
+    addCrew,
+    ph = '',
+    hrName = 'HR Personnel',
+    managerName = 'Manager',
+}: DailyAttendancePDFProps) {
     const defaultAddCrew: AddCrewData = {
         'ADD CREW - 01': [],
         'ADD CREW - 02': [],
@@ -482,18 +491,15 @@ export default function DailyAttendancePDF({ reportDate, microteams, addCrew, ph
                 <View style={styles.signatories}>
                     <View style={styles.signatory}>
                         <Text style={styles.signatoryLabel}>Prepared By:</Text>
-                        <View style={styles.signatoryLine} />
-                        <Text style={styles.signatoryName}>PHMC</Text>
+                        <Text style={[styles.signatoryName, { textDecoration: 'underline', marginTop: 8 }]}>PHMC</Text>
                     </View>
                     <View style={styles.signatory}>
                         <Text style={styles.signatoryLabel}>Noted by:</Text>
-                        <View style={styles.signatoryLine} />
-                        <Text style={styles.signatoryName}>Manager</Text>
+                        <Text style={[styles.signatoryName, { textDecoration: 'underline', marginTop: 8 }]}>{hrName}</Text>
                     </View>
                     <View style={styles.signatory}>
                         <Text style={styles.signatoryLabel}>Approved by:</Text>
-                        <View style={styles.signatoryLine} />
-                        <Text style={styles.signatoryName}></Text>
+                        <Text style={[styles.signatoryName, { textDecoration: 'underline', marginTop: 8 }]}>{managerName}</Text>
                     </View>
                 </View>
             </Page>

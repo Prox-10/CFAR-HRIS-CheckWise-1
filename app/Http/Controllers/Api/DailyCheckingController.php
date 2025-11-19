@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyCheckingAssignment;
 use App\Models\DailyCheckingPdf;
 use App\Models\Employee;
+use App\Models\HRDepartmentAssignment;
+use App\Models\ManagerDepartmentAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -656,5 +658,61 @@ class DailyCheckingController extends Controller
         }
 
         return 0; // No lock if both are off
+    }
+
+    /**
+     * Get HR personnel for Packing Plant department
+     * Returns HR from hr_department_assignments table
+     */
+    public function getHR(Request $request)
+    {
+        $department = $request->query('department', 'Packing Plant');
+
+        $hrAssignment = HRDepartmentAssignment::where('department', $department)
+            ->with('user')
+            ->first();
+
+        if (!$hrAssignment || !$hrAssignment->user) {
+            return response()->json([
+                'id' => null,
+                'name' => 'HR Personnel',
+            ]);
+        }
+
+        $hrUser = $hrAssignment->user;
+        $fullName = trim(($hrUser->firstname ?? '') . ' ' . ($hrUser->lastname ?? ''));
+
+        return response()->json([
+            'id' => $hrUser->id,
+            'name' => $fullName ?: 'HR Personnel',
+        ]);
+    }
+
+    /**
+     * Get Manager for Packing Plant department
+     * Returns Manager from manager_department_assignments table
+     */
+    public function getManager(Request $request)
+    {
+        $department = $request->query('department', 'Packing Plant');
+
+        $managerAssignment = ManagerDepartmentAssignment::where('department', $department)
+            ->with('user')
+            ->first();
+
+        if (!$managerAssignment || !$managerAssignment->user) {
+            return response()->json([
+                'id' => null,
+                'name' => 'Manager',
+            ]);
+        }
+
+        $managerUser = $managerAssignment->user;
+        $fullName = trim(($managerUser->firstname ?? '') . ' ' . ($managerUser->lastname ?? ''));
+
+        return response()->json([
+            'id' => $managerUser->id,
+            'name' => $fullName ?: 'Manager',
+        ]);
     }
 }

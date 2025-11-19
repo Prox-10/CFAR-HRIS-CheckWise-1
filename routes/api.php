@@ -114,6 +114,8 @@ Route::get('/daily-checking/by-microteam', [DailyCheckingController::class, 'get
 Route::get('/daily-checking/locked-employees', [DailyCheckingController::class, 'getLockedEmployees']);
 Route::get('/daily-checking/settings', [DailyCheckingController::class, 'getSettings']);
 Route::post('/daily-checking/settings', [DailyCheckingController::class, 'saveSettings']);
+Route::get('/daily-checking/hr', [DailyCheckingController::class, 'getHR']);
+Route::get('/daily-checking/manager', [DailyCheckingController::class, 'getManager']);
 
 // Gender Development Report API
 Route::get('/gender-development/hr', [GenderDevelopmentReportController::class, 'getHR'])->middleware('web');
