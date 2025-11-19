@@ -69,7 +69,7 @@ const positions = [
     { name: 'LABELLER', slots: 4, field: 'labeller' },
     { name: 'WEIGHER', slots: 4, field: 'weigher' },
     { name: 'SELECTOR', slots: 6, field: 'selector' },
-    { name: 'SUPPORT: ABSENT', slots: 8, field: 'supportAbsent' },
+    { name: 'SUPPORT: ABSENT', slots: 9, field: 'supportAbsent' },
 ];
 
 // Leave types
@@ -1617,110 +1617,128 @@ export default function DailyCheckingPage({
                                                                               return (
                                                                                   <div className="flex">
                                                                                       {/* Packing Plant Column */}
-                                                                                      <div className="flex-1 border-r border-gray-200">
+                                                                                      <div className="flex flex-1 flex-col border-r border-gray-200">
                                                                                           <SelectGroup>
-                                                                                              <SelectLabel className="flex items-center justify-center py-2 text-xs font-semibold text-gray-700">
+                                                                                              <SelectLabel className="flex flex-shrink-0 items-center justify-center py-2 text-xs font-semibold text-gray-700">
                                                                                                   Packing Plant
                                                                                               </SelectLabel>
-                                                                                              {packingPlant.map((emp) => {
-                                                                                                  const isSelectedInCurrent =
-                                                                                                      selectedEmployees.includes(emp.employee_name);
-                                                                                                  const isSelectedInSameMicroteamAndDate =
-                                                                                                      isEmployeeSelectedGlobally(emp.employee_name);
-                                                                                                  const isCurrentSelection =
-                                                                                                      assignmentData[position.field]?.[slotIndex] ===
-                                                                                                      emp.employee_name;
+                                                                                              <div className="max-h-[300px] overflow-y-auto">
+                                                                                                  {packingPlant.map((emp) => {
+                                                                                                      const isSelectedInCurrent =
+                                                                                                          selectedEmployees.includes(
+                                                                                                              emp.employee_name,
+                                                                                                          );
+                                                                                                      const isSelectedInSameMicroteamAndDate =
+                                                                                                          isEmployeeSelectedGlobally(
+                                                                                                              emp.employee_name,
+                                                                                                          );
+                                                                                                      const isCurrentSelection =
+                                                                                                          assignmentData[position.field]?.[
+                                                                                                              slotIndex
+                                                                                                          ] === emp.employee_name;
 
-                                                                                                  // Check if employee is locked (within 14 days)
-                                                                                                  const isLocked = lockedEmployees.has(
-                                                                                                      emp.employee_name,
-                                                                                                  );
-                                                                                                  const lockInfo = isLocked
-                                                                                                      ? lockedEmployees.get(emp.employee_name)
-                                                                                                      : null;
+                                                                                                      // Check if employee is locked (within 14 days)
+                                                                                                      const isLocked = lockedEmployees.has(
+                                                                                                          emp.employee_name,
+                                                                                                      );
+                                                                                                      const lockInfo = isLocked
+                                                                                                          ? lockedEmployees.get(emp.employee_name)
+                                                                                                          : null;
 
-                                                                                                  const shouldDisable =
-                                                                                                      (isSelectedInCurrent && !isCurrentSelection) ||
-                                                                                                      (isSelectedInSameMicroteamAndDate &&
-                                                                                                          !isCurrentSelection &&
-                                                                                                          !isSelectedInCurrent) ||
-                                                                                                      (isLocked && !isCurrentSelection);
+                                                                                                      const shouldDisable =
+                                                                                                          (isSelectedInCurrent &&
+                                                                                                              !isCurrentSelection) ||
+                                                                                                          (isSelectedInSameMicroteamAndDate &&
+                                                                                                              !isCurrentSelection &&
+                                                                                                              !isSelectedInCurrent) ||
+                                                                                                          (isLocked && !isCurrentSelection);
 
-                                                                                                  return (
-                                                                                                      <SelectItem
-                                                                                                          key={emp.id}
-                                                                                                          value={emp.employee_name}
-                                                                                                          className="text-xs"
-                                                                                                          disabled={shouldDisable}
-                                                                                                          title={
-                                                                                                              isLocked && lockInfo
-                                                                                                                  ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
-                                                                                                                  : undefined
-                                                                                                          }
-                                                                                                      >
-                                                                                                          {formatEmployeeDisplayName(emp)}
-                                                                                                          {isLocked && lockInfo && (
-                                                                                                              <span className="ml-2 text-xs text-emerald-500">
-                                                                                                                  ({lockInfo.days_remaining}d left)
-                                                                                                              </span>
-                                                                                                          )}
-                                                                                                      </SelectItem>
-                                                                                                  );
-                                                                                              })}
+                                                                                                      return (
+                                                                                                          <SelectItem
+                                                                                                              key={emp.id}
+                                                                                                              value={emp.employee_name}
+                                                                                                              className="text-xs"
+                                                                                                              disabled={shouldDisable}
+                                                                                                              title={
+                                                                                                                  isLocked && lockInfo
+                                                                                                                      ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
+                                                                                                                      : undefined
+                                                                                                              }
+                                                                                                          >
+                                                                                                              {formatEmployeeDisplayName(emp)}
+                                                                                                              {isLocked && lockInfo && (
+                                                                                                                  <span className="ml-2 text-xs text-emerald-500">
+                                                                                                                      ({lockInfo.days_remaining}d
+                                                                                                                      left)
+                                                                                                                  </span>
+                                                                                                              )}
+                                                                                                          </SelectItem>
+                                                                                                      );
+                                                                                                  })}
+                                                                                              </div>
                                                                                           </SelectGroup>
                                                                                       </div>
 
                                                                                       {/* Coop Area Column */}
-                                                                                      <div className="flex-1">
+                                                                                      <div className="flex flex-1 flex-col">
                                                                                           <SelectGroup>
-                                                                                              <SelectLabel className="flex items-center justify-center py-2 text-xs font-semibold text-gray-700">
+                                                                                              <SelectLabel className="flex flex-shrink-0 items-center justify-center py-2 text-xs font-semibold text-gray-700">
                                                                                                   Coop Area
                                                                                               </SelectLabel>
-                                                                                              {coopArea.map((emp) => {
-                                                                                                  const isSelectedInCurrent =
-                                                                                                      selectedEmployees.includes(emp.employee_name);
-                                                                                                  const isSelectedInSameMicroteamAndDate =
-                                                                                                      isEmployeeSelectedGlobally(emp.employee_name);
-                                                                                                  const isCurrentSelection =
-                                                                                                      assignmentData[position.field]?.[slotIndex] ===
-                                                                                                      emp.employee_name;
+                                                                                              <div className="max-h-[300px] overflow-y-auto">
+                                                                                                  {coopArea.map((emp) => {
+                                                                                                      const isSelectedInCurrent =
+                                                                                                          selectedEmployees.includes(
+                                                                                                              emp.employee_name,
+                                                                                                          );
+                                                                                                      const isSelectedInSameMicroteamAndDate =
+                                                                                                          isEmployeeSelectedGlobally(
+                                                                                                              emp.employee_name,
+                                                                                                          );
+                                                                                                      const isCurrentSelection =
+                                                                                                          assignmentData[position.field]?.[
+                                                                                                              slotIndex
+                                                                                                          ] === emp.employee_name;
 
-                                                                                                  // Check if employee is locked (within 14 days)
-                                                                                                  const isLocked = lockedEmployees.has(
-                                                                                                      emp.employee_name,
-                                                                                                  );
-                                                                                                  const lockInfo = isLocked
-                                                                                                      ? lockedEmployees.get(emp.employee_name)
-                                                                                                      : null;
+                                                                                                      // Check if employee is locked (within 14 days)
+                                                                                                      const isLocked = lockedEmployees.has(
+                                                                                                          emp.employee_name,
+                                                                                                      );
+                                                                                                      const lockInfo = isLocked
+                                                                                                          ? lockedEmployees.get(emp.employee_name)
+                                                                                                          : null;
 
-                                                                                                  const shouldDisable =
-                                                                                                      (isSelectedInCurrent && !isCurrentSelection) ||
-                                                                                                      (isSelectedInSameMicroteamAndDate &&
-                                                                                                          !isCurrentSelection &&
-                                                                                                          !isSelectedInCurrent) ||
-                                                                                                      (isLocked && !isCurrentSelection);
+                                                                                                      const shouldDisable =
+                                                                                                          (isSelectedInCurrent &&
+                                                                                                              !isCurrentSelection) ||
+                                                                                                          (isSelectedInSameMicroteamAndDate &&
+                                                                                                              !isCurrentSelection &&
+                                                                                                              !isSelectedInCurrent) ||
+                                                                                                          (isLocked && !isCurrentSelection);
 
-                                                                                                  return (
-                                                                                                      <SelectItem
-                                                                                                          key={emp.id}
-                                                                                                          value={emp.employee_name}
-                                                                                                          className="text-xs"
-                                                                                                          disabled={shouldDisable}
-                                                                                                          title={
-                                                                                                              isLocked && lockInfo
-                                                                                                                  ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
-                                                                                                                  : undefined
-                                                                                                          }
-                                                                                                      >
-                                                                                                          {formatEmployeeDisplayName(emp)}
-                                                                                                          {isLocked && lockInfo && (
-                                                                                                              <span className="ml-2 text-xs text-emerald-500">
-                                                                                                                  ({lockInfo.days_remaining}d left)
-                                                                                                              </span>
-                                                                                                          )}
-                                                                                                      </SelectItem>
-                                                                                                  );
-                                                                                              })}
+                                                                                                      return (
+                                                                                                          <SelectItem
+                                                                                                              key={emp.id}
+                                                                                                              value={emp.employee_name}
+                                                                                                              className="text-xs"
+                                                                                                              disabled={shouldDisable}
+                                                                                                              title={
+                                                                                                                  isLocked && lockInfo
+                                                                                                                      ? `Locked until ${lockInfo.lock_until} (${lockInfo.days_remaining} days remaining)`
+                                                                                                                      : undefined
+                                                                                                              }
+                                                                                                          >
+                                                                                                              {formatEmployeeDisplayName(emp)}
+                                                                                                              {isLocked && lockInfo && (
+                                                                                                                  <span className="ml-2 text-xs text-emerald-500">
+                                                                                                                      ({lockInfo.days_remaining}d
+                                                                                                                      left)
+                                                                                                                  </span>
+                                                                                                              )}
+                                                                                                          </SelectItem>
+                                                                                                      );
+                                                                                                  })}
+                                                                                              </div>
                                                                                           </SelectGroup>
                                                                                       </div>
                                                                                   </div>
