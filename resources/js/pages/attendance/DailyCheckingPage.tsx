@@ -1031,12 +1031,51 @@ export default function DailyCheckingPage({
             // This is the date the user selected in the calendar input
             const selectedDate = date; // This is already in YYYY-MM-DD format
 
+            // Generate PDF and convert to base64
+            let pdfBase64 = null;
+            try {
+                const PackingPlantPDF = (await import('./components/packing-plant-pdf')).default;
+                const weekStartDateObj = parseDateLocal(weekStartDate);
+                const PackingPlantDocument = PackingPlantPDF({
+                    weekStart: weekStartDateObj,
+                    workers: assignmentData,
+                    timeData: timeData,
+                    employees: employees,
+                    leaveData: leaveData,
+                    preparedBy: preparedBy || '',
+                    checkedBy: checkedBy || '',
+                });
+
+                const documentComponent = PackingPlantDocument();
+                if (documentComponent) {
+                    const instance = pdf(documentComponent);
+                    const blob = await instance.toBlob();
+
+                    // Convert blob to base64
+                    const reader = new FileReader();
+                    pdfBase64 = await new Promise<string>((resolve, reject) => {
+                        reader.onloadend = () => {
+                            const base64String = reader.result as string;
+                            // Remove data:application/pdf;base64, prefix if present
+                            const base64 = base64String.includes(',') ? base64String.split(',')[1] : base64String;
+                            resolve(base64);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                }
+            } catch (pdfError) {
+                console.error('Error generating PDF for save:', pdfError);
+                // Continue with save even if PDF generation fails
+            }
+
             const response = await axios.post('/api/daily-checking/store', {
                 week_start_date: weekStartDate,
                 assignments: assignments,
                 prepared_by: preparedBy,
                 checked_by: checkedBy,
                 day_of_save: selectedDate, // The date selected in the calendar (e.g., Nov 11, 2025)
+                pdf_base64: pdfBase64, // Base64 encoded PDF
             });
 
             toast.dismiss('save-daily-checking');

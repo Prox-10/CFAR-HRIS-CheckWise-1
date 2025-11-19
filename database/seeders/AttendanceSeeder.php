@@ -15,10 +15,10 @@ class AttendanceSeeder extends Seeder
 
     // Create employees and attendance for Daily Checking Page
     // Packing Plant: 10 employees
-    $packingPlantEmployees = $this->createEmployeesForDepartment('Packing Plant', 10, ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal']);
+    $packingPlantEmployees = $this->createEmployeesForDepartment('Packing Plant', 50, ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal']);
 
     // Coop Area: 8 employees
-    $coopAreaEmployees = $this->createEmployeesForDepartment('Coop Area', 8, ['Regular Hired Workers', 'Probitionary']);
+    $coopAreaEmployees = $this->createEmployeesForDepartment('Coop Area', 30, ['Regular Hired Workers', 'Probitionary']);
 
     // Add Crew: 20 employees
     $addCrewEmployees = $this->createAddCrewEmployees(20);

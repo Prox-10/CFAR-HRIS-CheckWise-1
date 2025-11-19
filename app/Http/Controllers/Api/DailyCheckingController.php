@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DailyCheckingAssignment;
+use App\Models\DailyCheckingPdf;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DailyCheckingController extends Controller
 {
@@ -22,6 +24,7 @@ class DailyCheckingController extends Controller
             'prepared_by' => 'nullable|string',
             'checked_by' => 'nullable|string',
             'day_of_save' => 'nullable|date', // The actual date when saving (e.g., Nov 12, 2025)
+            'pdf_base64' => 'nullable|string', // Base64 encoded PDF
         ]);
 
         $weekStartDate = $request->week_start_date;
@@ -184,6 +187,62 @@ class DailyCheckingController extends Controller
                     'prepared_by' => $preparedBy,
                     'checked_by' => $checkedBy,
                 ]);
+            }
+
+            // Save PDF if provided
+            if ($request->has('pdf_base64') && !empty($request->pdf_base64)) {
+                try {
+                    // Decode base64 PDF
+                    $pdfBinary = base64_decode($request->pdf_base64);
+
+                    if ($pdfBinary !== false) {
+                        // Get microteam from first assignment (all assignments should have same microteam)
+                        $pdfMicroteam = null;
+                        if (!empty($request->assignments) && isset($request->assignments[0]['microteam'])) {
+                            $pdfMicroteam = $request->assignments[0]['microteam'];
+                        }
+
+                        // Generate filename
+                        $microteamStr = $pdfMicroteam ? str_replace(' ', '_', $pdfMicroteam) : 'all';
+                        $filename = 'daily_checking_' . $weekStartDate . '_' . $microteamStr . '_' . $dayOfSave . '.pdf';
+
+                        // Store to disk
+                        $disk = 'public';
+                        $relativeDir = 'daily_checking_pdfs/' . date('Y/m', strtotime($dayOfSave));
+                        $relativePath = $relativeDir . '/' . $filename;
+
+                        // Ensure directory exists
+                        Storage::disk($disk)->makeDirectory($relativeDir);
+
+                        // Store PDF file
+                        Storage::disk($disk)->put($relativePath, $pdfBinary, 'public');
+
+                        // Save PDF record to database
+                        DailyCheckingPdf::updateOrCreate(
+                            [
+                                'week_start_date' => $weekStartDate,
+                                'day_of_save' => $dayOfSave,
+                                'microteam' => $pdfMicroteam,
+                            ],
+                            [
+                                'file_name' => $filename,
+                                'mime_type' => 'application/pdf',
+                                'disk' => $disk,
+                                'path' => $relativePath,
+                                'size_bytes' => strlen($pdfBinary),
+                                'prepared_by' => $preparedBy,
+                                'checked_by' => $checkedBy,
+                            ]
+                        );
+                    }
+                } catch (\Exception $pdfError) {
+                    // Log PDF error but don't fail the entire save operation
+                    Log::error('Failed to save PDF for daily checking', [
+                        'error' => $pdfError->getMessage(),
+                        'week_start_date' => $weekStartDate,
+                        'day_of_save' => $dayOfSave,
+                    ]);
+                }
             }
 
             DB::commit();
