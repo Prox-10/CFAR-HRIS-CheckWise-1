@@ -75,7 +75,7 @@ const employeeNavItems: EmployeeNavItem[] = [
             },
             {
                 title: 'Return to Work',
-                href: '/employee-view/return-work',
+                href: '/employee-view/return-work/request',
                 icon: CalendarSync,
             },
         ],

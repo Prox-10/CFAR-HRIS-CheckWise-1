@@ -85,13 +85,13 @@ export default function ReturnWorkRequestForm() {
                     <p className="text-sm text-muted-foreground">Notify HR and your supervisor about your return to work</p>
                 </div>
 
-                <Alert className="border-emerald-200 bg-emerald-50/80 text-emerald-900">
+                {/* <Alert className="border-emerald-200 bg-emerald-50/80 text-emerald-900">
                     <Info className="h-4 w-4" />
                     <AlertDescription>
                         Please submit your return to work notification at least 24 hours before your scheduled return date. 
                         This helps ensure proper documentation and smooth transition back to your duties.
                     </AlertDescription>
-                </Alert>
+                </Alert> */}
 
                 <Card>
                     <CardHeader>
@@ -169,7 +169,7 @@ export default function ReturnWorkRequestForm() {
                             />
                         </div>
 
-                        <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
+                        {/* <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
                             <AlertTitle>Return to Work Policy:</AlertTitle>
                             <AlertDescription>
                                 <ul className="list-disc space-y-1 pl-4">
@@ -179,7 +179,7 @@ export default function ReturnWorkRequestForm() {
                                     <li>Ensure all required documentation is submitted</li>
                                 </ul>
                             </AlertDescription>
-                        </Alert>
+                        </Alert> */}
 
                         {previousAbsences && previousAbsences.length > 0 && (
                             <Alert className="border-blue-200 bg-blue-50/80 text-blue-900">
@@ -210,7 +210,7 @@ export default function ReturnWorkRequestForm() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle>Emergency Contact</CardTitle>
                     </CardHeader>
@@ -228,7 +228,7 @@ export default function ReturnWorkRequestForm() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
         </AppLayout>
     );

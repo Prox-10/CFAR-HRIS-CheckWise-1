@@ -121,16 +121,16 @@ export default function AbsenceRequestForm() {
                         <CalendarDays className="h-5 w-5 text-emerald-600" />
                         <span>Absence Request Form</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Report your absence to HR</p>
+                    {/* <p className="text-sm text-muted-foreground">Report your absence to HR</p> */}
                 </div>
 
-                <Alert className="border-emerald-200 bg-emerald-50/80 text-emerald-900">
+                {/* <Alert className="border-emerald-200 bg-emerald-50/80 text-emerald-900">
                     <Info className="h-4 w-4" />
                     <AlertDescription>
                         Please submit absence notifications as soon as possible. For emergencies, contact your supervisor directly at
                         +63-XXX-XXXX-XXXX.
                     </AlertDescription>
-                </Alert>
+                </Alert> */}
 
                 <Card>
                     <CardHeader>
@@ -182,7 +182,7 @@ export default function AbsenceRequestForm() {
                             </p>
                         </div>
 
-                        <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
+                        {/* <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
                             <AlertTitle>Absence Policy:</AlertTitle>
                             <AlertDescription>
                                 <ul className="list-disc space-y-1 pl-4">
@@ -192,7 +192,7 @@ export default function AbsenceRequestForm() {
                                     <li>Contact your supervisor for urgent situations</li>
                                 </ul>
                             </AlertDescription>
-                        </Alert>
+                        </Alert> */}
 
                         <div className="flex items-center justify-between gap-3 pt-2">
                             <div />
@@ -208,7 +208,7 @@ export default function AbsenceRequestForm() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle>Emergency Contact</CardTitle>
                     </CardHeader>
@@ -226,7 +226,7 @@ export default function AbsenceRequestForm() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
         </AppLayout>
     );

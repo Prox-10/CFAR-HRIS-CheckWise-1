@@ -219,7 +219,7 @@ export default function LeaveRequestForm() {
                                 />
                             </div>
 
-                            <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
+                            {/* <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
                                 <AlertTitle>Leave Policy Reminder:</AlertTitle>
                                 <AlertDescription>
                                     <ul className="list-disc space-y-1 pl-4">
@@ -229,7 +229,7 @@ export default function LeaveRequestForm() {
                                         <li>Current leave balance: 12 days remaining</li>
                                     </ul>
                                 </AlertDescription>
-                            </Alert>
+                            </Alert> */}
 
                             <div className="flex items-center justify-between gap-3 pt-2">
                                 <div />

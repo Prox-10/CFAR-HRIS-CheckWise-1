@@ -29,7 +29,7 @@ export default function ReturnWorkIndex() {
                     <p className="text-sm text-muted-foreground">Submit your return to work notification</p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-1">
                     <Card className="border-emerald-200 bg-emerald-50/50">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-emerald-800">
@@ -52,7 +52,7 @@ export default function ReturnWorkIndex() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    {/* <Card>
                         <CardHeader>
                             <CardTitle>Return to Work Guidelines</CardTitle>
                             <CardDescription>Important information about returning to work</CardDescription>
@@ -75,10 +75,10 @@ export default function ReturnWorkIndex() {
                                 </ul>
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
 
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle>Contact Information</CardTitle>
                         <CardDescription>Get help with your return to work process</CardDescription>
@@ -97,7 +97,7 @@ export default function ReturnWorkIndex() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
         </AppLayout>
     );
