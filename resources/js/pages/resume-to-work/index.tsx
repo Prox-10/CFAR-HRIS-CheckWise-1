@@ -13,7 +13,7 @@ import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { Calendar, CheckCircle, Clock, Plus, User, UserCheck } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, FileText, User, UserCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Toaster, toast } from 'sonner';
 import AddResumeModal from './components/add-resume-modal';
@@ -31,6 +31,40 @@ interface Employee {
     employeeid: string;
     department: string;
     position: string;
+}
+
+interface ApprovedLeave {
+    id: string;
+    employee_name: string;
+    employeeid: string;
+    department: string;
+    position: string;
+    leave_type: string;
+    leave_start_date: string;
+    leave_end_date: string;
+    leave_days: string;
+    picture?: string;
+    status: string;
+    supervisor_status: string | null;
+    hr_status: string | null;
+    hr_approved_at: string | null;
+}
+
+interface ApprovedAbsence {
+    id: string;
+    employee_name: string;
+    employee_id_number: string;
+    department: string;
+    position: string;
+    absence_type: string;
+    from_date: string;
+    to_date: string;
+    days: number;
+    picture?: string;
+    status: string;
+    supervisor_status: string | null;
+    hr_status: string | null;
+    hr_approved_at: string | null;
 }
 
 interface ResumeToWorkRequest {
@@ -51,21 +85,43 @@ interface ResumeToWorkRequest {
 }
 
 interface Props {
-    resumeRequests: ResumeToWorkRequest[];
-    employees: Employee[];
-    userRole: {
+    resumeRequests?: ResumeToWorkRequest[];
+    approvedLeaves?: ApprovedLeave[];
+    approvedAbsences?: ApprovedAbsence[];
+    employees?: Employee[];
+    userRole?: {
         is_supervisor: boolean;
         is_super_admin: boolean;
+        is_hr?: boolean;
         supervised_departments: string[];
     };
+    leave_id?: string;
+    absence_id?: string;
+    type?: 'leave' | 'absence';
 }
 
-export default function ResumeToWorkIndex({ resumeRequests = [], employees = [], userRole }: Props) {
+export default function ResumeToWorkIndex({
+    resumeRequests = [],
+    approvedLeaves = [],
+    approvedAbsences = [],
+    employees = [],
+    userRole,
+    leave_id,
+    absence_id,
+    type,
+}: Props) {
     const [requests, setRequests] = useState<ResumeToWorkRequest[]>(resumeRequests);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'processed'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'leave' | 'absence'>('all');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const { auth } = usePage().props as any;
+
+    // Get URL query parameters
+    const page = usePage();
+    const urlParams = new URLSearchParams(window.location.search);
+    const leaveIdParam = urlParams.get('leave_id') || leave_id;
+    const absenceIdParam = urlParams.get('absence_id') || absence_id;
+    const typeParam = urlParams.get('type') || type;
 
     // Update local state when server data changes
     useEffect(() => {
@@ -199,21 +255,173 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
         };
     }, [userRole, auth?.user?.id]);
 
-    const filtered = useMemo(() => {
+    // Filter approved leaves and absences that need resume-to-work forms
+    const filteredLeaves = useMemo(() => {
         const q = search.trim().toLowerCase();
-        return requests.filter((r) => {
-            const matchQ = !q || `${r.employee_name} ${r.department}`.toLowerCase().includes(q);
-            const matchStatus = statusFilter === 'all' || r.status === statusFilter;
-            return matchQ && matchStatus;
+        return approvedLeaves.filter((leave) => {
+            const matchQ = !q || `${leave.employee_name} ${leave.department}`.toLowerCase().includes(q);
+            const matchStatus = statusFilter === 'all' || statusFilter === 'leave';
+            const isFullyApproved = leave.status === 'Approved' && leave.supervisor_status === 'approved' && leave.hr_status === 'approved';
+            return matchQ && matchStatus && isFullyApproved;
         });
-    }, [requests, search, statusFilter]);
+    }, [approvedLeaves, search, statusFilter]);
 
-    const grouped = useMemo(() => {
-        return {
-            pending: filtered.filter((r) => r.status === 'pending'),
-            processed: filtered.filter((r) => r.status === 'processed'),
+    const filteredAbsences = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return approvedAbsences.filter((absence) => {
+            const matchQ = !q || `${absence.employee_name} ${absence.department}`.toLowerCase().includes(q);
+            const matchStatus = statusFilter === 'all' || statusFilter === 'absence';
+            const isFullyApproved = absence.supervisor_status === 'approved' && absence.hr_status === 'approved';
+            return matchQ && matchStatus && isFullyApproved;
+        });
+    }, [approvedAbsences, search, statusFilter]);
+
+    // If specific leave_id or absence_id is provided, filter to show only that item
+    const selectedLeave = useMemo(() => {
+        if (leaveIdParam && typeParam === 'leave') {
+            return filteredLeaves.find((l) => l.id === leaveIdParam);
+        }
+        return null;
+    }, [filteredLeaves, leaveIdParam, typeParam]);
+
+    const selectedAbsence = useMemo(() => {
+        if (absenceIdParam && typeParam === 'absence') {
+            return filteredAbsences.find((a) => a.id === absenceIdParam);
+        }
+        return null;
+    }, [filteredAbsences, absenceIdParam, typeParam]);
+
+    // Component for displaying approved leave card
+    function ApprovedLeaveCard({ leave, onCreateResume }: { leave: ApprovedLeave; onCreateResume: () => void }) {
+        const calculateReturnDate = () => {
+            const endDate = new Date(leave.leave_end_date);
+            endDate.setDate(endDate.getDate() + 1); // Day after leave ends
+            return format(endDate, 'MMM dd, yyyy');
         };
-    }, [filtered]);
+
+        return (
+            <Card className="border-main/40 transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                            {leave.picture ? (
+                                <img
+                                    src={leave.picture}
+                                    alt={leave.employee_name}
+                                    className="border-main h-12 w-12 rounded-full border-2 object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/Logo.png';
+                                    }}
+                                />
+                            ) : (
+                                <div className="border-main flex h-12 w-12 items-center justify-center rounded-full border-2 bg-muted">
+                                    <User className="text-main h-6 w-6" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="truncate text-base">{leave.employee_name}</CardTitle>
+                            <CardDescription className="truncate text-xs">
+                                {leave.department} • {leave.position}
+                            </CardDescription>
+                            <CardDescription className="text-xs text-gray-500">ID: {leave.employeeid}</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                        <Badge variant="outline" className="bg-green-100 text-green-700">
+                            {leave.leave_type}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                                {format(new Date(leave.leave_start_date), 'MMM dd')} - {format(new Date(leave.leave_end_date), 'MMM dd, yyyy')}
+                            </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">{leave.leave_days}</span> day(s)
+                        </div>
+                        <div className="border-t pt-2">
+                            <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Return Date:</span> {calculateReturnDate()}
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Create Resume to Work
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    // Component for displaying approved absence card
+    function ApprovedAbsenceCard({ absence, onCreateResume }: { absence: ApprovedAbsence; onCreateResume: () => void }) {
+        const calculateReturnDate = () => {
+            const endDate = new Date(absence.to_date);
+            endDate.setDate(endDate.getDate() + 1); // Day after absence ends
+            return format(endDate, 'MMM dd, yyyy');
+        };
+
+        return (
+            <Card className="border-main/40 transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                            {absence.picture ? (
+                                <img
+                                    src={absence.picture}
+                                    alt={absence.employee_name}
+                                    className="border-main h-12 w-12 rounded-full border-2 object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/Logo.png';
+                                    }}
+                                />
+                            ) : (
+                                <div className="border-main flex h-12 w-12 items-center justify-center rounded-full border-2 bg-muted">
+                                    <User className="text-main h-6 w-6" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="truncate text-base">{absence.employee_name}</CardTitle>
+                            <CardDescription className="truncate text-xs">
+                                {absence.department} • {absence.position}
+                            </CardDescription>
+                            <CardDescription className="text-xs text-gray-500">ID: {absence.employee_id_number}</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                        <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                            {absence.absence_type}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                                {format(new Date(absence.from_date), 'MMM dd')} - {format(new Date(absence.to_date), 'MMM dd, yyyy')}
+                            </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">{absence.days}</span> day(s)
+                        </div>
+                        <div className="border-t pt-2">
+                            <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Return Date:</span> {calculateReturnDate()}
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Create Resume to Work
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
 
     // Drag and Drop handlers
     const onDragStart = (e: React.DragEvent, id: string) => {
@@ -291,6 +499,138 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
         [updateRequestStatus],
     );
 
+    // Component for displaying approved leave card
+    const ApprovedLeaveCardComponent = ({ leave, onCreateResume }: { leave: ApprovedLeave; onCreateResume: () => void }) => {
+        const calculateReturnDate = () => {
+            const endDate = new Date(leave.leave_end_date);
+            endDate.setDate(endDate.getDate() + 1); // Day after leave ends
+            return format(endDate, 'MMM dd, yyyy');
+        };
+
+        return (
+            <Card className="border-main/40 transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                            {leave.picture ? (
+                                <img
+                                    src={leave.picture}
+                                    alt={leave.employee_name}
+                                    className="border-main h-12 w-12 rounded-full border-2 object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/Logo.png';
+                                    }}
+                                />
+                            ) : (
+                                <div className="border-main flex h-12 w-12 items-center justify-center rounded-full border-2 bg-muted">
+                                    <User className="text-main h-6 w-6" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="truncate text-base">{leave.employee_name}</CardTitle>
+                            <CardDescription className="truncate text-xs">
+                                {leave.department} • {leave.position}
+                            </CardDescription>
+                            <CardDescription className="text-xs text-gray-500">ID: {leave.employeeid}</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                        <Badge variant="outline" className="bg-green-100 text-green-700">
+                            {leave.leave_type}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                                {format(new Date(leave.leave_start_date), 'MMM dd')} - {format(new Date(leave.leave_end_date), 'MMM dd, yyyy')}
+                            </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">{leave.leave_days}</span> day(s)
+                        </div>
+                        <div className="border-t pt-2">
+                            <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Return Date:</span> {calculateReturnDate()}
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Create Resume to Work
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    };
+
+    // Component for displaying approved absence card
+    const ApprovedAbsenceCardComponent = ({ absence, onCreateResume }: { absence: ApprovedAbsence; onCreateResume: () => void }) => {
+        const calculateReturnDate = () => {
+            const endDate = new Date(absence.to_date);
+            endDate.setDate(endDate.getDate() + 1); // Day after absence ends
+            return format(endDate, 'MMM dd, yyyy');
+        };
+
+        return (
+            <Card className="border-main/40 transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                            {absence.picture ? (
+                                <img
+                                    src={absence.picture}
+                                    alt={absence.employee_name}
+                                    className="border-main h-12 w-12 rounded-full border-2 object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/Logo.png';
+                                    }}
+                                />
+                            ) : (
+                                <div className="border-main flex h-12 w-12 items-center justify-center rounded-full border-2 bg-muted">
+                                    <User className="text-main h-6 w-6" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="truncate text-base">{absence.employee_name}</CardTitle>
+                            <CardDescription className="truncate text-xs">
+                                {absence.department} • {absence.position}
+                            </CardDescription>
+                            <CardDescription className="text-xs text-gray-500">ID: {absence.employee_id_number}</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                        <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                            {absence.absence_type}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                                {format(new Date(absence.from_date), 'MMM dd')} - {format(new Date(absence.to_date), 'MMM dd, yyyy')}
+                            </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">{absence.days}</span> day(s)
+                        </div>
+                        <div className="border-t pt-2">
+                            <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Return Date:</span> {calculateReturnDate()}
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Create Resume to Work
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    };
+
     return (
         <SidebarProvider>
             <Head title="Resume to Work" />
@@ -310,56 +650,92 @@ export default function ResumeToWorkIndex({ resumeRequests = [], employees = [],
                                         className="h-10"
                                     />
                                 </div>
-                                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'pending' | 'processed')}>
+                                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'leave' | 'absence')}>
                                     <SelectTrigger className="h-10 w-40">
-                                        <SelectValue placeholder="All Status" />
+                                        <SelectValue placeholder="Filter Type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Status</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="processed">Processed</SelectItem>
+                                        <SelectItem value="all">All Types</SelectItem>
+                                        <SelectItem value="leave">Leaves</SelectItem>
+                                        <SelectItem value="absence">Absences</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-                                <Plus className="h-4 w-4" />
-                                Add Request
-                            </Button>
                         </div>
 
                         <Separator />
 
-                        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-                            <BoardColumn
-                                title="Pending Processing"
-                                count={grouped.pending.length}
-                                tone="blue"
-                                onDrop={(e) => onDropToColumn(e, 'pending')}
-                                onDragOver={onDragOverColumn}
-                            >
-                                {grouped.pending.map((item) => (
-                                    <ResumeCard
-                                        key={item.id}
-                                        item={item}
-                                        onProcess={processRequest}
-                                        canProcess={userRole.is_super_admin}
-                                        onDragStart={onDragStart}
-                                        onDragEnd={onDragEnd}
-                                    />
-                                ))}
-                            </BoardColumn>
+                        {/* Show selected item if coming from specific leave/absence */}
+                        {(selectedLeave || selectedAbsence) && (
+                            <div className="p-4">
+                                <Card className="border-blue-200 bg-blue-50/50">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <FileText className="h-5 w-5 text-blue-600" />
+                                            {selectedLeave ? 'Approved Leave' : 'Approved Absence'} - Create Resume to Work
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {selectedLeave ? (
+                                            <ApprovedLeaveCardComponent leave={selectedLeave} onCreateResume={() => setIsAddModalOpen(true)} />
+                                        ) : selectedAbsence ? (
+                                            <ApprovedAbsenceCardComponent absence={selectedAbsence} onCreateResume={() => setIsAddModalOpen(true)} />
+                                        ) : null}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
 
-                            <BoardColumn
-                                title="Processed"
-                                count={grouped.processed.length}
-                                tone="green"
-                                onDrop={(e) => onDropToColumn(e, 'processed')}
-                                onDragOver={onDragOverColumn}
-                            >
-                                {grouped.processed.map((item) => (
-                                    <ResumeCard key={item.id} item={item} onDragStart={onDragStart} onDragEnd={onDragEnd} />
-                                ))}
-                            </BoardColumn>
+                        {/* Show all approved leaves and absences */}
+                        <div className="space-y-6 p-4">
+                            {/* Approved Leaves Section */}
+                            {filteredLeaves.length > 0 && (
+                                <div>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold">Approved Leaves ({filteredLeaves.length})</h2>
+                                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                                            Ready for Resume to Work
+                                        </Badge>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {filteredLeaves.map((leave) => (
+                                            <ApprovedLeaveCardComponent key={leave.id} leave={leave} onCreateResume={() => setIsAddModalOpen(true)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Approved Absences Section */}
+                            {filteredAbsences.length > 0 && (
+                                <div>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold">Approved Absences ({filteredAbsences.length})</h2>
+                                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                                            Ready for Resume to Work
+                                        </Badge>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {filteredAbsences.map((absence) => (
+                                            <ApprovedAbsenceCardComponent
+                                                key={absence.id}
+                                                absence={absence}
+                                                onCreateResume={() => setIsAddModalOpen(true)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* No approved items message */}
+                            {filteredLeaves.length === 0 && filteredAbsences.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
+                                    <p className="text-lg font-medium text-muted-foreground">No Approved Leaves or Absences</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Approved leaves and absences will appear here for creating resume to work forms.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Add Resume Modal */}

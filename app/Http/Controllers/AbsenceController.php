@@ -67,6 +67,8 @@ class AbsenceController extends Controller
                 'remaining_credits' => $absenceCredits->remaining_credits,
                 'used_credits' => $absenceCredits->used_credits,
                 'total_credits' => $absenceCredits->total_credits,
+                'supervisor_status' => $absence->supervisor_status,
+                'hr_status' => $absence->hr_status,
             ];
         })->toArray();
 

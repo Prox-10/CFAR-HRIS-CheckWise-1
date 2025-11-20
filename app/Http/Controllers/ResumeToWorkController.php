@@ -6,6 +6,8 @@ use App\Models\ResumeToWork;
 use App\Models\ReturnWork;
 use App\Models\Employee;
 use App\Models\Notification;
+use App\Models\Leave;
+use App\Models\Absence;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -93,23 +95,99 @@ class ResumeToWorkController extends Controller
 
     // Get employees for the form
     $employeeQuery = Employee::orderBy('employee_name');
-    
+
     // Filter employees based on user role
     if ($isSupervisor && !empty($supervisedDepartments)) {
-        $employeeQuery->whereIn('department', $supervisedDepartments);
+      $employeeQuery->whereIn('department', $supervisedDepartments);
     }
-    
+
     $employees = $employeeQuery->get()->map(fn($employee) => [
-        'id' => $employee->id,
-        'employee_name' => $employee->employee_name,
-        'employeeid' => $employee->employeeid,
-        'department' => $employee->department,
-        'position' => $employee->position,
+      'id' => $employee->id,
+      'employee_name' => $employee->employee_name,
+      'employeeid' => $employee->employeeid,
+      'department' => $employee->department,
+      'position' => $employee->position,
     ]);
+
+    // Get approved leaves (both supervisor and HR approved)
+    $approvedLeavesQuery = Leave::with(['employee', 'supervisorApprover', 'hrApprover'])
+      ->where('supervisor_status', 'approved')
+      ->where('hr_status', 'approved')
+      ->where('leave_status', 'Approved');
+
+    // Filter based on user role
+    if ($isSupervisor && !empty($supervisedDepartments)) {
+      $approvedLeavesQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
+        $query->whereIn('department', $supervisedDepartments);
+      });
+    }
+
+    $approvedLeaves = $approvedLeavesQuery->orderBy('hr_approved_at', 'desc')
+      ->orderBy('leave_end_date', 'desc')
+      ->get()
+      ->map(function ($leave) {
+        return [
+          'id' => (string) $leave->id,
+          'employee_name' => $leave->employee ? $leave->employee->employee_name : null,
+          'employee_id' => $leave->employee ? $leave->employee->employeeid : null,
+          'employee_id_db' => $leave->employee_id,
+          'department' => $leave->employee ? $leave->employee->department : null,
+          'position' => $leave->employee ? $leave->employee->position : null,
+          'leave_type' => $leave->leave_type,
+          'leave_start_date' => $leave->leave_start_date->format('Y-m-d'),
+          'leave_end_date' => $leave->leave_end_date->format('Y-m-d'),
+          'leave_days' => $leave->leave_days,
+          'leave_reason' => $leave->leave_reason,
+          'status' => $leave->leave_status,
+          'picture' => $leave->employee ? $leave->employee->picture : null,
+          'supervisor_status' => $leave->supervisor_status,
+          'hr_status' => $leave->hr_status,
+          'supervisor_approved_at' => $leave->supervisor_approved_at ? $leave->supervisor_approved_at->format('Y-m-d H:i:s') : null,
+          'hr_approved_at' => $leave->hr_approved_at ? $leave->hr_approved_at->format('Y-m-d H:i:s') : null,
+        ];
+      })->values();
+
+    // Get approved absences (both supervisor and HR approved)
+    $approvedAbsencesQuery = Absence::with(['employee', 'supervisorApprover', 'hrApprover'])
+      ->where('supervisor_status', 'approved')
+      ->where('hr_status', 'approved')
+      ->where('status', 'approved');
+
+    // Filter based on user role
+    if ($isSupervisor && !empty($supervisedDepartments)) {
+      $approvedAbsencesQuery->whereIn('department', $supervisedDepartments);
+    }
+
+    $approvedAbsences = $approvedAbsencesQuery->orderBy('hr_approved_at', 'desc')
+      ->orderBy('to_date', 'desc')
+      ->get()
+      ->map(function ($absence) {
+        return [
+          'id' => (string) $absence->id,
+          'employee_name' => $absence->employee ? $absence->employee->employee_name : $absence->full_name,
+          'employee_id' => $absence->employee ? $absence->employee->employeeid : $absence->employee_id_number,
+          'employee_id_db' => $absence->employee_id,
+          'department' => $absence->department,
+          'position' => $absence->position,
+          'absence_type' => $absence->absence_type,
+          'from_date' => $absence->from_date->format('Y-m-d'),
+          'to_date' => $absence->to_date->format('Y-m-d'),
+          'days' => $absence->days,
+          'reason' => $absence->reason,
+          'status' => $absence->status,
+          'picture' => $absence->employee ? $absence->employee->picture : null,
+          'supervisor_status' => $absence->supervisor_status,
+          'hr_status' => $absence->hr_status,
+          'supervisor_approved_at' => $absence->supervisor_approved_at ? $absence->supervisor_approved_at->format('Y-m-d H:i:s') : null,
+          'hr_approved_at' => $absence->hr_approved_at ? $absence->hr_approved_at->format('Y-m-d H:i:s') : null,
+        ];
+      })->values();
 
     return Inertia::render('resume-to-work/index', [
       'resumeRequests' => $allRequests,
       'employees' => $employees,
+      'approvedLeaves' => $approvedLeaves,
+      'approvedAbsences' => $approvedAbsences,
       'userRole' => [
         'is_supervisor' => $isSupervisor,
         'is_super_admin' => $isSuperAdmin,
@@ -142,7 +220,7 @@ class ResumeToWorkController extends Controller
       // Create notification for the supervisor of the employee's department
       $employee = Employee::find($request->employee_id);
       $supervisor = \App\Models\User::getSupervisorForDepartment($employee->department);
-      
+
       if ($supervisor) {
         Notification::create([
           'type' => 'resume_to_work',

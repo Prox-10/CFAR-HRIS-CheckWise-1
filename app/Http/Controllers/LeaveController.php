@@ -70,6 +70,8 @@ class LeaveController extends Controller
                 'remaining_credits'   => $leaveCredits->remaining_credits,
                 'used_credits'        => $leaveCredits->used_credits,
                 'total_credits'       => $leaveCredits->total_credits,
+                'supervisor_status'   => $leave->supervisor_status,
+                'hr_status'           => $leave->hr_status,
             ];
         })->toArray();
 

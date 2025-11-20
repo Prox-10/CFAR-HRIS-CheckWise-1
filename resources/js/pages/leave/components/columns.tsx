@@ -1,9 +1,9 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { CheckCircle, Clock, CreditCard, Edit, Eye, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, CreditCard, Edit, Eye, UserCheck, XCircle } from 'lucide-react';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {} from './editemployeemodal';
 
@@ -25,6 +25,8 @@ type Leave = {
     remaining_credits?: number;
     used_credits?: number;
     total_credits?: number;
+    supervisor_status?: string | null;
+    hr_status?: string | null;
 };
 
 const columns = (
@@ -228,6 +230,9 @@ const columns = (
         cell: ({ row }) => {
             const leave = row.original;
 
+            // Check if leave is fully approved (both supervisor and HR)
+            const isFullyApproved = leave.status === 'Approved' && leave.supervisor_status === 'approved' && leave.hr_status === 'approved';
+
             return (
                 <div className="flex items-center gap-2">
                     <Button
@@ -247,6 +252,19 @@ const columns = (
                             <Edit className="h-4 w-4" />
                         </Button>
                     </Link>
+                    {isFullyApproved && (
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 p-0 px-3 hover:bg-blue-200"
+                            onClick={() => {
+                                router.visit(`/resume-to-work?leave_id=${leave.id}&type=leave`);
+                            }}
+                            title="Create Resume to Work"
+                        >
+                            <UserCheck className="h-4 w-4 text-blue-600" />
+                        </Button>
+                    )}
                 </div>
             );
         },

@@ -13,9 +13,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Calendar, CircleEllipsis, Clock, CreditCard, Edit, Eye, Trash2 } from 'lucide-react';
+import { Calendar, CircleEllipsis, Clock, CreditCard, Eye, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { DataTableColumnHeader } from './data-table-column-header';
 
@@ -39,6 +40,8 @@ type Absence = {
     remaining_credits?: number;
     used_credits?: number;
     total_credits?: number;
+    supervisor_status?: string | null;
+    hr_status?: string | null;
 };
 
 const columns = (
@@ -86,11 +89,11 @@ const columns = (
     },
     {
         accessorKey: 'credits',
-        header: "Credits" ,
+        header: 'Credits',
         cell: ({ row }) => {
             const remaining = row.original.remaining_credits || 0;
             const used = row.original.used_credits || 0;
-            const total = row.original.total_credits || 12; 
+            const total = row.original.total_credits || 12;
 
             const getCreditStatus = () => {
                 if (remaining === 0) return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
@@ -116,7 +119,7 @@ const columns = (
     },
     {
         accessorKey: 'department',
-        header: "Department" ,
+        header: 'Department',
         cell: ({ row }) => {
             const department: string = row.getValue('department');
             const position = row.original.position;
@@ -136,7 +139,7 @@ const columns = (
     },
     {
         accessorKey: 'absence_type',
-        header: "Absence Type" ,
+        header: 'Absence Type',
         cell: ({ row }) => {
             const absenceType: string = row.getValue('absence_type');
 
@@ -161,7 +164,7 @@ const columns = (
     },
     {
         // accessorKey: 'from_date',
-        header: "Date Range" ,
+        header: 'Date Range',
         cell: ({ row }) => {
             const fromDate = row.original.from_date;
             const toDate = row.original.to_date;
@@ -197,7 +200,7 @@ const columns = (
     },
     {
         accessorKey: 'status',
-        header: "Status" ,
+        header: 'Status',
         cell: ({ row }) => {
             const status: string = row.getValue('status');
 
@@ -219,7 +222,7 @@ const columns = (
     },
     {
         accessorKey: 'submitted_at',
-        header: "Submitted" ,
+        header: 'Submitted',
         cell: ({ row }) => {
             const submittedAt = row.original.submitted_at;
             return <div className="text-sm text-gray-600">{format(new Date(submittedAt), 'MMM dd, yyyy')}</div>;
@@ -257,6 +260,23 @@ const columns = (
                                 View Details
                             </Button>
                         </DropdownMenuItem>
+
+                        {/* Resume to Work button - only show if both supervisor and HR approved */}
+                        {absence.supervisor_status === 'approved' && absence.hr_status === 'approved' && (
+                            <DropdownMenuItem>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                        router.visit(`/resume-to-work?absence_id=${absence.id}&type=absence`);
+                                    }}
+                                    className="hover-lift w-full border-purple-300 text-purple-600 hover:bg-purple-50"
+                                >
+                                    <UserCheck className="h-4 w-4" />
+                                    Create Resume to Work
+                                </Button>
+                            </DropdownMenuItem>
+                        )}
 
                         {/* {absence.status === 'pending' && (
                             <DropdownMenuItem>

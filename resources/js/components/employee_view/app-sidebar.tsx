@@ -73,11 +73,11 @@ const employeeNavItems: EmployeeNavItem[] = [
                 href: '/employee-view/absence',
                 icon: Clock,
             },
-            {
-                title: 'Return to Work',
-                href: '/employee-view/return-work/request',
-                icon: CalendarSync,
-            },
+            // {
+            //     title: 'Return to Work',
+            //     href: '/employee-view/return-work/request',
+            //     icon: CalendarSync,
+            // },
         ],
     },
 ];
