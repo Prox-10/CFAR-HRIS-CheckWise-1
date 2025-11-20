@@ -1,4 +1,3 @@
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import AppLayout from '@/layouts/employee-layout/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { CalendarDays, ChevronDown, Info } from 'lucide-react';
+import { CalendarDays, ChevronDown } from 'lucide-react';
 import React from 'react';
 import { toast } from 'sonner';
 
@@ -20,14 +19,25 @@ export default function AbsenceRequestForm() {
         { title: 'Submit Absence Notification', href: '/employee-view/absence/request' },
     ];
 
-    const [date, setDate] = React.useState<Date | undefined>(undefined);
+    const [fromDate, setFromDate] = React.useState<Date | undefined>(undefined);
+    const [toDate, setToDate] = React.useState<Date | undefined>(undefined);
     const [reason, setReason] = React.useState<string>('');
     const { employee } = usePage().props as any;
     const [submitting, setSubmitting] = React.useState(false);
 
     const handleSubmit = async () => {
-        if (!date || !reason) {
-            toast.error('Please fill in required fields.');
+        if (!fromDate || !toDate || !reason) {
+            toast.error('Please fill in all required fields.');
+            return;
+        }
+        // Normalize dates to midnight for comparison
+        const fromDateNormalized = new Date(fromDate);
+        fromDateNormalized.setHours(0, 0, 0, 0);
+        const toDateNormalized = new Date(toDate);
+        toDateNormalized.setHours(0, 0, 0, 0);
+
+        if (toDateNormalized < fromDateNormalized) {
+            toast.error('Date To must be on or after Date From.');
             return;
         }
         if (reason.trim().length < 5) {
@@ -43,8 +53,8 @@ export default function AbsenceRequestForm() {
                 department: employee?.department ?? '',
                 position: employee?.position ?? '',
                 absence_type: 'Other',
-                from_date: date.toISOString().slice(0, 10),
-                to_date: date.toISOString().slice(0, 10),
+                from_date: fromDate.toISOString().slice(0, 10),
+                to_date: toDate.toISOString().slice(0, 10),
                 is_partial_day: false,
                 reason,
             });
@@ -58,8 +68,8 @@ export default function AbsenceRequestForm() {
                     department: employee?.department ?? '',
                     position: employee?.position ?? '',
                     absence_type: 'Other',
-                    from_date: date.toISOString().slice(0, 10),
-                    to_date: date.toISOString().slice(0, 10),
+                    from_date: fromDate.toISOString().slice(0, 10),
+                    to_date: toDate.toISOString().slice(0, 10),
                     is_partial_day: false,
                     reason,
                 },
@@ -91,7 +101,8 @@ export default function AbsenceRequestForm() {
             }
 
             // Clear form after successful submission
-            setDate(undefined);
+            setFromDate(undefined);
+            setToDate(undefined);
             setReason('');
         } catch (e) {
             console.error('Failed to submit absence request:', e);
@@ -102,7 +113,8 @@ export default function AbsenceRequestForm() {
     };
 
     const clearForm = () => {
-        setDate(undefined);
+        setFromDate(undefined);
+        setToDate(undefined);
         setReason('');
     };
 
@@ -138,28 +150,59 @@ export default function AbsenceRequestForm() {
                         <CardDescription>Please provide details about your absence</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label className="font-medium">
-                                Date of Absence <span className="text-destructive">*</span>
-                            </Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="h-10 w-full justify-between">
-                                        <span>{date ? date.toLocaleDateString() : 'mm/dd/yyyy'}</span>
-                                        <ChevronDown className="h-4 w-4 opacity-60" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={date}
-                                        onSelect={setDate}
-                                        initialFocus
-                                        disabled={(date) => date < currentDate}
-                                        className="rounded-md border"
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label className="font-medium">
+                                    Date From <span className="text-destructive">*</span>
+                                </Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="h-10 w-full justify-between">
+                                            <span>{fromDate ? fromDate.toLocaleDateString() : 'mm/dd/yyyy'}</span>
+                                            <ChevronDown className="h-4 w-4 opacity-60" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={fromDate}
+                                            onSelect={setFromDate}
+                                            initialFocus
+                                            disabled={(date) => date < currentDate}
+                                            className="rounded-md border"
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="font-medium">
+                                    Date To <span className="text-destructive">*</span>
+                                </Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="h-10 w-full justify-between">
+                                            <span>{toDate ? toDate.toLocaleDateString() : 'mm/dd/yyyy'}</span>
+                                            <ChevronDown className="h-4 w-4 opacity-60" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={toDate}
+                                            onSelect={setToDate}
+                                            initialFocus
+                                            disabled={(date) => {
+                                                if (fromDate) {
+                                                    return date < fromDate;
+                                                }
+                                                return date < currentDate;
+                                            }}
+                                            className="rounded-md border"
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
