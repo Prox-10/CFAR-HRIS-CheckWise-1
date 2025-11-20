@@ -50,6 +50,7 @@ interface Absence {
 interface PageProps {
     absences: Absence[];
     hrEmployee: { id: number; name: string } | null;
+    [key: string]: any;
 }
 
 export default function EmployeeAbsenteeismReportPage() {
@@ -212,8 +213,7 @@ export default function EmployeeAbsenteeismReportPage() {
                                     ))}
                                 </div>
                             )}
-
-                            <div className="flex items-center justify-start gap-2 pt-4">
+                            <div className="ml-5 flex items-center justify-start gap-2 pt-4">
                                 <Button variant="outline" onClick={() => router.visit('/report')}>
                                     <ArrowLeft className="mr-2 h-4 w-4" />
                                     Back

@@ -168,34 +168,34 @@ const ReportPage = () => {
                                 <div className="space-y-6">
                                     <SidebarSeparator />
                                     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 p-5">
-                                        <TabsList className="bg-main mb-4 grid grid-cols-2 py-[5px] md:grid-cols-5">
+                                        <TabsList className="bg-main mb-3 grid grid-cols-2 py-[5px] md:grid-cols-5">
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                className="hover:bg-main-600 mx-3 mb-3 data-[state=active]:bg-green-600 data-[state=active]:text-white"
                                                 value="attendance"
                                                 // onClick={() => router.visit('/report/daily-attendance')}
                                             >
                                                 Attendance
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                className="hover:bg-main-600 mx-3 mb-3 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
                                                 value="employee"
                                             >
                                                 Employee
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                className="hover:bg-main-600 mx-3 mb-3 data-[state=active]:bg-yellow-500 data-[state=active]:text-white"
                                                 value="leave"
                                             >
                                                 Leave
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                className="hover:bg-main-600 mx-3 mb-3 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
                                                 value="evaluation"
                                             >
                                                 Evaluation
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                className="hover:bg-main-600 mx-3 mb-5 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                                                className="hover:bg-main-600 mx-3 mb-3 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
                                                 value="absenteeism"
                                             >
                                                 Absenteeism

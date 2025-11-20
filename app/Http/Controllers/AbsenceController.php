@@ -158,7 +158,7 @@ class AbsenceController extends Controller
                 'from_date' => 'required|date',
                 'to_date' => 'required|date|after_or_equal:from_date',
                 'is_partial_day' => 'boolean',
-                'reason' => 'required|string|min:10',
+                'reason' => 'required|string|min:5',
             ]);
 
             Log::info('Validated absence data:', $validated);

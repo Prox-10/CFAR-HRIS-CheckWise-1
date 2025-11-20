@@ -30,6 +30,10 @@ export default function AbsenceRequestForm() {
             toast.error('Please fill in required fields.');
             return;
         }
+        if (reason.trim().length < 5) {
+            toast.error('Reason for absence must be at least 5 characters.');
+            return;
+        }
         try {
             setSubmitting(true);
             console.log('Submitting absence request:', {
@@ -167,7 +171,15 @@ export default function AbsenceRequestForm() {
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Please provide a detailed reason for your absence..."
                                 className="min-h-32"
+                                minLength={5}
                             />
+                            <p className="text-xs text-muted-foreground">
+                                {reason.length < 5 ? (
+                                    <span className="text-destructive">Minimum 5 characters required ({reason.length}/5)</span>
+                                ) : (
+                                    <span className="text-muted-foreground">{reason.length} characters</span>
+                                )}
+                            </p>
                         </div>
 
                         <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">

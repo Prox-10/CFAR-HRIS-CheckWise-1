@@ -67,6 +67,7 @@ class DatabaseSeeder extends Seeder
         // Then run other seeders
         $this->call([
             LeaveSeeder::class,
+            AbsenceSeeder::class,
             UserSeeder::class,
             SupervisorDepartmentSeeder::class,
             // EvaluationConfigurationSeeder::class, // Add this before EvaluationSeeder

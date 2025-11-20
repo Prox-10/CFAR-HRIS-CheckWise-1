@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
 interface Absence {
@@ -33,30 +33,55 @@ const styles = StyleSheet.create({
         padding: 40,
         fontFamily: 'Helvetica',
         fontSize: 10,
+        position: 'relative',
+    },
+    backgroundLogo: {
+        position: 'absolute',
+        top: 150,
+        left: 50,
+        width: 500,
+        height: 500,
+        opacity: 0.02,
+        zIndex: 0,
+    },
+    content: {
+        position: 'relative',
+        zIndex: 1,
     },
     header: {
+        flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 20,
+        gap: 15,
+    },
+    headerLogo: {
+        width: 80,
+        height: 80,
+    },
+    headerText: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     companyName: {
-        fontSize: 9,
+        fontSize: 11,
         textAlign: 'center',
         marginBottom: 2,
     },
     companyNameBold: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 2,
     },
     acronym: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 2,
     },
     address: {
-        fontSize: 9,
+        fontSize: 10,
         textAlign: 'center',
         marginBottom: 8,
     },
@@ -157,93 +182,104 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.companyName}>Checkered Farms Agrarian Reform Beneficiaries</Text>
-                    <Text style={styles.companyNameBold}>Multi Purpose Cooperative</Text>
-                    <Text style={styles.acronym}>CFARBEMPCO</Text>
-                    <Text style={styles.address}>Purok 3, Tibungol, Panabo City, Davao del Norte</Text>
-                </View>
+                {/* Background Logo */}
+                <Image src="/Logo.png" style={styles.backgroundLogo} />
 
-                {/* Separator */}
-                <View style={styles.separator} />
-
-                {/* Title */}
-                <Text style={styles.title}>ABSENT FROM</Text>
-
-                {/* Recipient Section */}
-                <View style={styles.recipientSection}>
-                    <View style={styles.recipientRow}>
-                        <Text style={styles.recipientLabel}>TO :</Text>
-                        <View style={styles.recipientLine} />
+                {/* Content */}
+                <View style={styles.content}>
+                    {/* Header */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between' }}>
+                        <Image src="/Logo.png" style={[styles.headerLogo, { marginLeft: 5 }]} />
+                        <View style={styles.headerText}>
+                            <Text style={styles.companyName}>Checkered Farms Agrarian Reform Beneficiaries</Text>
+                            <Text style={styles.companyNameBold}>Multi Purpose Cooperative</Text>
+                            <Text style={styles.acronym}>CFARBEMPCO</Text>
+                            <Text style={styles.address}>Purok 3, Tibungol, Panabo City, Davao del Norte</Text>
+                        </View>
+                        <View style={{ width: 80, height: 80, marginRight: 5 }} />
                     </View>
-                    <View style={styles.recipientRow}>
-                        <Text style={styles.recipientLabel}>FROM :</Text>
-                        <View style={[styles.recipientLine, { flex: 1 }]}>
-                            <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{absence.employee_name}</Text>
+
+                    {/* Separator */}
+                    <View style={styles.separator} />
+
+                    {/* Title */}
+                    <Text style={styles.title}>ABSENT FROM</Text>
+
+                    {/* Recipient Section */}
+                    <View style={styles.recipientSection}>
+                        <View style={styles.recipientRow}>
+                            <Text style={styles.recipientLabel}>TO :</Text>
+                            <View style={styles.recipientLine} />
+                        </View>
+                        <View style={styles.recipientRow}>
+                            <Text style={styles.recipientLabel}>FROM :</Text>
+                            <View style={[styles.recipientLine, { flex: 1 }]}>
+                                <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{absence.employee_name}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.recipientRow}>
+                            <Text style={styles.recipientLabel}>DATE :</Text>
+                            <View style={[styles.recipientLine, { flex: 1 }]}>
+                                <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{formatDate(absence.submitted_at)}</Text>
+                            </View>
                         </View>
                     </View>
-                    <View style={styles.recipientRow}>
-                        <Text style={styles.recipientLabel}>DATE :</Text>
-                        <View style={[styles.recipientLine, { flex: 1 }]}>
-                            <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{formatDate(absence.submitted_at)}</Text>
+
+                    {/* Body Text */}
+                    <View style={styles.bodyText}>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, flexWrap: 'wrap' }}>
+                            <Text>This is to inform you that </Text>
+                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }} />
+                            <Text style={{ marginBottom: 2 }}>file a leave of absence</Text>
+                        </View>
+
+                        <View style={{ marginTop: 8, marginBottom: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4, flexWrap: 'wrap' }}>
+                                <Text>for </Text>
+                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 60, height: 12, marginLeft: 4, marginRight: 4 }}>
+                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{absence.days}</Text>
+                                </View>
+                                <Text> days from </Text>
+                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
+                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.from_date)}</Text>
+                                </View>
+                                <Text> to </Text>
+                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
+                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.to_date)}</Text>
+                                </View>
+                                <Text> for the</Text>
+                            </View>
+                        </View>
+                        <Text style={{ marginTop: 8 }}>following reason/s</Text>
+                    </View>
+
+                    {/* Reason Lines */}
+                    <View style={{ marginTop: 8, marginBottom: 15 }}>
+                        {Array.from({ length: displayLines }).map((_, index) => {
+                            const lineText = reasonLines[index] || '';
+                            return (
+                                <View key={index} style={styles.reasonLine}>
+                                    {lineText ? <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{lineText}</Text> : <Text> </Text>}
+                                </View>
+                            );
+                        })}
+                    </View>
+
+                    {/* Resume Work Text */}
+                    <View style={styles.bodyText}>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                            <Text>Said worker/employee is officially on leave on the date above stated and will resume work on </Text>
+                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }}>
+                                <Text style={{ fontSize: 9, marginLeft: 2 }}>{getResumeDate()}</Text>
+                            </View>
+                            <Text>.</Text>
                         </View>
                     </View>
-                </View>
 
-                {/* Body Text */}
-                <View style={styles.bodyText}>
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, flexWrap: 'wrap' }}>
-                        <Text>This is to inform you that </Text>
-                        <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }} />
+                    {/* Closing */}
+                    <View style={styles.closing}>
+                        <Text>Thank you,</Text>
                     </View>
-                    <Text style={{ marginBottom: 8 }}>file a leave of absence</Text>
-                    <View style={{ marginTop: 8, marginBottom: 8 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4, flexWrap: 'wrap' }}>
-                            <Text>for </Text>
-                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 60, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                <Text style={{ fontSize: 9, marginLeft: 2 }}>{absence.days}</Text>
-                            </View>
-                            <Text> days from </Text>
-                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.from_date)}</Text>
-                            </View>
-                            <Text> to </Text>
-                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.to_date)}</Text>
-                            </View>
-                            <Text> for the</Text>
-                        </View>
-                    </View>
-                    <Text style={{ marginTop: 8 }}>following reason/s</Text>
-                </View>
-
-                {/* Reason Lines */}
-                <View style={{ marginTop: 8, marginBottom: 15 }}>
-                    {Array.from({ length: displayLines }).map((_, index) => {
-                        const lineText = reasonLines[index] || '';
-                        return (
-                            <View key={index} style={styles.reasonLine}>
-                                {lineText ? <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{lineText}</Text> : <Text> </Text>}
-                            </View>
-                        );
-                    })}
-                </View>
-
-                {/* Resume Work Text */}
-                <View style={styles.bodyText}>
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                        <Text>Said worker/employee is officially on leave on the date above stated and will resume work on </Text>
-                        <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }}>
-                            <Text style={{ fontSize: 9, marginLeft: 2 }}>{getResumeDate()}</Text>
-                        </View>
-                        <Text>.</Text>
-                    </View>
-                </View>
-
-                {/* Closing */}
-                <View style={styles.closing}>
-                    <Text>Thank you,</Text>
                 </View>
             </Page>
         </Document>
