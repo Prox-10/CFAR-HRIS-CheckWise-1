@@ -107,18 +107,27 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     recipientLabel: {
-        fontSize: 10,
+        fontSize: 11,
         width: 60,
     },
     recipientLine: {
-        width: '20%',
+        // Option 1: Use percentage width (adjust the percentage as needed: 40%, 50%, 60%, etc.)
+        width: '30%',
+
+        // Option 2: Use fixed pixel width (uncomment and adjust as needed)
+        // width: 250,
+
+        // Option 3: Use flex with maxWidth (uncomment and adjust)
+        // flex: 1,
+        // maxWidth: 250,
+
         borderBottomWidth: 0.8,
         borderColor: '#000',
         marginLeft: 10,
-        height: 15,
+        minHeight: 15,
     },
     bodyText: {
-        fontSize: 10,
+        fontSize: 11,
         marginBottom: 15,
         lineHeight: 1.6,
     },
@@ -133,7 +142,6 @@ const styles = StyleSheet.create({
         minWidth: 100,
         marginHorizontal: 4,
         height: 12,
-        display: 'inline-block',
     },
     blankWithText: {
         borderBottomWidth: 0.8,
@@ -157,6 +165,10 @@ const styles = StyleSheet.create({
 });
 
 export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormPDFProps) {
+    // DEBUG: Log absence data
+    console.log('[AbsenceFormPDF] Debug - absence.days:', absence.days);
+    console.log('[AbsenceFormPDF] Debug - typeof absence.days:', typeof absence.days);
+
     // Format date for display
     const formatDate = (dateString: string): string => {
         try {
@@ -180,6 +192,53 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
     // Split reason into lines
     const reasonLines = absence.reason ? absence.reason.split('\n').filter((line) => line.trim()) : [];
     const displayLines = Math.max(1, reasonLines.length);
+
+    // Use absence.days directly, same as employee-absenteeism-report.tsx
+    // Ensure we always have a valid number to display
+    let totalDays: number = 1;
+
+    // First, try to use absence.days (same as report page uses)
+    if (absence.days !== null && absence.days !== undefined) {
+        const daysValue = Number(absence.days);
+        if (!isNaN(daysValue) && daysValue > 0) {
+            totalDays = Math.floor(daysValue);
+        }
+    }
+
+    // Fallback: calculate from dates if days is not available or invalid
+    if (totalDays === 1 && (!absence.days || absence.days === null || absence.days === undefined)) {
+        try {
+            const fromDate = new Date(absence.from_date);
+            const toDate = new Date(absence.to_date);
+            if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+                fromDate.setHours(0, 0, 0, 0);
+                toDate.setHours(0, 0, 0, 0);
+                const diffTime = toDate.getTime() - fromDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                totalDays = diffDays > 0 ? diffDays : 1;
+            }
+        } catch (error) {
+            console.error('[AbsenceFormPDF] Error calculating days fallback:', error);
+        }
+    }
+
+    // Convert to string for display - ensure it's always a valid string
+    const daysDisplay: string = totalDays > 0 ? String(totalDays) : '1';
+
+    // DEBUG: Log the final value
+    console.log('[AbsenceFormPDF] Debug - absence.days:', absence.days);
+    console.log('[AbsenceFormPDF] Debug - typeof absence.days:', typeof absence.days);
+    console.log('[AbsenceFormPDF] Debug - totalDays:', totalDays);
+    console.log('[AbsenceFormPDF] Debug - daysDisplay:', daysDisplay);
+    console.log('[AbsenceFormPDF] Debug - Will render:', daysDisplay);
+
+    // DEBUG: Log date formatting
+    console.log('[AbsenceFormPDF] Debug - absence.from_date:', absence.from_date);
+    const formattedFromDate = formatDate(absence.from_date);
+    console.log('[AbsenceFormPDF] Debug - formatted from_date:', formattedFromDate);
+    console.log('[AbsenceFormPDF] Debug - absence.to_date:', absence.to_date);
+    const formattedToDate = formatDate(absence.to_date);
+    console.log('[AbsenceFormPDF] Debug - formatted to_date:', formattedToDate);
 
     return (
         <Document>
@@ -213,7 +272,15 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
                             <Text style={styles.recipientLabel}>TO :</Text>
                             <View style={styles.recipientLine}>
                                 {absence.department_supervisor && (
-                                    <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>
+                                    <Text
+                                        style={{
+                                            fontSize: 9,
+                                            marginLeft: 4,
+                                            marginTop: 2,
+
+                                            flexShrink: 0,
+                                        }}
+                                    >
                                         {absence.department_supervisor.name.toUpperCase()}
                                     </Text>
                                 )}
@@ -223,14 +290,24 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
                             <Text style={styles.recipientLabel}>FROM :</Text>
                             <View style={styles.recipientLine}>
                                 {absence.department_hr && (
-                                    <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{absence.department_hr.name.toUpperCase()}</Text>
+                                    <Text
+                                        style={{
+                                            fontSize: 9,
+                                            marginLeft: 4,
+                                            marginTop: 2,
+
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {absence.department_hr.name.toUpperCase()}
+                                    </Text>
                                 )}
                             </View>
                         </View>
                         <View style={styles.recipientRow}>
                             <Text style={styles.recipientLabel}>DATE :</Text>
                             <View style={styles.recipientLine}>
-                                <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{formatDate(absence.submitted_at)}</Text>
+                                <Text style={{ fontSize: 11, marginLeft: 4, marginTop: 2 }}>{formatDate(absence.submitted_at)}</Text>
                             </View>
                         </View>
                     </View>
@@ -238,58 +315,55 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
                     {/* Body Text */}
                     <View style={styles.bodyText}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, flexWrap: 'wrap' }}>
-                            <Text>This is to inform you that </Text>
+                            <Text style={{ fontSize: 11 }}>This is to inform you that </Text>
                             {/* <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }}> */}
-                            <Text style={{ fontSize: 9, marginLeft: 2, textDecoration: 'underline' }}>{absence.employee_name.toUpperCase()}</Text>
+                            <Text style={{ fontSize: 11, marginLeft: 2, textDecoration: 'underline', fontWeight: 'bold' }}>{absence.employee_name.toUpperCase()}</Text>
                             {/* </View> */}
-                            <Text style={{ marginBottom: 2 }}> file a leave of absence</Text>
+                            <Text style={{ fontSize: 11, marginBottom: 2 }}> file a leave of absence for   <Text style={{ fontSize: 11, marginLeft: 2, color: '#000000', textDecoration: 'underline', fontWeight: 'bold' }}>{daysDisplay || '0'}</Text></Text>
                         </View>
 
-                        <View style={{ marginTop: 8, marginBottom: 8 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4, flexWrap: 'wrap' }}>
-                                <Text>for </Text>
-                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 60, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{absence.days}</Text>
-                                </View>
-                                <Text> days from </Text>
-                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.from_date)}</Text>
-                                </View>
-                                <Text> to </Text>
-                                <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 100, height: 12, marginLeft: 4, marginRight: 4 }}>
-                                    <Text style={{ fontSize: 9, marginLeft: 2 }}>{formatDate(absence.to_date)}</Text>
-                                </View>
-                                <Text> for the</Text>
+                        <View style={{ marginTop: 3, marginBottom: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap' }}>
+
+                                <Text style={{ fontSize: 11 }}> days from </Text>
+
+                                <Text style={{ fontSize: 11, marginLeft: 2, color: '#000000', textDecoration: 'underline', fontWeight: 'bold' }}>
+                                    {formattedFromDate}
+                                </Text>
+
+                                <Text style={{ fontSize: 11 }}> to </Text>
+                                <Text style={{ fontSize: 11, marginLeft: 2, color: '#000000', textDecoration: 'underline', fontWeight: 'bold' }}>{formattedToDate}</Text>
+
+                                <Text style={{ fontSize: 11 }}> for the following reason/s</Text>
                             </View>
                         </View>
-                        <Text style={{ marginTop: 8 }}>following reason/s</Text>
                     </View>
 
                     {/* Reason Lines */}
-                    <View style={{ marginTop: 8, marginBottom: 15 }}>
+                    <View style={{ fontSize: 11, marginTop: 8, marginBottom: 15 }}>
                         {Array.from({ length: displayLines }).map((_, index) => {
                             const lineText = reasonLines[index] || '';
                             return (
                                 <View key={index} style={styles.reasonLine}>
-                                    {lineText ? <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{lineText}</Text> : <Text> </Text>}
+                                    {lineText ? <Text style={{ fontSize: 11, marginLeft: 4, marginTop: 2 }}>{lineText}</Text> : <Text> </Text>}
                                 </View>
                             );
                         })}
                     </View>
 
                     {/* Resume Work Text */}
-                    <View style={styles.bodyText}>
+                    <View style={{ ...styles.bodyText }}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <Text>Said worker/employee is officially on leave on the date above stated and will resume work on </Text>
                             <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }}>
-                                <Text style={{ fontSize: 9, marginLeft: 2 }}>{getResumeDate()}</Text>
+                                <Text style={{ fontSize: 11, marginLeft: 2 }}>{getResumeDate()}</Text>
                             </View>
                             <Text>.</Text>
                         </View>
                     </View>
 
                     {/* Closing */}
-                    <View style={styles.closing}>
+                    <View style={{ ...styles.closing }}>
                         <Text>Thank you,</Text>
                     </View>
                 </View>
