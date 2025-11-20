@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import LoginLoadingModal from '@/components/ui/login-loading-modal';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 
 type LoginForm = {
     employee_id: string;
@@ -18,6 +18,7 @@ interface LoginProps {
 }
 
 export default function Login({ status }: LoginProps) {
+    const [showPin, setShowPin] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         employee_id: '',
         pin: '',
@@ -73,7 +74,7 @@ export default function Login({ status }: LoginProps) {
                             </div>
 
                             <div className="grid gap-2">
-                                <div className="flex items-center justify-between">
+                                {/* <div className="flex items-center justify-between">
                                     <Label htmlFor="pin" className="font-semibold text-white">
                                         PIN
                                     </Label>
@@ -87,24 +88,35 @@ export default function Login({ status }: LoginProps) {
                                     >
                                         Forgot PIN?
                                     </button>
+                                </div> */}
+                                <div className="relative">
+                                    <Input
+                                        id="pin"
+                                        type={showPin ? 'text' : 'password'}
+                                        className="placeholder:text-white-500 pr-10 text-background focus:ring-0 focus:ring-offset-0"
+                                        tabIndex={2}
+                                        autoComplete="current-password"
+                                        value={data.pin}
+                                        onChange={(e) => setData('pin', e.target.value)}
+                                        placeholder="PIN"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPin(!showPin)}
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-background hover:text-background/80 focus:outline-none"
+                                        tabIndex={3}
+                                        disabled={processing}
+                                    >
+                                        {showPin ? <EyeOff className="h-4 w-4 text-black" /> : <Eye className="h-4 w-4 text-black" />}
+                                    </button>
                                 </div>
-                                <Input
-                                    id="pin"
-                                    type="password"
-                                    className="placeholder:text-white-500 text-background focus:ring-0 focus:ring-offset-0"
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    value={data.pin}
-                                    onChange={(e) => setData('pin', e.target.value)}
-                                    placeholder="PIN"
-                                />
                                 <InputError message={errors.pin} />
                             </div>
 
                             <Button
                                 type="submit"
                                 className="w-full bg-cfar-400 font-bold text-white transition-all duration-200 ease-in-out hover:bg-cfar-450 hover:text-white"
-                                tabIndex={4}
+                                tabIndex={5}
                                 disabled={processing}
                             >
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}

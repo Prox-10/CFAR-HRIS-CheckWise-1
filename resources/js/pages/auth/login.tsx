@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import LoginLoadingModal from '@/components/ui/login-loading-modal';
 import AuthLayout from '@/layouts/auth-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 
 type LoginForm = {
     email: string;
@@ -20,6 +20,7 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
+    const [showPassword, setShowPassword] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
         password: '',
@@ -71,17 +72,27 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 </TextLink>
                             )} */}
                         </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            // required
-                            className="placeholder:text-white-500 dark:placeholder:text-white-500 dark:text-white-500 text-background focus:ring-0 focus:ring-offset-0"
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                // required
+                                className="placeholder:text-white-500 dark:placeholder:text-white-500 dark:text-white-500 pr-10 text-background focus:ring-0 focus:ring-offset-0"
+                                tabIndex={2}
+                                autoComplete="current-password"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-background hover:text-background/80 focus:outline-none"
+                                tabIndex={3}
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4 text-black" /> : <Eye className="h-4 w-4 text-black" />}
+                            </button>
+                        </div>
                         <InputError message={errors.password} />
                     </div>
 
@@ -99,7 +110,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     <Button
                         type="submit"
                         className="hover:bg-background-600 dark:text-white-500 dark:hover:bg-smoke-500 dark:hover:text-white-500 mt-10 w-full bg-background font-bold text-black transition-all duration-200 ease-in-out hover:text-black dark:bg-cfar-50"
-                        tabIndex={4}
+                        tabIndex={5}
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}

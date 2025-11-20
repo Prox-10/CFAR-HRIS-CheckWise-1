@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\LeaveCredit;
 use App\Models\AbsenceCredit;
 use App\Models\User;
+use App\Models\SupervisorDepartment;
+use App\Models\HRDepartmentAssignment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -766,6 +768,16 @@ class AbsenceController extends Controller
         })->first();
 
         $approvedAbsences = $absences->map(function ($absence) {
+            // Get department supervisor from supervisor_departments table
+            $departmentSupervisor = SupervisorDepartment::where('department', $absence->department)
+                ->with('user')
+                ->first();
+
+            // Get HR person from hr_department_assignments table
+            $departmentHR = HRDepartmentAssignment::where('department', $absence->department)
+                ->with('user')
+                ->first();
+
             return [
                 'id' => $absence->id,
                 'absence_type' => $absence->absence_type,
@@ -790,6 +802,14 @@ class AbsenceController extends Controller
                 'hr_approver' => $absence->hrApprover ? [
                     'id' => $absence->hrApprover->id,
                     'name' => $absence->hrApprover->fullname,
+                ] : null,
+                'department_supervisor' => $departmentSupervisor && $departmentSupervisor->user ? [
+                    'id' => $departmentSupervisor->user->id,
+                    'name' => $departmentSupervisor->user->fullname,
+                ] : null,
+                'department_hr' => $departmentHR && $departmentHR->user ? [
+                    'id' => $departmentHR->user->id,
+                    'name' => $departmentHR->user->fullname,
                 ] : null,
             ];
         })->toArray();

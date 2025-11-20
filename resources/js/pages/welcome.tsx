@@ -30,8 +30,8 @@ export default function Welcome() {
         }}
       >
         {/* Overlay for darkening */}
-        <div className="absolute inset-0 bg-black/70"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-green-700/10 via-green-400/20 to-green-900/100"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-700/10 via-green-400/20 to-green-950/100"></div>
       </div>
 
       {/* Content */}

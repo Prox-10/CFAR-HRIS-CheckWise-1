@@ -24,7 +24,7 @@ const Hero = () => {
                       <span className="text-cfar-50 mt-4 block text-3xl font-normal md:text-4xl">Biometric Attendance Management System</span>
                   </h1>
                   <p className="mx-auto mb-8 max-w-2xl text-xl font-sans text-white/90 md:text-2xl">
-                      Streamline your workforce management with cutting-edge biometric technology
+                      Modernized your workforce management with cutting-edge biometric technology
                   </p>
                   <div className="flex flex-col justify-center gap-4 sm:flex-row">
                       <Button

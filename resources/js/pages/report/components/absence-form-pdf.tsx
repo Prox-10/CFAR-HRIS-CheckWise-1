@@ -20,6 +20,8 @@ interface Absence {
     picture: string | null;
     supervisor_approver: { id: number; name: string } | null;
     hr_approver: { id: number; name: string } | null;
+    department_supervisor: { id: number; name: string } | null;
+    department_hr: { id: number; name: string } | null;
 }
 
 interface AbsenceFormPDFProps {
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
         width: 60,
     },
     recipientLine: {
-        flex: 1,
+        width: '20%',
         borderBottomWidth: 0.8,
         borderColor: '#000',
         marginLeft: 10,
@@ -203,23 +205,31 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
                     <View style={styles.separator} />
 
                     {/* Title */}
-                    <Text style={styles.title}>ABSENT FROM</Text>
+                    <Text style={styles.title}>ABSENT FORM</Text>
 
                     {/* Recipient Section */}
                     <View style={styles.recipientSection}>
                         <View style={styles.recipientRow}>
                             <Text style={styles.recipientLabel}>TO :</Text>
-                            <View style={styles.recipientLine} />
+                            <View style={styles.recipientLine}>
+                                {absence.department_supervisor && (
+                                    <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>
+                                        {absence.department_supervisor.name.toUpperCase()}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                         <View style={styles.recipientRow}>
                             <Text style={styles.recipientLabel}>FROM :</Text>
-                            <View style={[styles.recipientLine, { flex: 1 }]}>
-                                <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{absence.employee_name}</Text>
+                            <View style={styles.recipientLine}>
+                                {absence.department_hr && (
+                                    <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{absence.department_hr.name.toUpperCase()}</Text>
+                                )}
                             </View>
                         </View>
                         <View style={styles.recipientRow}>
                             <Text style={styles.recipientLabel}>DATE :</Text>
-                            <View style={[styles.recipientLine, { flex: 1 }]}>
+                            <View style={styles.recipientLine}>
                                 <Text style={{ fontSize: 9, marginLeft: 4, marginTop: 2 }}>{formatDate(absence.submitted_at)}</Text>
                             </View>
                         </View>
@@ -229,8 +239,10 @@ export default function AbsenceFormPDF({ absence, hrEmployeeName }: AbsenceFormP
                     <View style={styles.bodyText}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, flexWrap: 'wrap' }}>
                             <Text>This is to inform you that </Text>
-                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }} />
-                            <Text style={{ marginBottom: 2 }}>file a leave of absence</Text>
+                            {/* <View style={{ borderBottomWidth: 0.8, borderColor: '#000', width: 120, height: 12, marginLeft: 4 }}> */}
+                            <Text style={{ fontSize: 9, marginLeft: 2, textDecoration: 'underline' }}>{absence.employee_name.toUpperCase()}</Text>
+                            {/* </View> */}
+                            <Text style={{ marginBottom: 2 }}> file a leave of absence</Text>
                         </View>
 
                         <View style={{ marginTop: 8, marginBottom: 8 }}>
