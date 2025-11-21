@@ -1,10 +1,12 @@
 import { AppSidebar } from '@/components/app-sidebar';
 import { Main } from '@/components/customize/main';
+import ResumeToWorkPDF from '@/components/pdf/resume-to-work-pdf';
 import SidebarHoverZone from '@/components/sidebar-hover-zone';
 import { SiteHeader } from '@/components/site-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -13,10 +15,10 @@ import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { Calendar, CheckCircle, Clock, FileText, User, UserCheck } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, FileText, Pencil, Send, User, UserCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Toaster, toast } from 'sonner';
-import AddResumeModal from './components/add-resume-modal';
+import EditResumeModal from './components/edit-resume-modal';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -37,6 +39,7 @@ interface ApprovedLeave {
     id: string;
     employee_name: string;
     employeeid: string;
+    employee_id_db?: string;
     department: string;
     position: string;
     leave_type: string;
@@ -54,6 +57,7 @@ interface ApprovedAbsence {
     id: string;
     employee_name: string;
     employee_id_number: string;
+    employee_id_db?: string;
     department: string;
     position: string;
     absence_type: string;
@@ -70,7 +74,8 @@ interface ApprovedAbsence {
 interface ResumeToWorkRequest {
     id: string;
     employee_name: string;
-    employee_id: string;
+    employee_id: string; // Database ID
+    employee_id_number?: string; // Employee ID number for display
     department: string;
     position: string;
     return_date: string;
@@ -113,7 +118,10 @@ export default function ResumeToWorkIndex({
     const [requests, setRequests] = useState<ResumeToWorkRequest[]>(resumeRequests);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'leave' | 'absence'>('all');
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<ResumeToWorkRequest | null>(null);
+    const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+    const [pdfRequest, setPdfRequest] = useState<ResumeToWorkRequest | null>(null);
     const { auth } = usePage().props as any;
 
     // Get URL query parameters
@@ -275,6 +283,104 @@ export default function ResumeToWorkIndex({
             return matchQ && matchStatus && isFullyApproved;
         });
     }, [approvedAbsences, search, statusFilter]);
+
+    // Filter resume requests
+    const filteredRequests = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return requests.filter((request) => {
+            return !q || `${request.employee_name} ${request.department} ${request.employee_id}`.toLowerCase().includes(q);
+        });
+    }, [requests, search]);
+
+    const handleEditRequest = (request: ResumeToWorkRequest) => {
+        setSelectedRequest(request);
+        setIsEditModalOpen(true);
+    };
+
+    const handleViewPDF = (request: ResumeToWorkRequest) => {
+        setPdfRequest(request);
+        setIsPdfViewerOpen(true);
+    };
+
+    const handleSendEmail = (request: ResumeToWorkRequest) => {
+        // Extract the actual ID from the request (handle both 'resume_' and 'return_' prefixes)
+        const requestId =
+            request.id.startsWith('resume_') || request.id.startsWith('return_') ? request.id.replace(/^(resume_|return_)/, '') : request.id;
+
+        router.post(
+            route('resume-to-work.send-email', { resumeToWork: requestId }),
+            {},
+            {
+                onSuccess: () => {
+                    toast.success('Email sent successfully!');
+                },
+                onError: (errors) => {
+                    console.error('Email sending errors:', errors);
+                    toast.error('Failed to send email. Please try again.');
+                },
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleEditLeave = (leave: ApprovedLeave) => {
+        // Navigate to leave edit page
+        try {
+            router.visit(route('leave.edit', { leave: leave.id }), {
+                preserveScroll: true,
+            });
+        } catch (error) {
+            toast.info('Edit functionality for leaves is available in the Leave Management page');
+        }
+    };
+
+    const handleEditAbsence = (absence: ApprovedAbsence) => {
+        // Navigate to absence page (edit functionality may be available there)
+        try {
+            router.visit(route('absence.index'), {
+                preserveScroll: true,
+            });
+            toast.info(`Navigate to Absence Management to edit absence #${absence.id}`);
+        } catch (error) {
+            toast.info('Edit functionality for absences is available in the Absence Management page');
+        }
+    };
+
+    const handleCreateResumeFromLeave = (leave: ApprovedLeave) => {
+        // Find the employee by employee_id_db
+        const employee = employees.find((e) => e.id === leave.employee_id_db);
+        if (!employee) {
+            toast.error('Employee not found');
+            return;
+        }
+
+        // Calculate return date (day after leave ends)
+        const endDate = new Date(leave.leave_end_date);
+        endDate.setDate(endDate.getDate() + 1);
+        const returnDate = format(endDate, 'yyyy-MM-dd');
+
+        // Create resume-to-work request directly
+        router.post(
+            route('resume-to-work.store'),
+            {
+                employee_id: employee.id,
+                return_date: returnDate,
+                previous_absence_reference: `Leave Request #${leave.id} - ${leave.leave_type}`,
+                comments: `Resume to work after approved leave: ${leave.leave_type}`,
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Resume to work request created successfully!');
+                },
+                onError: (errors) => {
+                    console.error('Creation errors:', errors);
+                    toast.error('Failed to create resume to work request. Please try again.');
+                },
+                preserveScroll: true,
+            },
+        );
+    };
+
 
     // If specific leave_id or absence_id is provided, filter to show only that item
     const selectedLeave = useMemo(() => {
@@ -500,7 +606,15 @@ export default function ResumeToWorkIndex({
     );
 
     // Component for displaying approved leave card
-    const ApprovedLeaveCardComponent = ({ leave, onCreateResume }: { leave: ApprovedLeave; onCreateResume: () => void }) => {
+    const ApprovedLeaveCardComponent = ({
+        leave,
+        onCreateResume,
+        onEdit,
+    }: {
+        leave: ApprovedLeave;
+        onCreateResume: (leave: ApprovedLeave) => void;
+        onEdit?: (leave: ApprovedLeave) => void;
+    }) => {
         const calculateReturnDate = () => {
             const endDate = new Date(leave.leave_end_date);
             endDate.setDate(endDate.getDate() + 1); // Day after leave ends
@@ -556,17 +670,38 @@ export default function ResumeToWorkIndex({
                             </div>
                         </div>
                     </div>
-                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Create Resume to Work
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => onCreateResume(leave)} className="bg-main hover:bg-main/90 flex-1 text-white" size="sm">
+                            <UserCheck className="mr-2 h-4 w-4" />
+                            Create Resume to Work
+                        </Button>
+                        {onEdit && (
+                            <Button
+                                variant="outline"
+                                className="border-blue-400 text-blue-700 hover:bg-blue-50"
+                                onClick={() => onEdit(leave)}
+                                size="sm"
+                                title="Edit"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         );
     };
 
     // Component for displaying approved absence card
-    const ApprovedAbsenceCardComponent = ({ absence, onCreateResume }: { absence: ApprovedAbsence; onCreateResume: () => void }) => {
+    const ApprovedAbsenceCardComponent = ({
+        absence,
+        onCreateResume,
+        onEdit,
+    }: {
+        absence: ApprovedAbsence;
+        onCreateResume: (absence: ApprovedAbsence) => void;
+        onEdit?: (absence: ApprovedAbsence) => void;
+    }) => {
         const calculateReturnDate = () => {
             const endDate = new Date(absence.to_date);
             endDate.setDate(endDate.getDate() + 1); // Day after absence ends
@@ -622,10 +757,23 @@ export default function ResumeToWorkIndex({
                             </div>
                         </div>
                     </div>
-                    <Button onClick={onCreateResume} className="bg-main hover:bg-main/90 w-full text-white" size="sm">
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Create Resume to Work
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => onCreateResume(absence)} className="bg-main hover:bg-main/90 flex-1 text-white" size="sm">
+                            <UserCheck className="mr-2 h-4 w-4" />
+                            Create Resume to Work
+                        </Button>
+                        {onEdit && (
+                            <Button
+                                variant="outline"
+                                className="border-blue-400 text-blue-700 hover:bg-blue-50"
+                                onClick={() => onEdit(absence)}
+                                size="sm"
+                                title="Edit"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -665,26 +813,7 @@ export default function ResumeToWorkIndex({
 
                         <Separator />
 
-                        {/* Show selected item if coming from specific leave/absence */}
-                        {(selectedLeave || selectedAbsence) && (
-                            <div className="p-4">
-                                <Card className="border-blue-200 bg-blue-50/50">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <FileText className="h-5 w-5 text-blue-600" />
-                                            {selectedLeave ? 'Approved Leave' : 'Approved Absence'} - Create Resume to Work
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {selectedLeave ? (
-                                            <ApprovedLeaveCardComponent leave={selectedLeave} onCreateResume={() => setIsAddModalOpen(true)} />
-                                        ) : selectedAbsence ? (
-                                            <ApprovedAbsenceCardComponent absence={selectedAbsence} onCreateResume={() => setIsAddModalOpen(true)} />
-                                        ) : null}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
+                      
 
                         {/* Show all approved leaves and absences */}
                         <div className="space-y-6 p-4">
@@ -699,32 +828,18 @@ export default function ResumeToWorkIndex({
                                     </div>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                         {filteredLeaves.map((leave) => (
-                                            <ApprovedLeaveCardComponent key={leave.id} leave={leave} onCreateResume={() => setIsAddModalOpen(true)} />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Approved Absences Section */}
-                            {filteredAbsences.length > 0 && (
-                                <div>
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <h2 className="text-lg font-semibold">Approved Absences ({filteredAbsences.length})</h2>
-                                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                                            Ready for Resume to Work
-                                        </Badge>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                        {filteredAbsences.map((absence) => (
-                                            <ApprovedAbsenceCardComponent
-                                                key={absence.id}
-                                                absence={absence}
-                                                onCreateResume={() => setIsAddModalOpen(true)}
+                                            <ApprovedLeaveCardComponent
+                                                key={leave.id}
+                                                leave={leave}
+                                                onCreateResume={handleCreateResumeFromLeave}
+                                                onEdit={handleEditLeave}
                                             />
                                         ))}
                                     </div>
                                 </div>
                             )}
+
+                           
 
                             {/* No approved items message */}
                             {filteredLeaves.length === 0 && filteredAbsences.length === 0 && (
@@ -736,10 +851,49 @@ export default function ResumeToWorkIndex({
                                     </p>
                                 </div>
                             )}
+
+                            {/* Resume to Work Requests Section */}
+                            {filteredRequests.length > 0 && (
+                                <div>
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold">Resume to Work Requests ({filteredRequests.length})</h2>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {filteredRequests.map((request) => (
+                                            <ResumeCard
+                                                key={request.id}
+                                                item={request}
+                                                onProcess={processRequest}
+                                                canProcess={userRole?.is_super_admin || userRole?.is_hr}
+                                                onDragStart={onDragStart}
+                                                onDragEnd={onDragEnd}
+                                                onEdit={handleEditRequest}
+                                                onViewPDF={handleViewPDF}
+                                                onSendEmail={handleSendEmail}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Add Resume Modal */}
-                        <AddResumeModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} employees={employees} />
+                        {/* Edit Resume Modal */}
+                        <EditResumeModal
+                            isOpen={isEditModalOpen}
+                            onClose={() => {
+                                setIsEditModalOpen(false);
+                                setSelectedRequest(null);
+                            }}
+                            employees={employees}
+                            request={selectedRequest}
+                        />
+
+                        {/* PDF Viewer Modal */}
+                        <Dialog open={isPdfViewerOpen} onOpenChange={setIsPdfViewerOpen}>
+                            <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
+                                {pdfRequest && <ResumeToWorkPDF request={pdfRequest} />}
+                            </DialogContent>
+                        </Dialog>
                     </Main>
                 </SidebarInset>
             </SidebarHoverLogic>
@@ -798,17 +952,24 @@ function ResumeCard({
     canProcess = false,
     onDragStart,
     onDragEnd,
+    onEdit,
+    onViewPDF,
+    onSendEmail,
 }: {
     item: ResumeToWorkRequest;
     onProcess?: (id: string) => void;
     canProcess?: boolean;
     onDragStart: (e: React.DragEvent, id: string) => void;
     onDragEnd: (e: React.DragEvent) => void;
+    onEdit?: (item: ResumeToWorkRequest) => void;
+    onViewPDF?: (item: ResumeToWorkRequest) => void;
+    onSendEmail?: (item: ResumeToWorkRequest) => void;
 }) {
     const {
         id,
         employee_name,
         employee_id,
+        employee_id_number,
         department,
         position,
         return_date,
@@ -839,7 +1000,7 @@ function ResumeCard({
                         <CardDescription className="flex items-center gap-1 text-xs">
                             <UserCheck className="h-3.5 w-3.5" /> {department} • {position}
                         </CardDescription>
-                        <CardDescription className="text-xs text-gray-500">ID: {employee_id}</CardDescription>
+                        <CardDescription className="text-xs text-gray-500">ID: {employee_id_number || employee_id}</CardDescription>
                     </div>
                     {getStatusBadge(status)}
                 </div>
@@ -850,7 +1011,7 @@ function ResumeCard({
                         <Calendar className="h-3.5 w-3.5" /> Return Date: {format(new Date(return_date), 'MMM dd, yyyy')}
                     </div>
                 </div>
-                <div className="text-xs text-muted-foreground">Submitted {format(new Date(created_at), 'MMM dd, yyyy HH:mm')}</div>
+                <div className="text-xstext-muted-foreground">Submitted {format(new Date(created_at), 'MMM dd, yyyy HH:mm')}</div>
 
                 {previous_absence_reference && (
                     <div className="rounded-md bg-muted/40 p-2 text-sm">
@@ -875,17 +1036,50 @@ function ResumeCard({
                     </div>
                 )}
 
-                {status === 'pending' && canProcess && (
-                    <div className="flex gap-2 pt-1">
+                <div className="z-50 flex flex-wrap gap-2 pt-1 bg-red-500">
+                    {status === 'pending' && canProcess && (
                         <Button
                             variant="outline"
-                            className="flex-1 border-green-400 text-green-700 hover:bg-green-50"
+                            className="flex-1 border-green-400 text-green-700 bg-green-500"
                             onClick={() => onProcess?.(id)}
                         >
                             <CheckCircle className="mr-1 h-4 w-4" /> Process
                         </Button>
-                    </div>
-                )}
+                    )}
+                    {onEdit && status === 'pending' && (
+                        <Button
+                            variant="outline"
+                            className="border-blue-400 text-blue-700 hover:bg-blue-50"
+                            onClick={() => onEdit(item)}
+                            size="sm"
+                            title="Edit request"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {onViewPDF && (
+                        <Button
+                            variant="outline"
+                            className="border-purple-400 text-purple-700 hover:bg-purple-50"
+                            onClick={() => onViewPDF(item)}
+                            size="sm"
+                            title="View PDF"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {onSendEmail && (
+                        <Button
+                            variant="outline"
+                            className="border-orange-400 text-orange-700 hover:bg-orange-50"
+                            onClick={() => onSendEmail(item)}
+                            size="sm"
+                            title="Send Email"
+                        >
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );

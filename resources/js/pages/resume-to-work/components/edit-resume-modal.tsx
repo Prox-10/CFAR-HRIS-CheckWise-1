@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, User } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { CalendarIcon, Pencil } from 'lucide-react';
+import { FormEventHandler, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Employee {
@@ -21,23 +21,55 @@ interface Employee {
     position: string;
 }
 
-interface AddResumeModalProps {
+interface ResumeToWorkRequest {
+    id: string;
+    employee_name: string;
+    employee_id: string;
+    department: string;
+    position: string;
+    return_date: string;
+    previous_absence_reference: string;
+    comments: string;
+    status: 'pending' | 'processed';
+}
+
+interface EditResumeModalProps {
     isOpen: boolean;
     onClose: () => void;
     employees: Employee[];
+    request: ResumeToWorkRequest | null;
 }
 
-const AddResumeModal = ({ isOpen, onClose, employees = [] }: AddResumeModalProps) => {
+const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResumeModalProps) => {
     const [returnDateOpen, setReturnDateOpen] = useState(false);
     const [returnDate, setReturnDate] = useState<Date | undefined>();
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const { data, setData, errors, processing, reset, post } = useForm({
+    const { data, setData, errors, processing, reset, put } = useForm({
         employee_id: '',
         return_date: '',
         previous_absence_reference: '',
         comments: '',
     });
+
+    // Populate form when request is provided
+    useEffect(() => {
+        if (request && isOpen) {
+            // Find employee by database ID (request.employee_id is now the database ID)
+            const employee = employees.find((e) => e.id === request.employee_id);
+            if (employee) {
+                setSelectedEmployee(employee);
+            }
+            const returnDateValue = request.return_date ? new Date(request.return_date) : undefined;
+            setReturnDate(returnDateValue);
+            setData({
+                employee_id: request.employee_id || '',
+                return_date: request.return_date || '',
+                previous_absence_reference: request.previous_absence_reference || '',
+                comments: request.comments || '',
+            });
+        }
+    }, [request, isOpen, employees]);
 
     const resetState = () => {
         reset();
@@ -82,16 +114,25 @@ const AddResumeModal = ({ isOpen, onClose, employees = [] }: AddResumeModalProps
         if (!data.return_date) {
             toast.error('Please select a return date');
             return;
-        } 
+        }
 
-        post(route('resume-to-work.store'), {
+        if (!request) {
+            toast.error('No request selected for editing');
+            return;
+        }
+
+        // Extract the actual ID from the request (handle both 'resume_' and 'return_' prefixes)
+        const requestId =
+            request.id.startsWith('resume_') || request.id.startsWith('return_') ? request.id.replace(/^(resume_|return_)/, '') : request.id;
+
+        put(route('resume-to-work.update', { resumeToWork: requestId }), {
             onSuccess: () => {
-                toast.success('Resume to work request submitted successfully!');
+                toast.success('Resume to work request updated successfully!');
                 closeNow();
             },
             onError: (errors) => {
-                console.error('Submission errors:', errors);
-                toast.error('Failed to submit resume to work request. Please check your input.');
+                console.error('Update errors:', errors);
+                toast.error('Failed to update resume to work request. Please check your input.');
             },
         });
     };
@@ -104,8 +145,8 @@ const AddResumeModal = ({ isOpen, onClose, employees = [] }: AddResumeModalProps
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Submit Resume to Work Request
+                        <Pencil className="h-5 w-5" />
+                        Edit Resume to Work Request
                     </DialogTitle>
                 </DialogHeader>
 
@@ -190,7 +231,7 @@ const AddResumeModal = ({ isOpen, onClose, employees = [] }: AddResumeModalProps
                             Cancel
                         </Button>
                         <Button type="submit" disabled={processing}>
-                            {processing ? 'Submitting...' : 'Submit Request'}
+                            {processing ? 'Updating...' : 'Update Request'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -199,4 +240,4 @@ const AddResumeModal = ({ isOpen, onClose, employees = [] }: AddResumeModalProps
     );
 };
 
-export default AddResumeModal;
+export default EditResumeModal;

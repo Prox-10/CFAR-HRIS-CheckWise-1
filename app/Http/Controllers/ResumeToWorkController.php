@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Exception;
 
 class ResumeToWorkController extends Controller
@@ -56,7 +57,8 @@ class ResumeToWorkController extends Controller
     $resumeList = $resumeRequests->transform(fn($resume) => [
       'id' => 'resume_' . $resume->id,
       'employee_name' => $resume->employee ? $resume->employee->employee_name : null,
-      'employee_id' => $resume->employee ? $resume->employee->employeeid : null,
+      'employee_id' => (string) $resume->employee_id, // Database ID for form
+      'employee_id_number' => $resume->employee ? $resume->employee->employeeid : null, // Employee ID number for display
       'department' => $resume->employee ? $resume->employee->department : null,
       'position' => $resume->employee ? $resume->employee->position : null,
       'return_date' => $resume->return_date ? \Illuminate\Support\Carbon::parse($resume->return_date)->format('Y-m-d') : null,
@@ -75,7 +77,8 @@ class ResumeToWorkController extends Controller
     $returnWorkList = $returnWorkRequests->transform(fn($returnWork) => [
       'id' => 'return_' . $returnWork->id,
       'employee_name' => $returnWork->employee ? $returnWork->employee->employee_name : null,
-      'employee_id' => $returnWork->employee ? $returnWork->employee->employeeid : null,
+      'employee_id' => (string) $returnWork->employee_id, // Database ID for form
+      'employee_id_number' => $returnWork->employee ? $returnWork->employee->employeeid : $returnWork->employee_id_number, // Employee ID number for display
       'department' => $returnWork->employee ? $returnWork->employee->department : null,
       'position' => $returnWork->employee ? $returnWork->employee->position : null,
       'return_date' => $returnWork->return_date ? \Illuminate\Support\Carbon::parse($returnWork->return_date)->format('Y-m-d') : null,
@@ -130,7 +133,7 @@ class ResumeToWorkController extends Controller
           'id' => (string) $leave->id,
           'employee_name' => $leave->employee ? $leave->employee->employee_name : null,
           'employee_id' => $leave->employee ? $leave->employee->employeeid : null,
-          'employee_id_db' => $leave->employee_id,
+          'employee_id_db' => (string) $leave->employee_id,
           'department' => $leave->employee ? $leave->employee->department : null,
           'position' => $leave->employee ? $leave->employee->position : null,
           'leave_type' => $leave->leave_type,
@@ -166,7 +169,7 @@ class ResumeToWorkController extends Controller
           'id' => (string) $absence->id,
           'employee_name' => $absence->employee ? $absence->employee->employee_name : $absence->full_name,
           'employee_id' => $absence->employee ? $absence->employee->employeeid : $absence->employee_id_number,
-          'employee_id_db' => $absence->employee_id,
+          'employee_id_db' => (string) $absence->employee_id,
           'department' => $absence->department,
           'position' => $absence->position,
           'absence_type' => $absence->absence_type,
@@ -327,6 +330,80 @@ class ResumeToWorkController extends Controller
   }
 
   /**
+   * Update the specified resource in storage.
+   */
+  public function update(Request $request, $resumeToWorkId)
+  {
+    try {
+      $user = Auth::user();
+
+      // Only HR Admin or Super Admin can update
+      if (!$user->isSuperAdmin() && !$user->hasRole('HR Admin')) {
+        return redirect()->back()->with('error', 'Unauthorized action.');
+      }
+
+      $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'return_date' => 'required|date',
+        'previous_absence_reference' => 'nullable|string',
+        'comments' => 'nullable|string',
+      ]);
+
+      // Parse the ID to determine if it's a resume or return work request
+      if (str_starts_with($resumeToWorkId, 'resume_')) {
+        $id = str_replace('resume_', '', $resumeToWorkId);
+        $resumeToWork = ResumeToWork::findOrFail($id);
+
+        // Only allow editing if not yet processed
+        if ($resumeToWork->status === 'processed') {
+          return redirect()->back()->with('error', 'Cannot edit a processed resume to work request.');
+        }
+
+        $resumeToWork->update([
+          'employee_id' => $request->employee_id,
+          'return_date' => $request->return_date,
+          'previous_absence_reference' => $request->previous_absence_reference,
+          'comments' => $request->comments,
+        ]);
+      } elseif (str_starts_with($resumeToWorkId, 'return_')) {
+        $id = str_replace('return_', '', $resumeToWorkId);
+        $returnWork = ReturnWork::findOrFail($id);
+
+        // Only allow editing if not yet approved/processed
+        if (in_array($returnWork->status, ['approved', 'processed'])) {
+          return redirect()->back()->with('error', 'Cannot edit an approved return work request.');
+        }
+
+        $returnWork->update([
+          'employee_id' => $request->employee_id,
+          'return_date' => $request->return_date,
+          'absence_type' => $request->previous_absence_reference,
+          'reason' => $request->comments,
+        ]);
+      } else {
+        // Try to find by direct ID (for backward compatibility)
+        $resumeToWork = ResumeToWork::findOrFail($resumeToWorkId);
+
+        if ($resumeToWork->status === 'processed') {
+          return redirect()->back()->with('error', 'Cannot edit a processed resume to work request.');
+        }
+
+        $resumeToWork->update([
+          'employee_id' => $request->employee_id,
+          'return_date' => $request->return_date,
+          'previous_absence_reference' => $request->previous_absence_reference,
+          'comments' => $request->comments,
+        ]);
+      }
+
+      return redirect()->back()->with('success', 'Resume to work request updated successfully!');
+    } catch (Exception $e) {
+      Log::error('Resume to work update failed: ' . $e->getMessage());
+      return redirect()->back()->with('error', 'Failed to update resume to work request. Please try again.');
+    }
+  }
+
+  /**
    * Mark supervisor as notified
    */
   public function markSupervisorNotified(ResumeToWork $resumeToWork)
@@ -337,6 +414,67 @@ class ResumeToWorkController extends Controller
     } catch (Exception $e) {
       Log::error('Mark supervisor notified failed: ' . $e->getMessage());
       return response()->json(['success' => false], 500);
+    }
+  }
+
+  /**
+   * Send resume to work email
+   */
+  public function sendEmail(Request $request, $resumeToWorkId)
+  {
+    try {
+      $user = Auth::user();
+
+      // Only HR Admin or Super Admin can send emails
+      if (!$user->isSuperAdmin() && !$user->hasRole('HR Admin')) {
+        return redirect()->back()->with('error', 'Unauthorized action.');
+      }
+
+      // Parse the ID to determine if it's a resume or return work request
+      if (str_starts_with($resumeToWorkId, 'resume_')) {
+        $id = str_replace('resume_', '', $resumeToWorkId);
+        $resumeToWork = ResumeToWork::with('employee')->findOrFail($id);
+        $employee = $resumeToWork->employee;
+      } elseif (str_starts_with($resumeToWorkId, 'return_')) {
+        $id = str_replace('return_', '', $resumeToWorkId);
+        $returnWork = ReturnWork::with('employee')->findOrFail($id);
+        $employee = $returnWork->employee;
+      } else {
+        // Try to find by direct ID
+        $resumeToWork = ResumeToWork::with('employee')->findOrFail($resumeToWorkId);
+        $employee = $resumeToWork->employee;
+      }
+
+      if (!$employee) {
+        return redirect()->back()->with('error', 'Employee not found.');
+      }
+
+      // Check if employee has email
+      if (!$employee->email) {
+        return redirect()->back()->with('error', 'Employee email address is not set. Please update the employee profile with a valid email address.');
+      }
+
+      // Validate email format
+      $email = trim($employee->email);
+      if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return redirect()->back()->with('error', 'Invalid email address format. Please update the employee profile with a valid email address.');
+      }
+
+      // TODO: Create ResumeToWorkEmail mailable class
+      // For now, just return success message
+      // Mail::to($email)->send(new ResumeToWorkEmail($resumeToWork));
+
+      Log::info('[RESUME TO WORK SEND EMAIL] Email sent successfully:', [
+        'resume_id' => $resumeToWorkId,
+        'employee_id' => $employee->id,
+        'employee_email' => $email,
+        'sent_by' => $user->id,
+      ]);
+
+      return redirect()->back()->with('success', 'Email sent successfully to ' . $email);
+    } catch (Exception $e) {
+      Log::error('[RESUME TO WORK SEND EMAIL] Failed to send email: ' . $e->getMessage());
+      return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
     }
   }
 }

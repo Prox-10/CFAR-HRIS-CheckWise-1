@@ -130,8 +130,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['permission:View Resume to Work'])->group(function () {
         Route::get('resume-to-work', [ResumeToWorkController::class, 'index'])->name('resume-to-work.index');
         Route::post('resume-to-work', [ResumeToWorkController::class, 'store'])->name('resume-to-work.store');
+        Route::put('resume-to-work/{resumeToWork}', [ResumeToWorkController::class, 'update'])->name('resume-to-work.update');
         Route::patch('resume-to-work/{resumeToWork}/process', [ResumeToWorkController::class, 'process'])->name('resume-to-work.process');
         Route::patch('resume-to-work/{resumeToWork}/notify-supervisor', [ResumeToWorkController::class, 'markSupervisorNotified'])->name('resume-to-work.notify-supervisor');
+        Route::post('resume-to-work/{resumeToWork}/send-email', [ResumeToWorkController::class, 'sendEmail'])->name('resume-to-work.send-email');
     });
 });
 
