@@ -21,8 +21,8 @@ class LeaveSeeder extends Seeder
             $employees = Employee::factory()->count(0)->create();
         }
 
-        // Create 20 leaves, each assigned to a random existing employee
-        Leave::factory()->count(10)->make()->each(function ($leave) use ($employees) {
+        // Create 30 leaves, each assigned to a random existing employee
+        Leave::factory()->count(30)->make()->each(function ($leave) use ($employees) {
             $leave->employee_id = $employees->random()->id;
             $leave->save();
         });

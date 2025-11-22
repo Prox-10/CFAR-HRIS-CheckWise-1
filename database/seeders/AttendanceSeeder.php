@@ -11,63 +11,60 @@ class AttendanceSeeder extends Seeder
 {
   public function run()
   {
+    $targetCount = 200;
     $totalCreated = 0;
 
-    // Create employees and attendance for Daily Checking Page
-    // Packing Plant: 10 employees
-    $packingPlantEmployees = $this->createEmployeesForDepartment('Packing Plant', 50, ['Regular Hired Workers', 'Fruit Recorder', 'Probitionary', 'Seasonal']);
+    // Get all employees (or create some if none exist)
+    $employees = Employee::all();
 
-    // Coop Area: 8 employees
-    $coopAreaEmployees = $this->createEmployeesForDepartment('Coop Area', 30, ['Regular Hired Workers', 'Probitionary']);
+    if ($employees->count() === 0) {
+      $employees = Employee::factory()->count(20)->create();
+    }
 
-    // Add Crew: 20 employees
-    $addCrewEmployees = $this->createAddCrewEmployees(20);
-
-    // Generate attendance records for 2025 dates
-    // Create records for multiple weeks in 2025 (November and December for example)
+    // Generate exactly 200 attendance records
     $startDate = Carbon::parse('2025-11-01');
-    $endDate = Carbon::parse('2025-12-31');
+    $endDate = Carbon::now();
 
-    $allEmployees = $packingPlantEmployees->merge($coopAreaEmployees)->merge($addCrewEmployees);
+    while ($totalCreated < $targetCount) {
+      // Pick a random employee
+      $employee = $employees->random();
 
-    foreach ($allEmployees as $employee) {
-      $currentDate = $startDate->copy();
+      // Pick a random date within the range
+      $randomDays = rand(0, $startDate->diffInDays($endDate));
+      $randomDate = $startDate->copy()->addDays($randomDays);
 
-      while ($currentDate <= $endDate) {
-        // Skip weekends (Saturday = 6, Sunday = 0)
-        if ($currentDate->dayOfWeek !== 0 && $currentDate->dayOfWeek !== 6) {
-          // Randomly create attendance (80% chance to have attendance)
-          if (rand(1, 100) <= 80) {
-            $existing = Attendance::where('employee_id', $employee->id)
-              ->where('attendance_date', $currentDate->format('Y-m-d'))
-              ->first();
+      // Skip weekends
+      if ($randomDate->dayOfWeek === 0 || $randomDate->dayOfWeek === 6) {
+        continue;
+      }
 
-            if (!$existing) {
-              $session = $this->getRandomSession();
-              Attendance::create([
-                'employee_id' => $employee->id,
-                'time_in' => $this->generateTimeIn($session),
-                'time_out' => $this->generateTimeOut($session),
-                'break_time' => $this->generateBreakTime($session),
-                'attendance_status' => $this->generateAttendanceStatus(),
-                'actual_attendance_status' => null,
-                'attendance_date' => $currentDate->format('Y-m-d'),
-                'session' => $session,
-              ]);
-              $totalCreated++;
-            }
-          }
-        }
+      // Check if attendance already exists for this employee and date
+      $existing = Attendance::where('employee_id', $employee->id)
+        ->where('attendance_date', $randomDate->format('Y-m-d'))
+        ->first();
 
-        $currentDate->addDay();
+      if (!$existing) {
+        $session = $this->getRandomSession();
+        Attendance::create([
+          'employee_id' => $employee->id,
+          'time_in' => $this->generateTimeIn($session),
+          'time_out' => $this->generateTimeOut($session),
+          'break_time' => $this->generateBreakTime($session),
+          'attendance_status' => $this->generateAttendanceStatus(),
+          'actual_attendance_status' => null,
+          'attendance_date' => $randomDate->format('Y-m-d'),
+          'session' => $session,
+        ]);
+        $totalCreated++;
+      }
+
+      // Safety check to prevent infinite loop
+      if ($totalCreated >= $targetCount) {
+        break;
       }
     }
 
-    $this->output("\n=== Daily Checking Page Data ===");
-    $this->output("Packing Plant employees: {$packingPlantEmployees->count()}");
-    $this->output("Coop Area employees: {$coopAreaEmployees->count()}");
-    $this->output("Add Crew employees: {$addCrewEmployees->count()}");
-    $this->output("\nTotal attendance records created for 2025: {$totalCreated}");
+    $this->output("\nTotal attendance records created: {$totalCreated}");
     $this->displayStatistics();
   }
 
