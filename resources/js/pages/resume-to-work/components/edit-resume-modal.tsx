@@ -43,6 +43,7 @@ interface EditResumeModalProps {
 const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResumeModalProps) => {
     const [returnDateOpen, setReturnDateOpen] = useState(false);
     const [returnDate, setReturnDate] = useState<Date | undefined>();
+    const [originalReturnDate, setOriginalReturnDate] = useState<Date | undefined>();
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
     const { data, setData, errors, processing, reset, put } = useForm({
@@ -62,6 +63,8 @@ const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResum
             }
             const returnDateValue = request.return_date ? new Date(request.return_date) : undefined;
             setReturnDate(returnDateValue);
+            // Store the original return date for comparison
+            setOriginalReturnDate(returnDateValue);
             setData({
                 employee_id: request.employee_id || '',
                 return_date: request.return_date || '',
@@ -74,6 +77,7 @@ const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResum
     const resetState = () => {
         reset();
         setReturnDate(undefined);
+        setOriginalReturnDate(undefined);
         setSelectedEmployee(null);
     };
 
@@ -156,23 +160,36 @@ const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResum
                         <Label htmlFor="employee_id">
                             Employee <span className="text-red-500">*</span>
                         </Label>
-                        <Select value={data.employee_id} onValueChange={handleEmployeeSelect}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an employee" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {employees.map((employee) => (
-                                    <SelectItem key={employee.id} value={employee.id}>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{employee.employee_name}</span>
-                                            <span className="text-sm text-muted-foreground">
-                                                {employee.employeeid} • {employee.department} • {employee.position}
-                                            </span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {request ? (
+                            // Display employee name as read-only when editing existing request
+                            <div className="rounded-md border border-input bg-muted px-3 py-2">
+                                <div className="flex flex-col">
+                                    <span className="font-medium">{request.employee_name}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                        {selectedEmployee?.employeeid || request.employee_id} • {request.department} • {request.position}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            // Show dropdown when creating new request
+                            <Select value={data.employee_id} onValueChange={handleEmployeeSelect}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select an employee" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map((employee) => (
+                                        <SelectItem key={employee.id} value={employee.id}>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">{employee.employee_name}</span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    {employee.employeeid} • {employee.department} • {employee.position}
+                                                </span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                         <InputError message={errors.employee_id} />
                     </div>
 
@@ -198,6 +215,22 @@ const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResum
                                 />
                             </PopoverContent>
                         </Popover>
+                        {/* Show original return date from employee's leave/absence */}
+                        {request && originalReturnDate && (
+                            <div className="rounded-md border border-input bg-muted/50 px-3 py-2">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Original Return Date (from employee):</span>
+                                    <span className="font-medium">{format(originalReturnDate, 'PPP')}</span>
+                                </div>
+                                {/* Show comparison if date was changed */}
+                                {returnDate && returnDate.getTime() !== originalReturnDate.getTime() && (
+                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">HR Modified Return Date:</span>
+                                        <span className="font-semibold text-blue-600 dark:text-blue-400">{format(returnDate, 'PPP')}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <InputError message={errors.return_date} />
                     </div>
 
