@@ -8,7 +8,7 @@ import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sideb
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Calendar, Edit, FileText, Filter, Mail, Users, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Edit, FileText, Filter, Mail, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Toaster, toast } from 'sonner';
 import EditResumeModal from './components/edit-resume-modal';
@@ -178,6 +178,9 @@ export default function Index({ approvedLeaves = [], approvedAbsences = [], empl
     };
 
     const handlePDF = (item: CombinedItem) => {
+        // Use HR updated return date if available, otherwise use original return date
+        const returnDate = item.hr_return_date || (item.type === 'leave' ? item.leave_end_date : item.to_date);
+
         // Create resume-to-work request data for PDF
         const pdfRequest = {
             id: item.type === 'leave' ? `LEAVE-${item.id}` : `ABS-${item.id}`,
@@ -186,7 +189,7 @@ export default function Index({ approvedLeaves = [], approvedAbsences = [], empl
             employee_id_number: item.employee_id || 'N/A',
             department: item.department || 'N/A',
             position: item.position || 'N/A',
-            return_date: item.type === 'leave' ? item.leave_end_date : item.to_date,
+            return_date: returnDate,
             previous_absence_reference: item.type === 'leave' ? `Leave Request #${item.id}` : `Absence #${item.id}`,
             comments: item.type === 'leave' ? item.leave_reason : item.reason,
             status: 'processed' as const,
@@ -218,7 +221,7 @@ export default function Index({ approvedLeaves = [], approvedAbsences = [], empl
                     <SiteHeader breadcrumbs={breadcrumbs} title={''} />
                     <Main fixed>
                         <div className="mb-2 flex flex-wrap items-center justify-between space-y-2 gap-x-4">
-                            <div>
+                            <div className="flex items-center gap-4">
                                 <div className="ms-2 flex items-center">
                                     <Users className="size-11" />
                                     <div className="ms-2">
@@ -298,7 +301,7 @@ export default function Index({ approvedLeaves = [], approvedAbsences = [], empl
                                     {combinedItems.map((item) => (
                                         <Card
                                             key={`${item.type}-${item.id}`}
-                                            className="border-main dark:bg-backgrounds bg-background drop-shadow-lg"
+                                            className="border-emerald-200 bg-emerald-50/50 dark:bg-backgrounds transition-all duration-300 hover:scale-3d hover:shadow-lg"
                                         >
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-start justify-between">
@@ -404,6 +407,10 @@ export default function Index({ approvedLeaves = [], approvedAbsences = [], empl
                                     ))}
                                 </div>
                             )}
+                            {/* <Button variant="outline" onClick={() => router.visit('/resume-to-work')} className="mt-5 flex items-center gap-2">
+                                <ArrowLeft className="h-4 w-4" />
+                                Back
+                            </Button> */}
                         </div>
                     </Main>
                 </SidebarInset>

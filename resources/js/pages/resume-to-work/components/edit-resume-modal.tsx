@@ -129,7 +129,8 @@ const EditResumeModal = ({ isOpen, onClose, employees = [], request }: EditResum
         const requestId =
             request.id.startsWith('resume_') || request.id.startsWith('return_') ? request.id.replace(/^(resume_|return_)/, '') : request.id;
 
-        put(route('resume-to-work.update', { resumeToWork: requestId }), {
+        // Use direct URL path to avoid Ziggy route issues
+        put(`/resume-to-work/${requestId}`, {
             onSuccess: () => {
                 toast.success('Resume to work request updated successfully!');
                 closeNow();

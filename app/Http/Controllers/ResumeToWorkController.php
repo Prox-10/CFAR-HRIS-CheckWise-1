@@ -623,25 +623,66 @@ class ResumeToWorkController extends Controller
         return redirect()->back()->with('error', 'Employee email address is not set. Please update the employee profile with a valid email address.');
       }
 
-      // Validate email format
-      $email = trim($employee->email);
-      if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      // Validate employee email format
+      $employeeEmail = trim($employee->email);
+      if (!filter_var($employeeEmail, FILTER_VALIDATE_EMAIL)) {
         return redirect()->back()->with('error', 'Invalid email address format. Please update the employee profile with a valid email address.');
       }
 
-      // Send email using ResumeToWorkEmail mailable
-      Mail::to($email)->send(new \App\Mail\ResumeToWorkEmail($resumeToWork));
+      // Get supervisor for the employee's department
+      $supervisor = null;
+      $supervisorEmail = null;
+      if ($employee->department) {
+        $supervisor = User::getSupervisorForDepartment($employee->department);
+        if ($supervisor && $supervisor->email) {
+          $supervisorEmail = trim($supervisor->email);
+          // Validate supervisor email format
+          if (!filter_var($supervisorEmail, FILTER_VALIDATE_EMAIL)) {
+            Log::warning('[RESUME TO WORK SEND EMAIL] Invalid supervisor email format:', [
+              'supervisor_id' => $supervisor->id,
+              'supervisor_email' => $supervisorEmail,
+              'department' => $employee->department,
+            ]);
+            $supervisorEmail = null; // Skip supervisor email if invalid
+          }
+        }
+      }
+
+      // Mark as processed before sending email (if not already processed)
+      if ($resumeToWork->status !== 'processed') {
+        $resumeToWork->markAsProcessed($user->id);
+        // Reload to get updated data
+        $resumeToWork->refresh();
+      }
+
+      // Prepare email recipients
+      $recipients = [$employeeEmail];
+      if ($supervisorEmail) {
+        $recipients[] = $supervisorEmail;
+      }
+
+      // Send email using ResumeToWorkEmail mailable to both employee and supervisor
+      Mail::to($recipients)->send(new \App\Mail\ResumeToWorkEmail($resumeToWork));
+
+      // Build success message
+      $successMessage = 'Email sent successfully to ' . $employeeEmail;
+      if ($supervisorEmail) {
+        $successMessage .= ' and supervisor (' . $supervisorEmail . ')';
+      }
 
       Log::info('[RESUME TO WORK SEND EMAIL] Email sent successfully:', [
         'resume_id' => $resumeToWorkId,
         'resume_to_work_id' => $resumeToWork->id ?? null,
         'employee_id' => $employee->id,
-        'employee_email' => $email,
+        'employee_email' => $employeeEmail,
+        'supervisor_id' => $supervisor ? $supervisor->id : null,
+        'supervisor_email' => $supervisorEmail,
+        'department' => $employee->department,
         'sent_by' => $user->id,
         'sent_by_name' => $user->fullname ?? $user->name,
       ]);
 
-      return redirect()->back()->with('success', 'Email sent successfully to ' . $email);
+      return redirect()->back()->with('success', $successMessage);
     } catch (Exception $e) {
       Log::error('[RESUME TO WORK SEND EMAIL] Failed to send email: ' . $e->getMessage());
       return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
