@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Log;
+use App\Traits\EmployeeFilterTrait;
+use Illuminate\Support\Facades\Auth;
 
 
 
 class ServiceTenureController extends Controller
 {
+    use EmployeeFilterTrait;
     /**
      * Display a listing of the resource.
      */
@@ -22,9 +25,14 @@ class ServiceTenureController extends Controller
 
     public function employee()
     {
-        $employees = Employee::with(['serviceTenure' => function ($q) {
+        $user = Auth::user();
+
+        // Use filtered employees based on user role
+        $baseQuery = Employee::with(['serviceTenure' => function ($q) {
             $q->orderBy('created_at', 'desc');
-        }])->orderBy('employee_name')->get();
+        }]);
+
+        $employees = $this->getFilteredEmployees($user, $baseQuery);
 
         $employeeList = $employees->map(function ($employee) {
             $latestServiceTenure = $employee->serviceTenure->first();
@@ -73,9 +81,14 @@ class ServiceTenureController extends Controller
 
     public function serviceTenure()
     {
-        $employees = Employee::with(['serviceTenure' => function ($q) {
+        $user = Auth::user();
+
+        // Use filtered employees based on user role
+        $baseQuery = Employee::with(['serviceTenure' => function ($q) {
             $q->orderBy('created_at', 'desc');
-        }])->orderBy('employee_name')->get();
+        }]);
+
+        $employees = $this->getFilteredEmployees($user, $baseQuery);
 
         $employeeList = $employees->map(function ($employee) {
             $latestServiceTenure = $employee->serviceTenure->first();
@@ -125,14 +138,17 @@ class ServiceTenureController extends Controller
     public function payAdvancement()
     {
         try {
-            // Get all employees with service tenure, including those without service tenure records
-            $employees = Employee::with(['serviceTenure' => function ($q) {
+            $user = Auth::user();
+
+            // Base query with additional filters for pay advancement
+            $baseQuery = Employee::with(['serviceTenure' => function ($q) {
                 $q->orderBy('created_at', 'desc');
             }])
-                ->where('work_status', 'Regular')
-                // ->whereNotNull('service_tenure') // Only employees with service tenure date
-                ->orderBy('employee_name')
-                ->get();
+                ->where('work_status', 'Regular');
+            // ->whereNotNull('service_tenure') // Only employees with service tenure date
+
+            // Use filtered employees based on user role
+            $employees = $this->getFilteredEmployees($user, $baseQuery);
 
             // Debug: Log the count of employees found
             Log::info('Pay Advancement - Employees found: ' . $employees->count());
@@ -251,10 +267,14 @@ class ServiceTenureController extends Controller
     public function recalculate()
     {
         try {
-            // Get all employees with service tenure
-            $employees = Employee::with(['serviceTenure' => function ($q) {
+            $user = Auth::user();
+
+            // Use filtered employees based on user role
+            $baseQuery = Employee::with(['serviceTenure' => function ($q) {
                 $q->orderBy('created_at', 'desc');
-            }])->orderBy('employee_name')->get();
+            }]);
+
+            $employees = $this->getFilteredEmployees($user, $baseQuery);
 
             $employeeList = $employees->map(function ($employee) {
                 $latestServiceTenure = $employee->serviceTenure->first();

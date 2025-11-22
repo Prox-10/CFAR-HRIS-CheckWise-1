@@ -73,10 +73,48 @@ class User extends Authenticatable
      */
     public function canEvaluateDepartment($department)
     {
-        return $this->supervisedDepartments()
+        // Super Admin can evaluate any department
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Supervisor with can_evaluate permission
+        if ($this->supervisedDepartments()
             ->where('department', $department)
             ->where('can_evaluate', true)
-            ->exists();
+            ->exists()
+        ) {
+            return true;
+        }
+
+        // HR Personnel with assignment to this department and can_evaluate = true
+        if ($this->hrAssignments()
+            ->where('department', $department)
+            ->where('can_evaluate', true)
+            ->exists()
+        ) {
+            return true;
+        }
+
+        // Manager with assignment to this department and can_evaluate = true
+        if ($this->managerAssignments()
+            ->where('department', $department)
+            ->where('can_evaluate', true)
+            ->exists()
+        ) {
+            return true;
+        }
+
+        // Admin with assignment to this department and can_evaluate = true
+        if ($this->adminAssignments()
+            ->where('department', $department)
+            ->where('can_evaluate', true)
+            ->exists()
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -84,10 +122,60 @@ class User extends Authenticatable
      */
     public function getEvaluableDepartments()
     {
-        return $this->supervisedDepartments()
+        $departments = [];
+
+        // Super Admin can evaluate all departments
+        if ($this->isSuperAdmin()) {
+            return \App\Models\Employee::distinct()->pluck('department')->toArray();
+        }
+
+        // HR Personnel can evaluate all departments (no filtering by assignment)
+        if ($this->isHR() && $this->hrAssignments()->where('can_evaluate', true)->exists()) {
+            return \App\Models\Employee::distinct()->pluck('department')->toArray();
+        }
+
+        // Manager can evaluate all departments (no filtering by assignment)
+        if ($this->isManager() && $this->managerAssignments()->where('can_evaluate', true)->exists()) {
+            return \App\Models\Employee::distinct()->pluck('department')->toArray();
+        }
+
+        // Get departments from Supervisor assignments
+        $supervisorDepartments = $this->supervisedDepartments()
             ->where('can_evaluate', true)
             ->pluck('department')
             ->toArray();
+        $departments = array_merge($departments, $supervisorDepartments);
+
+        // Get departments from HR assignments with can_evaluate = true
+        // (Only if not already handled above - for non-HR role users)
+        if (!$this->isHR()) {
+            $hrDepartments = $this->hrAssignments()
+                ->where('can_evaluate', true)
+                ->pluck('department')
+                ->toArray();
+            $departments = array_merge($departments, $hrDepartments);
+        }
+
+        // Get departments from Manager assignments with can_evaluate = true
+        // (Only if not already handled above - for non-Manager role users)
+        if (!$this->isManager()) {
+            $managerDepartments = $this->managerAssignments()
+                ->where('can_evaluate', true)
+                ->pluck('department')
+                ->toArray();
+            $departments = array_merge($departments, $managerDepartments);
+        }
+
+        // Get departments from Admin assignments with can_evaluate = true
+        // Admin can only see their assigned departments (e.g., Mr. Kyle assigned to Utility sees only Utility)
+        $adminDepartments = $this->adminAssignments()
+            ->where('can_evaluate', true)
+            ->pluck('department')
+            ->toArray();
+        $departments = array_merge($departments, $adminDepartments);
+
+        // Remove duplicates and return
+        return array_unique($departments);
     }
 
     /**
@@ -107,11 +195,36 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user can evaluate (super admin or supervisor with permissions)
+     * Check if user can evaluate (super admin, supervisor, HR, manager, or admin with department assignments)
      */
     public function canEvaluate()
     {
-        return $this->isSuperAdmin() || ($this->isSupervisor() && $this->supervisedDepartments()->where('can_evaluate', true)->exists());
+        // Super Admin can always evaluate
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Supervisor with can_evaluate permission
+        if ($this->isSupervisor() && $this->supervisedDepartments()->where('can_evaluate', true)->exists()) {
+            return true;
+        }
+
+        // HR Personnel with department assignments and can_evaluate = true
+        if ($this->hrAssignments()->where('can_evaluate', true)->exists()) {
+            return true;
+        }
+
+        // Manager with department assignments and can_evaluate = true
+        if ($this->managerAssignments()->where('can_evaluate', true)->exists()) {
+            return true;
+        }
+
+        // Admin with department assignments and can_evaluate = true
+        if ($this->adminAssignments()->where('can_evaluate', true)->exists()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -173,5 +286,49 @@ class User extends Authenticatable
         })->whereHas('roles', function ($query) {
             $query->whereIn('name', ['HR', 'HR Manager', 'HR Personnel']);
         })->get();
+    }
+
+    /**
+     * Check if user has Manager role
+     */
+    public function isManager()
+    {
+        return $this->hasRole(['Manager', 'Department Manager']);
+    }
+
+    /**
+     * Get Manager assignments for this user
+     */
+    public function managerAssignments()
+    {
+        return $this->hasMany(ManagerDepartmentAssignment::class);
+    }
+
+    /**
+     * Get all departments this user handles as Manager
+     */
+    public function getManagerDepartments()
+    {
+        return $this->managerAssignments()
+            ->pluck('department')
+            ->toArray();
+    }
+
+    /**
+     * Get Admin assignments for this user
+     */
+    public function adminAssignments()
+    {
+        return $this->hasMany(AdminDepartmentAssignment::class);
+    }
+
+    /**
+     * Get all departments this user handles as Admin
+     */
+    public function getAdminDepartments()
+    {
+        return $this->adminAssignments()
+            ->pluck('department')
+            ->toArray();
     }
 }

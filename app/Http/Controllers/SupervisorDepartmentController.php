@@ -34,7 +34,7 @@ class SupervisorDepartmentController extends Controller
     // Get users with HR roles
     $hrPersonnel = User::whereHas('roles', function ($query) {
       $query->where('name', 'like', '%HR%')
-            ->orWhere('name', 'like', '%hr%');
+        ->orWhere('name', 'like', '%hr%');
     })->get()->map(function ($user) {
       return [
         'id' => $user->id,
@@ -48,7 +48,7 @@ class SupervisorDepartmentController extends Controller
     // Get users with Manager roles
     $managers = User::whereHas('roles', function ($query) {
       $query->where('name', 'like', '%Manager%')
-            ->orWhere('name', 'like', '%manager%');
+        ->orWhere('name', 'like', '%manager%');
     })->get()->map(function ($user) {
       return [
         'id' => $user->id,
@@ -69,6 +69,7 @@ class SupervisorDepartmentController extends Controller
         'id' => $assignment->id,
         'user_id' => $assignment->user_id,
         'department' => $assignment->department,
+        'can_evaluate' => $assignment->can_evaluate ?? true,
         'user' => [
           'id' => $assignment->user->id,
           'firstname' => $assignment->user->firstname,
@@ -84,6 +85,7 @@ class SupervisorDepartmentController extends Controller
         'id' => $assignment->id,
         'user_id' => $assignment->user_id,
         'department' => $assignment->department,
+        'can_evaluate' => $assignment->can_evaluate ?? true,
         'user' => [
           'id' => $assignment->user->id,
           'firstname' => $assignment->user->firstname,
@@ -96,14 +98,14 @@ class SupervisorDepartmentController extends Controller
     // Get evaluation frequencies for all departments
     $frequencies = [];
     foreach ($departments as $department) {
-        $config = EvaluationConfiguration::where('department', $department)->first();
-        $employeeCount = Employee::where('department', $department)->count();
+      $config = EvaluationConfiguration::where('department', $department)->first();
+      $employeeCount = Employee::where('department', $department)->count();
 
-        $frequencies[] = [
-            'department' => $department,
-            'evaluation_frequency' => $config ? $config->evaluation_frequency : 'annual',
-            'employee_count' => $employeeCount,
-        ];
+      $frequencies[] = [
+        'department' => $department,
+        'evaluation_frequency' => $config ? $config->evaluation_frequency : 'annual',
+        'employee_count' => $employeeCount,
+      ];
     }
 
     return Inertia::render('evaluation/supervisor-management', [
@@ -224,9 +226,32 @@ class SupervisorDepartmentController extends Controller
     HRDepartmentAssignment::create([
       'user_id' => $request->user_id,
       'department' => $request->department,
+      'can_evaluate' => $request->can_evaluate ?? true,
     ]);
 
     return back()->with('success', 'HR Personnel assignment created successfully.');
+  }
+
+  /**
+   * Update HR Personnel-department assignment
+   */
+  public function updateHRAssignment(Request $request, HRDepartmentAssignment $assignment)
+  {
+    $user = Auth::user();
+
+    if (!$user->isSuperAdmin()) {
+      return back()->withErrors(['error' => 'Access denied.']);
+    }
+
+    $request->validate([
+      'can_evaluate' => 'required|boolean',
+    ]);
+
+    $assignment->update([
+      'can_evaluate' => $request->can_evaluate,
+    ]);
+
+    return back()->with('success', 'HR Personnel assignment updated successfully.');
   }
 
   /**
@@ -271,9 +296,32 @@ class SupervisorDepartmentController extends Controller
     ManagerDepartmentAssignment::create([
       'user_id' => $request->user_id,
       'department' => $request->department,
+      'can_evaluate' => $request->can_evaluate ?? true,
     ]);
 
     return back()->with('success', 'Manager assignment created successfully.');
+  }
+
+  /**
+   * Update Manager-department assignment
+   */
+  public function updateManagerAssignment(Request $request, ManagerDepartmentAssignment $assignment)
+  {
+    $user = Auth::user();
+
+    if (!$user->isSuperAdmin()) {
+      return back()->withErrors(['error' => 'Access denied.']);
+    }
+
+    $request->validate([
+      'can_evaluate' => 'required|boolean',
+    ]);
+
+    $assignment->update([
+      'can_evaluate' => $request->can_evaluate,
+    ]);
+
+    return back()->with('success', 'Manager assignment updated successfully.');
   }
 
   /**

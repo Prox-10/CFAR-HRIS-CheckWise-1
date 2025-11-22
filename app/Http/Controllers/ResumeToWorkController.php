@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Leave;
 use App\Models\Absence;
 use App\Models\User;
+use App\Traits\EmployeeFilterTrait;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ use Exception;
 
 class ResumeToWorkController extends Controller
 {
+  use EmployeeFilterTrait;
+
   /**
    * Display a listing of the resource.
    */
@@ -27,14 +30,19 @@ class ResumeToWorkController extends Controller
     $isSupervisor = $user->isSupervisor();
     $isSuperAdmin = $user->isSuperAdmin();
 
-    // Get user's supervised departments if supervisor
-    $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+    // Get evaluable departments based on user role
+    // HR and Manager see all departments, Admin and Supervisor see only assigned
+    $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
     // Base query for resume to work requests (admin created)
     $resumeQuery = ResumeToWork::with('employee', 'processedBy');
 
     // Filter based on user role
-    if ($isSupervisor && !empty($supervisedDepartments)) {
+    // HR and Manager already get all requests, so only filter for Admin and Supervisor
+    $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+    $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+    if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
       $resumeQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
         $query->whereIn('department', $supervisedDepartments);
       });
@@ -46,7 +54,7 @@ class ResumeToWorkController extends Controller
     $returnWorkQuery = ReturnWork::with('employee');
 
     // Filter based on user role
-    if ($isSupervisor && !empty($supervisedDepartments)) {
+    if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
       $returnWorkQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
         $query->whereIn('department', $supervisedDepartments);
       });
@@ -101,7 +109,8 @@ class ResumeToWorkController extends Controller
     $employeeQuery = Employee::orderBy('employee_name');
 
     // Filter employees based on user role
-    if ($isSupervisor && !empty($supervisedDepartments)) {
+    // HR and Manager already get all employees, so only filter for Admin and Supervisor
+    if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
       $employeeQuery->whereIn('department', $supervisedDepartments);
     }
 
@@ -120,7 +129,8 @@ class ResumeToWorkController extends Controller
       ->where('leave_status', 'Approved');
 
     // Filter based on user role
-    if ($isSupervisor && !empty($supervisedDepartments)) {
+    // HR and Manager already get all leaves, so only filter for Admin and Supervisor
+    if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
       $approvedLeavesQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
         $query->whereIn('department', $supervisedDepartments);
       });
@@ -191,7 +201,8 @@ class ResumeToWorkController extends Controller
       ->where('status', 'approved');
 
     // Filter based on user role
-    if ($isSupervisor && !empty($supervisedDepartments)) {
+    // HR and Manager already get all absences, so only filter for Admin and Supervisor
+    if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
       $approvedAbsencesQuery->whereIn('department', $supervisedDepartments);
     }
 

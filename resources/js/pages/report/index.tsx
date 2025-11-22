@@ -311,25 +311,60 @@ const ReportPage = () => {
                                         <TabsContent value="evaluation" className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                                 <ReportCard
-                                                    title="Performance Summary"
-                                                    description="Summary of employee performance ratings"
+                                                    title="Admin Department Performance"
+                                                    description="Performance analysis by Admin Department"
                                                     icon={FileText}
                                                     variant="evaluation"
-                                                    buttonText="Generate Performance Report"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/admin-department-performance')}
                                                 />
                                                 <ReportCard
-                                                    title="Department Performance"
-                                                    description="Performance analysis by department"
+                                                    title="Packing Plant Performance"
+                                                    description="Performance analysis by Packing Plant"
                                                     icon={FileText}
                                                     variant="evaluation"
-                                                    buttonText="Generate Department Report"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/packing-plant-performance')}
                                                 />
                                                 <ReportCard
-                                                    title="Evaluation Completion"
-                                                    description="Status report on completed vs. pending evaluations"
+                                                    title="Harvesting Area Performance"
+                                                    description="Performance analysis by Harvesting Area"
                                                     icon={FileText}
                                                     variant="evaluation"
-                                                    buttonText="Generate Status Report"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/harvesting-area-performance')}
+                                                />
+                                                <ReportCard
+                                                    title="Coop Area Performance"
+                                                    description="Performance analysis by Coop Area"
+                                                    icon={FileText}
+                                                    variant="evaluation"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/coop-area-performance')}
+                                                />
+                                                <ReportCard
+                                                    title="Pest & Disease Performance"
+                                                    description="Performance analysis by Pest & Disease"
+                                                    icon={FileText}
+                                                    variant="evaluation"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/pest-disease-performance')}
+                                                />
+                                                <ReportCard
+                                                    title="Utility Performance"
+                                                    description="Performance analysis by Utility"
+                                                    icon={FileText}
+                                                    variant="evaluation"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/utility-performance')}
+                                                />
+                                                <ReportCard
+                                                    title="Engineering Department Performance"
+                                                    description="Performance analysis by Engineering Department"
+                                                    icon={FileText}
+                                                    variant="evaluation"
+                                                    buttonText="View"
+                                                    onClick={() => router.visit('/report/engineering-department-performance')}
                                                 />
                                             </div>
                                         </TabsContent>

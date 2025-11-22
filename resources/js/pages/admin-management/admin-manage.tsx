@@ -26,7 +26,7 @@ import { departments as globalDepartments } from '@/hooks/data';
 import { useSidebarHover } from '@/hooks/use-sidebar-hover';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Plus, Settings, Star, Trash2, UserCheck, UserCog, Users } from 'lucide-react';
+import { Plus, Settings, Star, Trash2, UserCheck, UserCog, Users, UserX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { EvaluationFrequencyManager } from './components/evaluation-frequency-manager';
@@ -69,6 +69,7 @@ interface HRAssignment {
     id: number;
     user_id: number;
     department: string;
+    can_evaluate: boolean;
     user: {
         id: number;
         firstname: string;
@@ -81,6 +82,20 @@ interface ManagerAssignment {
     id: number;
     user_id: number;
     department: string;
+    can_evaluate: boolean;
+    user: {
+        id: number;
+        firstname: string;
+        lastname: string;
+        email: string;
+    };
+}
+
+interface AdminAssignment {
+    id: number;
+    user_id: number;
+    department: string;
+    can_evaluate: boolean;
     user: {
         id: number;
         firstname: string;
@@ -109,6 +124,14 @@ interface Props {
     assignments: Assignment[];
     hr_assignments?: HRAssignment[];
     manager_assignments?: ManagerAssignment[];
+    admin_users?: Array<{
+        id: number;
+        firstname: string;
+        lastname: string;
+        email: string;
+        roles: string[];
+    }>;
+    admin_assignments?: AdminAssignment[];
     frequencies: Array<{
         department: string;
         evaluation_frequency: 'semi_annual' | 'annual';
@@ -129,6 +152,8 @@ export default function SupervisorManagement({
     assignments,
     hr_assignments = [],
     manager_assignments = [],
+    admin_users = [],
+    admin_assignments = [],
     frequencies,
     user_permissions,
 }: Props) {
@@ -142,12 +167,21 @@ export default function SupervisorManagement({
     const [newHRAssignment, setNewHRAssignment] = useState({
         user_id: '',
         departments: [] as string[],
+        can_evaluate: true,
         selectAll: false,
     });
 
     const [newManagerAssignment, setNewManagerAssignment] = useState({
         user_id: '',
         departments: [] as string[],
+        can_evaluate: true,
+        selectAll: false,
+    });
+
+    const [newAdminAssignment, setNewAdminAssignment] = useState({
+        user_id: '',
+        departments: [] as string[],
+        can_evaluate: true,
         selectAll: false,
     });
 
@@ -257,7 +291,7 @@ export default function SupervisorManagement({
                 setTimeout(() => {
                     if (errors.length === 0) {
                         toast.success(`HR Personnel assignment created successfully for ${successCount} department(s)`);
-                        setNewHRAssignment({ user_id: '', departments: [], selectAll: false });
+                        setNewHRAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
                     } else if (successCount > 0) {
                         toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
                     } else {
@@ -348,7 +382,7 @@ export default function SupervisorManagement({
                 setTimeout(() => {
                     if (errors.length === 0) {
                         toast.success(`Manager assignment created successfully for ${successCount} department(s)`);
-                        setNewManagerAssignment({ user_id: '', departments: [], selectAll: false });
+                        setNewManagerAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
                     } else if (successCount > 0) {
                         toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
                     } else {
@@ -430,8 +464,99 @@ export default function SupervisorManagement({
         }
     }, [manager_assignments]); // Re-run when manager_assignments prop changes (after Inertia reload)
 
+    // Helper function to process Admin assignment queue
+    const processAdminAssignmentQueue = (index: number) => {
+        const queueKey = 'admin_assignment_queue';
+        const processingKey = 'admin_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+
+        // Check if already processing to prevent duplicate calls
+        if (sessionStorage.getItem(processingKey) === 'true' && index > 0) {
+            return;
+        }
+
+        if (queue.length === 0 || index >= queue.length) {
+            // All done or no queue
+            const successCount = parseInt(sessionStorage.getItem('admin_assignment_queue_success') || '0');
+            const errors = JSON.parse(sessionStorage.getItem('admin_assignment_queue_errors') || '[]');
+
+            // Only show toast if we actually processed a queue
+            if (queue.length > 0 && successCount > 0) {
+                // Clean up first
+                sessionStorage.removeItem(queueKey);
+                sessionStorage.removeItem('admin_assignment_queue_index');
+                sessionStorage.removeItem('admin_assignment_queue_success');
+                sessionStorage.removeItem('admin_assignment_queue_errors');
+                sessionStorage.removeItem(processingKey);
+
+                // Show toast after a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    if (errors.length === 0) {
+                        toast.success(`Admin assignment created successfully for ${successCount} department(s)`);
+                        setNewAdminAssignment({ user_id: '', departments: [], can_evaluate: true, selectAll: false });
+                    } else if (successCount > 0) {
+                        toast.warning(`Created ${successCount} assignment(s), ${errors.length} failed`);
+                    } else {
+                        toast.error(`Failed to create assignments. ${errors[0] || 'Unknown error'}`);
+                    }
+                }, 100);
+            }
+            return;
+        }
+
+        // Mark as processing
+        sessionStorage.setItem(processingKey, 'true');
+
+        const assignment = queue[index];
+        router.post(route('evaluation.admin-management.store'), assignment, {
+            onSuccess: () => {
+                const successCount = parseInt(sessionStorage.getItem('admin_assignment_queue_success') || '0') + 1;
+                sessionStorage.setItem('admin_assignment_queue_success', successCount.toString());
+                sessionStorage.setItem('admin_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Process next assignment after a short delay (Inertia will reload first)
+                // The useEffect will pick up the queue and continue processing
+            },
+            onError: (error) => {
+                const errors = JSON.parse(sessionStorage.getItem('admin_assignment_queue_errors') || '[]');
+                const errorMessage = Object.values(error)[0] as string;
+                errors.push(errorMessage);
+                sessionStorage.setItem('admin_assignment_queue_errors', JSON.stringify(errors));
+                sessionStorage.setItem('admin_assignment_queue_index', (index + 1).toString());
+                // Clear processing flag - next assignment will set it again
+                sessionStorage.removeItem(processingKey);
+                // Continue with next assignment after Inertia reloads
+                // The useEffect will pick up the queue and continue processing
+            },
+            preserveState: true,
+            preserveScroll: true,
+            only: ['admin_assignments'],
+        });
+    };
+
+    // Check for ongoing Admin queue processing on mount and after admin_assignments update
+    useEffect(() => {
+        const queueKey = 'admin_assignment_queue';
+        const processingKey = 'admin_assignment_queue_processing';
+        const queue = JSON.parse(sessionStorage.getItem(queueKey) || '[]');
+        const currentIndex = parseInt(sessionStorage.getItem('admin_assignment_queue_index') || '0');
+        const isProcessing = sessionStorage.getItem(processingKey) === 'true';
+
+        // Only continue if there's a queue, we haven't finished (or just finished), and we're not already processing
+        // Use <= instead of < to allow one final call when currentIndex === queue.length to trigger completion
+        if (queue.length > 0 && currentIndex <= queue.length && !isProcessing) {
+            // Continue processing the queue after a short delay to ensure Inertia has finished updating
+            const timeoutId = setTimeout(() => {
+                processAdminAssignmentQueue(currentIndex);
+            }, 200);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [admin_assignments]); // Re-run when admin_assignments prop changes (after Inertia reload)
+
     // Helper functions for department selection
-    const handleSelectAllDepartments = (type: 'supervisor' | 'hr' | 'manager') => {
+    const handleSelectAllDepartments = (type: 'supervisor' | 'hr' | 'manager' | 'admin') => {
         if (type === 'supervisor') {
             const allSelected = newAssignment.selectAll;
             setNewAssignment({
@@ -453,10 +578,17 @@ export default function SupervisorManagement({
                 departments: allSelected ? [] : [...availableDepartments],
                 selectAll: !allSelected,
             });
+        } else if (type === 'admin') {
+            const allSelected = newAdminAssignment.selectAll;
+            setNewAdminAssignment({
+                ...newAdminAssignment,
+                departments: allSelected ? [] : [...availableDepartments],
+                selectAll: !allSelected,
+            });
         }
     };
 
-    const handleDepartmentToggle = (department: string, type: 'supervisor' | 'hr' | 'manager') => {
+    const handleDepartmentToggle = (department: string, type: 'supervisor' | 'hr' | 'manager' | 'admin') => {
         if (type === 'supervisor') {
             const isSelected = newAssignment.departments.includes(department);
             const newDepartments = isSelected
@@ -484,6 +616,16 @@ export default function SupervisorManagement({
                 : [...newManagerAssignment.departments, department];
             setNewManagerAssignment({
                 ...newManagerAssignment,
+                departments: newDepartments,
+                selectAll: newDepartments.length === availableDepartments.length,
+            });
+        } else if (type === 'admin') {
+            const isSelected = newAdminAssignment.departments.includes(department);
+            const newDepartments = isSelected
+                ? newAdminAssignment.departments.filter((d) => d !== department)
+                : [...newAdminAssignment.departments, department];
+            setNewAdminAssignment({
+                ...newAdminAssignment,
                 departments: newDepartments,
                 selectAll: newDepartments.length === availableDepartments.length,
             });
@@ -605,6 +747,7 @@ export default function SupervisorManagement({
         const assignmentsToCreate = newHRAssignment.departments.map((department) => ({
             user_id: newHRAssignment.user_id,
             department: department,
+            can_evaluate: newHRAssignment.can_evaluate,
         }));
 
         // Store the queue in sessionStorage to persist across page reloads
@@ -616,6 +759,23 @@ export default function SupervisorManagement({
 
         // Start processing from index 0
         processHRAssignmentQueue(0);
+    };
+
+    const handleUpdateHRAssignment = (assignmentId: number, canEvaluate: boolean) => {
+        router.put(
+            route('evaluation.hr-management.update', assignmentId),
+            {
+                can_evaluate: canEvaluate,
+            },
+            {
+                onSuccess: () => {
+                    toast.success('HR Personnel assignment updated successfully');
+                },
+                onError: (errors) => {
+                    toast.error(Object.values(errors)[0] as string);
+                },
+            },
+        );
     };
 
     const handleDeleteHRAssignment = (assignmentId: number) => {
@@ -655,6 +815,7 @@ export default function SupervisorManagement({
         const assignmentsToCreate = newManagerAssignment.departments.map((department) => ({
             user_id: newManagerAssignment.user_id,
             department: department,
+            can_evaluate: newManagerAssignment.can_evaluate,
         }));
 
         // Store the queue in sessionStorage to persist across page reloads
@@ -668,10 +829,93 @@ export default function SupervisorManagement({
         processManagerAssignmentQueue(0);
     };
 
+    const handleUpdateManagerAssignment = (assignmentId: number, canEvaluate: boolean) => {
+        router.put(
+            route('evaluation.manager-management.update', assignmentId),
+            {
+                can_evaluate: canEvaluate,
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Manager assignment updated successfully');
+                },
+                onError: (errors) => {
+                    toast.error(Object.values(errors)[0] as string);
+                },
+            },
+        );
+    };
+
     const handleDeleteManagerAssignment = (assignmentId: number) => {
         router.delete(route('evaluation.manager-management.destroy', assignmentId), {
             onSuccess: () => {
                 toast.success('Manager assignment removed successfully');
+            },
+            onError: (errors) => {
+                toast.error(Object.values(errors)[0] as string);
+            },
+        });
+    };
+
+    const handleCreateAdminAssignment = () => {
+        if (!newAdminAssignment.user_id) {
+            toast.error('Please select a user');
+            return;
+        }
+        if (newAdminAssignment.departments.length === 0) {
+            toast.error('Please select at least one department');
+            return;
+        }
+
+        // Check for existing assignments
+        const existingAssignments = newAdminAssignment.departments.filter((dept) =>
+            admin_assignments?.some((assignment) => assignment.user_id === parseInt(newAdminAssignment.user_id) && assignment.department === dept),
+        );
+
+        if (existingAssignments.length > 0) {
+            toast.error(`This user is already assigned to: ${existingAssignments.join(', ')}`);
+            return;
+        }
+
+        // Send each department as a separate assignment
+        const assignmentsToCreate = newAdminAssignment.departments.map((department) => ({
+            user_id: newAdminAssignment.user_id,
+            department: department,
+            can_evaluate: newAdminAssignment.can_evaluate,
+        }));
+
+        // Store the queue in sessionStorage to persist across page reloads
+        const queueKey = 'admin_assignment_queue';
+        sessionStorage.setItem(queueKey, JSON.stringify(assignmentsToCreate));
+        sessionStorage.setItem('admin_assignment_queue_index', '0');
+        sessionStorage.setItem('admin_assignment_queue_success', '0');
+        sessionStorage.setItem('admin_assignment_queue_errors', JSON.stringify([]));
+
+        // Start processing from index 0
+        processAdminAssignmentQueue(0);
+    };
+
+    const handleUpdateAdminAssignment = (assignmentId: number, canEvaluate: boolean) => {
+        router.put(
+            route('evaluation.admin-management.update', assignmentId),
+            {
+                can_evaluate: canEvaluate,
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Admin assignment updated successfully');
+                },
+                onError: (errors) => {
+                    toast.error(Object.values(errors)[0] as string);
+                },
+            },
+        );
+    };
+
+    const handleDeleteAdminAssignment = (assignmentId: number) => {
+        router.delete(route('evaluation.admin-management.destroy', assignmentId), {
+            onSuccess: () => {
+                toast.success('Admin assignment removed successfully');
             },
             onError: (errors) => {
                 toast.error(Object.values(errors)[0] as string);
@@ -699,7 +943,7 @@ export default function SupervisorManagement({
                         </div>
 
                         <Tabs defaultValue="supervisors" className="space-y-4">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className={isAdmin ? 'grid w-full grid-cols-5' : 'grid w-full grid-cols-4'}>
                                 <TabsTrigger value="supervisors" className="flex items-center gap-2">
                                     <Users className="h-4 w-4" />
                                     Supervisors
@@ -713,6 +957,10 @@ export default function SupervisorManagement({
                                         <TabsTrigger value="managers" className="flex items-center gap-2">
                                             <UserCog className="h-4 w-4" />
                                             Managers
+                                        </TabsTrigger>
+                                        <TabsTrigger value="admin" className="flex items-center gap-2">
+                                            <UserX className="h-4 w-4" />
+                                            Admin
                                         </TabsTrigger>
                                         <TabsTrigger value="frequencies" className="flex items-center gap-2">
                                             <Settings className="h-4 w-4" />
@@ -960,6 +1208,16 @@ export default function SupervisorManagement({
                                                             </div>
                                                         )}
                                                     </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch
+                                                            id="can_evaluate_hr"
+                                                            checked={newHRAssignment.can_evaluate}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewHRAssignment((prev) => ({ ...prev, can_evaluate: checked }))
+                                                            }
+                                                        />
+                                                        <Label htmlFor="can_evaluate_hr">Can Evaluate</Label>
+                                                    </div>
                                                 </div>
                                                 <Button onClick={handleCreateHRAssignment} className="mt-4">
                                                     <Plus className="mr-2 h-4 w-4" />
@@ -986,6 +1244,15 @@ export default function SupervisorManagement({
                                                                 <div className="text-sm text-gray-500">Department: {assignment.department}</div>
                                                             </div>
                                                             <div className="flex items-center space-x-4">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <Switch
+                                                                        checked={assignment.can_evaluate ?? true}
+                                                                        onCheckedChange={(checked) =>
+                                                                            handleUpdateHRAssignment(assignment.id, checked)
+                                                                        }
+                                                                    />
+                                                                    <span className="text-sm">Can Evaluate</span>
+                                                                </div>
                                                                 <AlertDialog>
                                                                     <AlertDialogTrigger asChild>
                                                                         <Button variant="destructive" size="sm">
@@ -1122,6 +1389,16 @@ export default function SupervisorManagement({
                                                             </div>
                                                         )}
                                                     </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch
+                                                            id="can_evaluate_manager"
+                                                            checked={newManagerAssignment.can_evaluate}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewManagerAssignment((prev) => ({ ...prev, can_evaluate: checked }))
+                                                            }
+                                                        />
+                                                        <Label htmlFor="can_evaluate_manager">Can Evaluate</Label>
+                                                    </div>
                                                 </div>
                                                 <Button onClick={handleCreateManagerAssignment} className="mt-4">
                                                     <Plus className="mr-2 h-4 w-4" />
@@ -1148,6 +1425,15 @@ export default function SupervisorManagement({
                                                                 <div className="text-sm text-gray-500">Department: {assignment.department}</div>
                                                             </div>
                                                             <div className="flex items-center space-x-4">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <Switch
+                                                                        checked={assignment.can_evaluate ?? true}
+                                                                        onCheckedChange={(checked) =>
+                                                                            handleUpdateManagerAssignment(assignment.id, checked)
+                                                                        }
+                                                                    />
+                                                                    <span className="text-sm">Can Evaluate</span>
+                                                                </div>
                                                                 <AlertDialog>
                                                                     <AlertDialogTrigger asChild>
                                                                         <Button variant="destructive" size="sm">
@@ -1179,6 +1465,157 @@ export default function SupervisorManagement({
                                                     ))}
                                                     {(!manager_assignments || manager_assignments.length === 0) && (
                                                         <div className="py-8 text-center text-gray-500">No Manager assignments found</div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </TabsContent>
+                            )}
+
+                            {/* Admin Tab */}
+                            {isAdmin && (
+                                <TabsContent value="admin" className="space-y-6">
+                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                        {/* Create New Admin Assignment */}
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Create New Admin Assignment</CardTitle>
+                                                <CardDescription>Assign any user to a department (regardless of role)</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <Label htmlFor="admin-user">User</Label>
+                                                        <Select
+                                                            value={newAdminAssignment.user_id}
+                                                            onValueChange={(value) => setNewAdminAssignment((prev) => ({ ...prev, user_id: value }))}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select user" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {admin_users.map((user) => (
+                                                                    <SelectItem key={user.id} value={user.id.toString()}>
+                                                                        {user.firstname} {user.lastname} ({user.email})
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="admin-department">Departments</Label>
+                                                        <div className="mt-2 max-h-60 space-y-3 overflow-y-auto rounded-lg border p-4">
+                                                            <div className="flex items-center space-x-2 border-b pb-2">
+                                                                <Checkbox
+                                                                    id="select-all-admin"
+                                                                    checked={newAdminAssignment.selectAll}
+                                                                    onCheckedChange={() => handleSelectAllDepartments('admin')}
+                                                                />
+                                                                <Label htmlFor="select-all-admin" className="cursor-pointer font-medium">
+                                                                    Select All
+                                                                </Label>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                {availableDepartments.map((department) => (
+                                                                    <div key={department} className="flex items-center space-x-2">
+                                                                        <Checkbox
+                                                                            id={`dept-${department}-admin`}
+                                                                            checked={newAdminAssignment.departments.includes(department)}
+                                                                            onCheckedChange={() => handleDepartmentToggle(department, 'admin')}
+                                                                        />
+                                                                        <Label
+                                                                            htmlFor={`dept-${department}-admin`}
+                                                                            className="cursor-pointer text-sm"
+                                                                        >
+                                                                            {department}
+                                                                        </Label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {newAdminAssignment.departments.length > 0 && (
+                                                            <div className="mt-2 text-sm text-muted-foreground">
+                                                                Selected: {newAdminAssignment.departments.length} department(s)
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch
+                                                            id="can_evaluate_admin"
+                                                            checked={newAdminAssignment.can_evaluate}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewAdminAssignment((prev) => ({ ...prev, can_evaluate: checked }))
+                                                            }
+                                                        />
+                                                        <Label htmlFor="can_evaluate_admin">Can Evaluate</Label>
+                                                    </div>
+                                                </div>
+                                                <Button onClick={handleCreateAdminAssignment} className="mt-4">
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    Create Admin Assignment
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Current Admin Assignments */}
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Current Admin Assignments</CardTitle>
+                                                <CardDescription>Manage existing user-department assignments</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="max-h-96 space-y-4 overflow-y-auto pr-2">
+                                                    {admin_assignments?.map((assignment) => (
+                                                        <div key={assignment.id} className="flex items-center justify-between rounded-lg border p-4">
+                                                            <div>
+                                                                <div className="font-medium">
+                                                                    {assignment.user.firstname} {assignment.user.lastname}
+                                                                </div>
+                                                                <div className="text-sm text-gray-500">{assignment.user.email}</div>
+                                                                <div className="text-sm text-gray-500">Department: {assignment.department}</div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <Switch
+                                                                        checked={assignment.can_evaluate ?? true}
+                                                                        onCheckedChange={(checked) =>
+                                                                            handleUpdateAdminAssignment(assignment.id, checked)
+                                                                        }
+                                                                    />
+                                                                    <span className="text-sm">Can Evaluate</span>
+                                                                </div>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="destructive" size="sm">
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                This action cannot be undone. This will permanently remove the Admin
+                                                                                assignment for {assignment.user.firstname} {assignment.user.lastname}{' '}
+                                                                                from the {assignment.department} department.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                            <AlertDialogAction
+                                                                                onClick={() => handleDeleteAdminAssignment(assignment.id)}
+                                                                                className="bg-red-600 hover:bg-red-700"
+                                                                            >
+                                                                                Delete Assignment
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {(!admin_assignments || admin_assignments.length === 0) && (
+                                                        <div className="py-8 text-center text-gray-500">No Admin assignments found</div>
                                                     )}
                                                 </div>
                                             </CardContent>

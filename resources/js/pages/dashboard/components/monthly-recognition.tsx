@@ -85,7 +85,9 @@ export function MonthlyRecognition({ employees = [], isSupervisor = false }: Pro
                                     <div className="ml-2 text-right">
                                         <p className="text-xs font-medium text-muted-foreground">{employee.employeeid}</p>
                                         <Badge variant="secondary" className="text-xs">
-                                            {employee.recognition_score.toFixed(1)}
+                                            {typeof employee.recognition_score === 'number'
+                                                ? employee.recognition_score.toFixed(1)
+                                                : Number(employee.recognition_score || 0).toFixed(1)}
                                         </Badge>
                                     </div>
                                 </div>

@@ -58,10 +58,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('report.gender-development');
         Route::get('report/employee-leave-list', [\App\Http\Controllers\LeaveController::class, 'approvedLeaves'])->name('report.employee-leave-list');
         Route::get('report/employee-absenteeism-report', [\App\Http\Controllers\AbsenceController::class, 'approvedAbsences'])->name('report.employee-absenteeism-report');
+
+        // Department Evaluation Reports
+        Route::get('report/management-staff-performance-summary', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Management & Staff(Admin)');
+        })->name('report.management-staff-performance-summary');
+        Route::get('report/admin-department-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Management & Staff(Admin)');
+        })->name('report.admin-department-performance');
+        Route::get('report/packing-plant-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Packing Plant');
+        })->name('report.packing-plant-performance');
+        Route::get('report/harvesting-area-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Harvesting');
+        })->name('report.harvesting-area-performance');
+        Route::get('report/coop-area-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Coop Area');
+        })->name('report.coop-area-performance');
+        Route::get('report/pest-disease-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Pest & Decease');
+        })->name('report.pest-disease-performance');
+        Route::get('report/coop-harvester-maintenance-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Coop Harvester Maintenance');
+        })->name('report.coop-harvester-maintenance-performance');
+        Route::get('report/security-forces-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Security Forces');
+        })->name('report.security-forces-performance');
+        Route::get('report/miscellaneous-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Miscellaneous');
+        })->name('report.miscellaneous-performance');
     });
 
     // Explicit routes for all service-tenure subpages
     Route::middleware(['permission:View Service Tenure'])->group(function () {
+        Route::get('service-tenure/employee', [ServiceTenureController::class, 'employee'])->name('service-tenure.employee.alias');
         Route::get('service-tenure', [ServiceTenureController::class, 'employee'])->name('service-tenure.employee');
         Route::get('service-tenure/index', [ServiceTenureController::class, 'index'])->name('service-tenure.index');
         Route::get('service-tenure/service-tenure', [ServiceTenureController::class, 'serviceTenure'])->name('service-tenure.service-tenure');
@@ -79,10 +109,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // HR Personnel management routes
     Route::post('evaluation/hr-management', [SupervisorDepartmentController::class, 'storeHRAssignment'])->name('evaluation.hr-management.store');
+    Route::put('evaluation/hr-management/{assignment}', [SupervisorDepartmentController::class, 'updateHRAssignment'])->name('evaluation.hr-management.update');
     Route::delete('evaluation/hr-management/{assignment}', [SupervisorDepartmentController::class, 'destroyHRAssignment'])->name('evaluation.hr-management.destroy');
 
     // Manager management routes
     Route::post('evaluation/manager-management', [SupervisorDepartmentController::class, 'storeManagerAssignment'])->name('evaluation.manager-management.store');
+    Route::put('evaluation/manager-management/{assignment}', [SupervisorDepartmentController::class, 'updateManagerAssignment'])->name('evaluation.manager-management.update');
     Route::delete('evaluation/manager-management/{assignment}', [SupervisorDepartmentController::class, 'destroyManagerAssignment'])->name('evaluation.manager-management.destroy');
 
     // Evaluation frequency update route (accessible from supervisor management)
@@ -178,6 +210,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin Management
     Route::middleware(['permission:View Admin Management'])->group(function () {
         Route::get('admin-management', [AdminManagementController::class, 'index'])->name('admin-management.index');
+        Route::post('evaluation/admin-management', [AdminManagementController::class, 'storeAdminAssignment'])->name('evaluation.admin-management.store');
+        Route::put('evaluation/admin-management/{assignment}', [AdminManagementController::class, 'updateAdminAssignment'])->name('evaluation.admin-management.update');
+        Route::delete('evaluation/admin-management/{assignment}', [AdminManagementController::class, 'destroyAdminAssignment'])->name('evaluation.admin-management.destroy');
     });
 });
 

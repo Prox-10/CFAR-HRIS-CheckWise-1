@@ -7,12 +7,14 @@ use App\Http\Requests\EmployeeRequest;
 use Inertia\Inertia;
 use App\Models\Employee;
 use App\Models\Fingerprint;
+use App\Traits\EmployeeFilterTrait;
 use Inertia\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
+    use EmployeeFilterTrait;
     /**
      * Generate a unique employee ID for Add Crew employees
      * Format: AC + 6 digits (AC000001 to AC999999)
@@ -53,8 +55,9 @@ class EmployeeController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
         // Base query for employees
         $employeeQuery = Employee::with(['fingerprints', 'evaluations' => function ($q) {
@@ -62,7 +65,11 @@ class EmployeeController extends Controller
         }]);
 
         // Filter employees based on user role
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        // HR and Manager already get all employees, so only filter for Admin and Supervisor
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $employeeQuery->whereIn('department', $supervisedDepartments);
         }
 

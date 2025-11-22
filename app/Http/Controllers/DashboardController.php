@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Employee;
 use App\Models\Evaluation;
+use App\Traits\EmployeeFilterTrait;
 use Inertia\Response;
 use Illuminate\Support\Facades\Log;
 use App\Models\Leave;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    use EmployeeFilterTrait;
     /**
      * Display a listing of the resource.
      */
@@ -24,18 +26,22 @@ class DashboardController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
         // Base query for employees based on user role
         $employeeQuery = Employee::query();
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $employeeQuery->whereIn('department', $supervisedDepartments);
         }
 
         // Base query for leaves based on user role
         $leaveQuery = Leave::query();
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $leaveQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -44,11 +50,11 @@ class DashboardController extends Controller
         // Total unique employees
         $totalEmployee = $employeeQuery->distinct('employeeid')->count('employeeid');
 
-        // Total unique departments (for supervisor, only their supervised departments)
-        if ($isSupervisor && !empty($supervisedDepartments)) {
-            $totalDepartment = count($supervisedDepartments);
-        } else {
+        // Total unique departments
+        if ($isSuperAdmin || $isHR || $isManager) {
             $totalDepartment = Employee::distinct('department')->count('department');
+        } else {
+            $totalDepartment = count($supervisedDepartments);
         }
 
         // Total leave requests
@@ -63,21 +69,21 @@ class DashboardController extends Controller
 
         // Employees created before this month (as a proxy for previous total)
         $prevEmployeeQuery = Employee::where('created_at', '<', now()->startOfMonth());
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $prevEmployeeQuery->whereIn('department', $supervisedDepartments);
         }
         $prevTotalEmployee = $prevEmployeeQuery->distinct('employeeid')->count('employeeid');
 
         // Departments created before this month (as a proxy for previous total)
-        if ($isSupervisor && !empty($supervisedDepartments)) {
-            $prevTotalDepartment = count($supervisedDepartments);
-        } else {
+        if ($isSuperAdmin || $isHR || $isManager) {
             $prevTotalDepartment = Employee::where('created_at', '<', now()->startOfMonth())->distinct('department')->count('department');
+        } else {
+            $prevTotalDepartment = count($supervisedDepartments);
         }
 
         // Leaves created in previous month
         $prevLeaveQuery = Leave::whereBetween('created_at', [$prevMonthStart, $prevMonthEnd]);
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $prevLeaveQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -86,7 +92,7 @@ class DashboardController extends Controller
 
         // Pending leaves in previous month
         $prevPendingLeaveQuery = Leave::where('leave_status', 'Pending')->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd]);
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $prevPendingLeaveQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -107,7 +113,7 @@ class DashboardController extends Controller
         )
             ->whereBetween('leave_start_date', [$startDate, $endDate]);
 
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $leavesPerMonthQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -141,7 +147,7 @@ class DashboardController extends Controller
         $leavesPerPeriodQuery1 = Leave::whereRaw('MONTH(leave_start_date) BETWEEN 1 AND 6');
         $leavesPerPeriodQuery2 = Leave::whereRaw('MONTH(leave_start_date) BETWEEN 7 AND 12');
 
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $leavesPerPeriodQuery1->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -165,7 +171,7 @@ class DashboardController extends Controller
         // Fetch user-specific notifications (latest 10)
         $notifications = collect();
         $unreadCount = 0;
-        
+
         if ($isSuperAdmin) {
             // Super admin sees all notifications
             $notifications = Notification::orderBy('created_at', 'desc')->take(10)->get();
@@ -183,14 +189,15 @@ class DashboardController extends Controller
 
         // Get user role information
         $userRole = $user->roles->first()?->name ?? 'User';
-        $userDepartments = $isSupervisor ? $supervisedDepartments : [];
+        // Use supervisedDepartments for Admin and Supervisor (HR/Manager see all, so empty means all)
+        $userDepartments = (!$isSuperAdmin && !$isHR && !$isManager) ? $supervisedDepartments : [];
 
         // Get employees eligible for monthly recognition (good attendance, no absences, no leaves)
-        $monthlyRecognitionEmployees = $this->getMonthlyRecognitionEmployees($supervisedDepartments, $isSupervisor);
+        $monthlyRecognitionEmployees = $this->getMonthlyRecognitionEmployees($supervisedDepartments, $isSupervisor || $user->adminAssignments()->exists());
 
-        // Get employees for supervisor dashboard
+        // Get employees for supervisor/admin dashboard
         $supervisorEmployees = collect();
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        if ((!$isSuperAdmin && !$isHR && !$isManager) && !empty($supervisedDepartments)) {
             $supervisorEmployees = Employee::whereIn('department', $supervisedDepartments)
                 ->select('id', 'employee_name', 'department', 'position', 'picture', 'employeeid')
                 ->orderBy('employee_name')
@@ -461,10 +468,11 @@ class DashboardController extends Controller
             }
 
             if ($latestEvaluation) {
-                $totalRating = $latestEvaluation->total_rating ?? 0;
+                $totalRating = (float) ($latestEvaluation->total_rating ?? 0);
 
                 // Employee is eligible for recognition if they have a high evaluation rating (8.0 or above)
                 if ($totalRating >= 8.0) {
+                    $recognitionScore = (float) $this->calculateRecognitionScore($totalRating);
                     $recognitionEmployees[] = [
                         'id' => $employee->id,
                         'name' => $employee->employee_name,
@@ -477,7 +485,7 @@ class DashboardController extends Controller
                         'evaluation_date' => $latestEvaluation->rating_date,
                         'evaluation_period' => $latestEvaluation->period_label,
                         'evaluation_year' => $latestEvaluation->evaluation_year,
-                        'recognition_score' => $this->calculateRecognitionScore($totalRating),
+                        'recognition_score' => $recognitionScore,
                     ];
                 }
             }
@@ -496,20 +504,23 @@ class DashboardController extends Controller
      */
     private function calculateRecognitionScore($evaluationRating)
     {
+        // Ensure evaluation rating is a float
+        $rating = (float) ($evaluationRating ?? 0);
+
         // Base score is the evaluation rating (1-10 scale)
-        $score = $evaluationRating;
+        $score = $rating;
 
         // Bonus for excellent performance (9.0+)
-        if ($evaluationRating >= 9.0) {
+        if ($rating >= 9.0) {
             $score += 2;
         }
 
         // Bonus for very good performance (8.5+)
-        elseif ($evaluationRating >= 8.5) {
+        elseif ($rating >= 8.5) {
             $score += 1;
         }
 
-        return $score;
+        return (float) $score;
     }
 
     /**

@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\SupervisorDepartment;
 use App\Models\HRDepartmentAssignment;
 use App\Models\ManagerDepartmentAssignment;
+use App\Models\AdminDepartmentAssignment;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\EvaluationConfiguration;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 class AdminManagementController extends Controller
 {
@@ -23,7 +25,7 @@ class AdminManagementController extends Controller
 
         $hrPersonnel = User::whereHas('roles', function ($query) {
             $query->where('name', 'like', '%HR%')
-                  ->orWhere('name', 'like', '%hr%');
+                ->orWhere('name', 'like', '%hr%');
         })->get()->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -36,7 +38,7 @@ class AdminManagementController extends Controller
 
         $managers = User::whereHas('roles', function ($query) {
             $query->where('name', 'like', '%Manager%')
-                  ->orWhere('name', 'like', '%manager%');
+                ->orWhere('name', 'like', '%manager%');
         })->get()->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -56,6 +58,7 @@ class AdminManagementController extends Controller
                 'id' => $assignment->id,
                 'user_id' => $assignment->user_id,
                 'department' => $assignment->department,
+                'can_evaluate' => $assignment->can_evaluate ?? true,
                 'user' => [
                     'id' => $assignment->user->id,
                     'firstname' => $assignment->user->firstname,
@@ -70,6 +73,50 @@ class AdminManagementController extends Controller
                 'id' => $assignment->id,
                 'user_id' => $assignment->user_id,
                 'department' => $assignment->department,
+                'can_evaluate' => $assignment->can_evaluate ?? true,
+                'user' => [
+                    'id' => $assignment->user->id,
+                    'firstname' => $assignment->user->firstname,
+                    'lastname' => $assignment->user->lastname,
+                    'email' => $assignment->user->email,
+                ],
+            ];
+        });
+
+        // Get users for Admin tab (exclude Supervisors, HR Personnel, and Managers)
+        $adminUsers = User::with('roles')
+            ->whereDoesntHave('roles', function ($query) {
+                // Exclude Supervisor role
+                $query->where('name', 'Supervisor');
+            })
+            ->whereDoesntHave('roles', function ($query) {
+                // Exclude HR-related roles
+                $query->where('name', 'like', '%HR%')
+                    ->orWhere('name', 'like', '%hr%');
+            })
+            ->whereDoesntHave('roles', function ($query) {
+                // Exclude Manager-related roles
+                $query->where('name', 'like', '%Manager%')
+                    ->orWhere('name', 'like', '%manager%');
+            })
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'firstname' => $user->firstname,
+                    'lastname' => $user->lastname,
+                    'email' => $user->email,
+                    'roles' => $user->roles->pluck('name')->toArray(),
+                ];
+            });
+
+        // Get Admin assignments
+        $adminAssignments = AdminDepartmentAssignment::with('user')->get()->map(function ($assignment) {
+            return [
+                'id' => $assignment->id,
+                'user_id' => $assignment->user_id,
+                'department' => $assignment->department,
+                'can_evaluate' => $assignment->can_evaluate ?? true,
                 'user' => [
                     'id' => $assignment->user->id,
                     'firstname' => $assignment->user->firstname,
@@ -99,6 +146,8 @@ class AdminManagementController extends Controller
             'assignments' => $assignments,
             'hr_assignments' => $hrAssignments,
             'manager_assignments' => $managerAssignments,
+            'admin_users' => $adminUsers,
+            'admin_assignments' => $adminAssignments,
             'frequencies' => $frequencies,
             'user_permissions' => [
                 'is_super_admin' => $user->isSuperAdmin(),
@@ -107,6 +156,75 @@ class AdminManagementController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Store a new Admin-department assignment
+     */
+    public function storeAdminAssignment(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            return back()->withErrors(['error' => 'Access denied.']);
+        }
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'department' => 'required|string',
+        ]);
+
+        // No role check - can assign any user
+        // Create assignment (or update if exists)
+        AdminDepartmentAssignment::updateOrCreate(
+            [
+                'user_id' => $request->user_id,
+                'department' => $request->department,
+            ],
+            [
+                'user_id' => $request->user_id,
+                'department' => $request->department,
+                'can_evaluate' => $request->can_evaluate ?? true,
+            ]
+        );
+
+        return back()->with('success', 'Admin assignment created successfully.');
+    }
+
+    /**
+     * Update Admin-department assignment
+     */
+    public function updateAdminAssignment(Request $request, AdminDepartmentAssignment $assignment)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            return back()->withErrors(['error' => 'Access denied.']);
+        }
+
+        $request->validate([
+            'can_evaluate' => 'required|boolean',
+        ]);
+
+        $assignment->update([
+            'can_evaluate' => $request->can_evaluate,
+        ]);
+
+        return back()->with('success', 'Admin assignment updated successfully.');
+    }
+
+    /**
+     * Remove Admin-department assignment
+     */
+    public function destroyAdminAssignment(AdminDepartmentAssignment $assignment)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            return back()->withErrors(['error' => 'Access denied.']);
+        }
+
+        $assignment->delete();
+
+        return back()->with('success', 'Admin assignment removed successfully.');
+    }
 }
-
-

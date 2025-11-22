@@ -22,7 +22,17 @@ class EvaluationFactory extends Factory
         $employee = Employee::inRandomOrder()->first();
 
         // Department and frequency come from either provided attributes or derived
-        $department = $this->faker->randomElement(['Monthly', 'Packing', 'Harvest', 'PDC', 'Coop Area', 'Engineering']);
+        $department = $this->faker->randomElement([
+            'Management & Staff(Admin)',
+            'Packing Plant',
+            'Harvesting',
+            'Pest & Decease',
+            'Coop Area',
+            'Engineering',
+            'Utility',
+            'Security Forces',
+            'Miscellaneous',
+        ]);
         $frequency = $this->faker->randomElement(['semi_annual', 'annual']);
 
         // Period and year
@@ -107,35 +117,65 @@ class EvaluationFactory extends Factory
 
             // Department-specific function names (subset)
             $deptFunctions = [
-                'Monthly' => [
+                'Management & Staff(Admin)' => [
                     'Encode workers daily time & accomplishment report (WDTAR)',
+                    'Prepare the payroll of periodic paid employees, COOP leave, honorarium and hired workers',
                     'Maintain files of timesheets and other source documents',
-                    'Prepare payroll summaries',
+                    'Update generation of documents in order to catch up with the remittance/payments schedules',
+                    'Prepare and furnish the bookeeper summary of beneficiary\'s deduction',
                 ],
-                'Packing' => [
+                'Packing Plant' => [
                     'Package products according to quality standards',
                     'Ensure proper labeling and documentation',
                     'Meet daily packaging targets and deadlines',
+                    'Quality control and inspection',
+                    'Maintain packaging equipment',
                 ],
-                'Harvest' => [
+                'Harvesting' => [
                     'Harvest crops at optimal maturity',
                     'Sort and grade harvested produce',
                     'Maintain harvest equipment and tools',
+                    'Field preparation and maintenance',
+                    'Crop handling and transportation',
                 ],
-                'PDC' => [
-                    'Process and package dried crops',
-                    'Maintain drying facility equipment',
-                    'Ensure proper storage conditions',
+                'Pest & Decease' => [
+                    'Pest and disease monitoring',
+                    'Application of pesticides and treatments',
+                    'Field inspection and reporting',
+                    'Equipment maintenance',
+                    'Safety compliance',
                 ],
                 'Coop Area' => [
                     'Manage cooperative area operations',
                     'Coordinate with member farmers',
                     'Organize cooperative meetings and events',
+                    'Field maintenance',
+                    'Crop management',
                 ],
                 'Engineering' => [
                     'Repair & Maintenance of Vehicles/Equipment',
                     'Machine Operation and Troubleshooting',
                     'Equipment Safety Inspections',
+                    'Preventive maintenance',
+                    'Technical support',
+                ],
+                'Utility' => [
+                    'Facility maintenance',
+                    'Utility system operations',
+                    'Equipment repairs',
+                    'General maintenance tasks',
+                ],
+                'Security Forces' => [
+                    'Security patrol and monitoring',
+                    'Access control',
+                    'Incident reporting',
+                    'Safety inspections',
+                ],
+                'Miscellaneous' => [
+                    'General field operations',
+                    'Support tasks',
+                    'Equipment handling',
+                    'Facility upkeep',
                 ],
             ];
 
@@ -159,7 +199,7 @@ class EvaluationFactory extends Factory
 
             // Recompute and persist the total rating based on actual parts
             $total = ($attendanceRating + $supervisorRating + $coworkerRating + $workAttitudeAvg + $workFunctionAvg) / 5;
-            $evaluation->total_rating = (float) number_format($total, 1);
+            $evaluation->total_rating = (float) round($total, 1);
             $evaluation->save();
         });
     }

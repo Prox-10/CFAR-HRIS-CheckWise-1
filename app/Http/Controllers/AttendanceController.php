@@ -5,20 +5,44 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HRDepartmentAssignment;
+use App\Traits\EmployeeFilterTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AttendanceController extends Controller
 {
+    use EmployeeFilterTrait;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $user = Auth::user();
+        $isSuperAdmin = $user->isSuperAdmin();
+
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
+
         // Include soft-deleted employees in the relationship to ensure employee data is loaded
-        $attendance = Attendance::with(['employee' => function ($query) {
+        $attendanceQuery = Attendance::with(['employee' => function ($query) {
             $query->withTrashed();
-        }])->orderBy('created_at', 'asc')->get();
+        }]);
+
+        // Filter attendance based on user role
+        // HR and Manager already get all attendance, so only filter for Admin and Supervisor
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
+            $attendanceQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
+                $query->whereIn('department', $supervisedDepartments);
+            });
+        }
+
+        $attendance = $attendanceQuery->orderBy('created_at', 'asc')->get();
 
         $attendanceList = $attendance->transform(
             fn($attendance) => [
@@ -41,11 +65,23 @@ class AttendanceController extends Controller
         // Get sessions data
         $sessions = AttendanceSession::orderBy('created_at', 'desc')->get();
 
-        // Analytics for section cards
-        $totalEmployee = \App\Models\Employee::distinct('employeeid')->count('employeeid');
-        $totalDepartment = \App\Models\Employee::distinct('department')->count('department');
-        $prevTotalEmployee = \App\Models\Employee::where('created_at', '<', now()->startOfMonth())->distinct('employeeid')->count('employeeid');
-        $prevTotalDepartment = \App\Models\Employee::where('created_at', '<', now()->startOfMonth())->distinct('department')->count('department');
+        // Analytics for section cards - filter by user role
+        $employeeQuery = \App\Models\Employee::query();
+        $prevEmployeeQuery = \App\Models\Employee::where('created_at', '<', now()->startOfMonth());
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
+            $employeeQuery->whereIn('department', $supervisedDepartments);
+            $prevEmployeeQuery->whereIn('department', $supervisedDepartments);
+        }
+
+        $totalEmployee = $employeeQuery->distinct('employeeid')->count('employeeid');
+        $totalDepartment = $isSuperAdmin || $isHR || $isManager
+            ? \App\Models\Employee::distinct('department')->count('department')
+            : count($supervisedDepartments);
+        $prevTotalEmployee = $prevEmployeeQuery->distinct('employeeid')->count('employeeid');
+        $prevTotalDepartment = $isSuperAdmin || $isHR || $isManager
+            ? \App\Models\Employee::where('created_at', '<', now()->startOfMonth())->distinct('department')->count('department')
+            : count($supervisedDepartments);
 
         return Inertia::render('attendance/index', [
             'attendanceData' => $attendanceList,

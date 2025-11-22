@@ -134,32 +134,63 @@ class EvaluationController extends Controller
             // Super admin can see all employees
             Log::info('User is Super Admin - showing all employees');
             return $query->orderBy('employee_name')->get();
-        } elseif ($user->isSupervisor()) {
-            // Supervisor can only see employees in departments they supervise
-            $evaluableDepartments = $user->getEvaluableDepartments();
-            Log::info('Supervisor evaluable departments:', $evaluableDepartments);
+        }
 
-            if (empty($evaluableDepartments)) {
-                Log::warning('No departments assigned to supervisor');
-                return collect(); // No departments assigned
-            }
-
-            $employees = $query->whereIn('department', $evaluableDepartments)
-                ->orderBy('employee_name')
-                ->get();
-
-            Log::info('Supervisor employees found:', [
-                'count' => $employees->count(),
-                'departments' => $evaluableDepartments,
-                'employees' => $employees->pluck('employee_name', 'department')->toArray()
-            ]);
-
-            return $employees;
-        } else {
-            // Other roles (Manager, HR) can only view, not evaluate
-            Log::info('User is other role - showing all employees');
+        // HR Personnel can see all employees from all departments (no filtering by assignment)
+        if ($user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists()) {
+            Log::info('User is HR Personnel with can_evaluate - showing all employees');
             return $query->orderBy('employee_name')->get();
         }
+
+        // Manager can see all employees from all departments (no filtering by assignment)
+        if ($user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists()) {
+            Log::info('User is Manager with can_evaluate - showing all employees');
+            return $query->orderBy('employee_name')->get();
+        }
+
+        // Get all evaluable departments for the user (from Supervisor or Admin assignments)
+        // Note: HR and Manager are already handled above to show all employees
+        $evaluableDepartments = $user->getEvaluableDepartments();
+
+        if (empty($evaluableDepartments)) {
+            Log::warning('No departments assigned to user for evaluation', [
+                'user_id' => $user->id,
+                'is_supervisor' => $user->isSupervisor(),
+                'is_hr' => $user->isHR(),
+                'is_manager' => $user->isManager(),
+                'has_admin_assignments' => $user->adminAssignments()->exists(),
+            ]);
+            return collect(); // No departments assigned
+        }
+
+        // User can evaluate employees in their assigned departments
+        // - Supervisor: their assigned departments
+        // - Admin (e.g., Mr. Kyle): only their assigned departments (e.g., Utility)
+        $employees = $query->whereIn('department', $evaluableDepartments)
+            ->orderBy('employee_name')
+            ->get();
+
+        $userRole = 'Unknown';
+        if ($user->isSupervisor()) {
+            $userRole = 'Supervisor';
+        } elseif ($user->isHR()) {
+            $userRole = 'HR';
+        } elseif ($user->isManager()) {
+            $userRole = 'Manager';
+        } elseif ($user->adminAssignments()->exists()) {
+            $userRole = 'Admin';
+        }
+
+        Log::info('User employees found for evaluation:', [
+            'user_id' => $user->id,
+            'user_name' => $user->firstname . ' ' . $user->lastname,
+            'user_role' => $userRole,
+            'count' => $employees->count(),
+            'departments' => $evaluableDepartments,
+            'employees' => $employees->pluck('employee_name', 'department')->toArray()
+        ]);
+
+        return $employees;
     }
 
     /**
@@ -881,5 +912,117 @@ class EvaluationController extends Controller
     public function evaluationSettings()
     {
         return Inertia::render('evaluation/evaluation-settings');
+    }
+
+    /**
+     * Get evaluations by department for report
+     * Only returns employees who have been evaluated
+     */
+    public function departmentEvaluationsReport(Request $request, $department)
+    {
+        $user = Auth::user();
+
+        // Decode department name (handle URL encoding)
+        $department = urldecode($department);
+
+        // Get all evaluations for the department with all relationships
+        $evaluations = Evaluation::with([
+            'employee',
+            'attendance',
+            'attitudes',
+            'workAttitude',
+            'workFunctions'
+        ])
+            ->whereHas('employee', function ($query) use ($department) {
+                $query->where('department', $department);
+            })
+            ->orderBy('rating_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Transform evaluations for frontend
+        $evaluationList = $evaluations->map(function ($evaluation) {
+            $employee = $evaluation->employee;
+
+            // Get Supervisor for the department
+            $departmentSupervisor = null;
+            if ($employee->department) {
+                $supervisorAssignment = \App\Models\SupervisorDepartment::where('department', $employee->department)
+                    ->where('can_evaluate', true)
+                    ->with('user')
+                    ->first();
+                if ($supervisorAssignment && $supervisorAssignment->user) {
+                    $departmentSupervisor = [
+                        'id' => $supervisorAssignment->user->id,
+                        'name' => $supervisorAssignment->user->fullname,
+                    ];
+                }
+            }
+
+            // Get Manager for the department
+            $departmentManager = null;
+            if ($employee->department) {
+                $managerAssignment = \App\Models\ManagerDepartmentAssignment::where('department', $employee->department)
+                    ->with('user')
+                    ->first();
+                if ($managerAssignment && $managerAssignment->user) {
+                    $departmentManager = [
+                        'id' => $managerAssignment->user->id,
+                        'name' => $managerAssignment->user->fullname,
+                    ];
+                }
+            }
+
+            return [
+                'id' => $evaluation->id,
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->employee_name,
+                'employeeid' => $employee->employeeid,
+                'department' => $employee->department,
+                'position' => $employee->position,
+                'picture' => $employee->picture,
+                'rating_date' => $evaluation->rating_date ? ($evaluation->rating_date instanceof \Carbon\Carbon ? $evaluation->rating_date->format('Y-m-d') : $evaluation->rating_date) : null,
+                'evaluation_year' => $evaluation->evaluation_year,
+                'evaluation_period' => $evaluation->evaluation_period,
+                'period_label' => $evaluation->period_label,
+                'total_rating' => $evaluation->total_rating,
+                'evaluator' => $evaluation->evaluator,
+                'observations' => $evaluation->observations,
+                'department_supervisor' => $departmentSupervisor,
+                'department_manager' => $departmentManager,
+                'attendance' => $evaluation->attendance ? [
+                    'days_late' => $evaluation->attendance->days_late,
+                    'days_absent' => $evaluation->attendance->days_absent,
+                    'rating' => $evaluation->attendance->rating,
+                    'remarks' => $evaluation->attendance->remarks,
+                ] : null,
+                'attitudes' => $evaluation->attitudes ? [
+                    'supervisor_rating' => $evaluation->attitudes->supervisor_rating,
+                    'supervisor_remarks' => $evaluation->attitudes->supervisor_remarks,
+                    'coworker_rating' => $evaluation->attitudes->coworker_rating,
+                    'coworker_remarks' => $evaluation->attitudes->coworker_remarks,
+                ] : null,
+                'workAttitude' => $evaluation->workAttitude ? [
+                    'responsible' => $evaluation->workAttitude->responsible,
+                    'job_knowledge' => $evaluation->workAttitude->job_knowledge,
+                    'cooperation' => $evaluation->workAttitude->cooperation,
+                    'initiative' => $evaluation->workAttitude->initiative,
+                    'dependability' => $evaluation->workAttitude->dependability,
+                    'remarks' => $evaluation->workAttitude->remarks,
+                ] : null,
+                'workFunctions' => $evaluation->workFunctions->map(function ($workFunction) {
+                    return [
+                        'function_name' => $workFunction->function_name,
+                        'work_quality' => $workFunction->work_quality,
+                        'work_efficiency' => $workFunction->work_efficiency,
+                    ];
+                })->toArray(),
+            ];
+        });
+
+        return Inertia::render('report/department-evaluation-report', [
+            'evaluations' => $evaluationList,
+            'department' => $department,
+        ]);
     }
 }

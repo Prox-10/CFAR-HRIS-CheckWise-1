@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\LeaveCredit;
 use App\Models\User;
 use App\Models\ManagerDepartmentAssignment;
+use App\Traits\EmployeeFilterTrait;
 use Illuminate\Http\Request;
 // use Inertia\Controller;
 use Inertia\Inertia;
@@ -23,6 +24,7 @@ use App\Mail\LeaveApprovalEmail;
 
 class LeaveController extends Controller
 {
+    use EmployeeFilterTrait;
     /**
      * Display a listing of the resource.
      */
@@ -32,14 +34,19 @@ class LeaveController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
         // Base query for leaves
         $leaveQuery = Leave::with('employee');
 
         // Filter leaves based on user role
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        // HR and Manager already get all leaves, so only filter for Admin and Supervisor
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $leaveQuery->whereHas('employee', function ($query) use ($supervisedDepartments) {
                 $query->whereIn('department', $supervisedDepartments);
             });
@@ -75,8 +82,12 @@ class LeaveController extends Controller
             ];
         })->toArray();
 
-        // Fetch employees for dropdown
-        $employees = Employee::select('id', 'employeeid', 'employee_name', 'department', 'position')->get();
+        // Fetch employees for dropdown - filter by user role
+        $employeeQuery = Employee::select('id', 'employeeid', 'employee_name', 'department', 'position');
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
+            $employeeQuery->whereIn('department', $supervisedDepartments);
+        }
+        $employees = $employeeQuery->get();
 
         // Calculate leave stats (current)
         $totalLeaves = Leave::count();
@@ -381,15 +392,14 @@ class LeaveController extends Controller
                 // Handle two-stage approval workflow
                 // Stage 1: Supervisor Approval
                 if ($request->has('supervisor_status') && ($isSupervisor || $isSuperAdmin)) {
-                    // If supervisor (not super admin), verify they have access to this employee's department
-                    if ($isSupervisor && !$isSuperAdmin) {
+                    // If not super admin, verify user has access to this employee's department
+                    if (!$isSuperAdmin) {
                         $employee = $leave->employee;
-                        $supervisedDepartments = $user->getEvaluableDepartments();
-
-                        if (!$employee || !in_array($employee->department, $supervisedDepartments)) {
-                            Log::warning('[LEAVE UPDATE] Supervisor attempted to approve leave outside their department:', [
+                        if (!$employee || !$user->canEvaluateDepartment($employee->department)) {
+                            $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
+                            Log::warning('[LEAVE UPDATE] User attempted to approve leave outside their department:', [
                                 'leave_id' => $leave->id,
-                                'supervisor_id' => $user->id,
+                                'user_id' => $user->id,
                                 'employee_department' => $employee ? $employee->department : 'N/A',
                                 'supervised_departments' => $supervisedDepartments,
                             ]);
@@ -728,12 +738,16 @@ class LeaveController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
-        // Fetch employees for the credit summary - filter by supervisor role
+        // Fetch employees for the credit summary - filter by user role
         $employeeQuery = Employee::select('id', 'employeeid', 'employee_name', 'department', 'position');
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $employeeQuery->whereIn('department', $supervisedDepartments);
         }
         $employees = $employeeQuery->get();

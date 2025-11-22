@@ -9,6 +9,7 @@ use App\Models\AbsenceCredit;
 use App\Models\User;
 use App\Models\SupervisorDepartment;
 use App\Models\HRDepartmentAssignment;
+use App\Traits\EmployeeFilterTrait;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,7 @@ use App\Models\Notification;
 
 class AbsenceController extends Controller
 {
+    use EmployeeFilterTrait;
     /**
      * Display a listing of the resource.
      */
@@ -32,14 +34,19 @@ class AbsenceController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
         // Base query for absences
         $absenceQuery = Absence::with('employee', 'approver');
 
         // Filter absences based on user role
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        // HR and Manager already get all absences, so only filter for Admin and Supervisor
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $absenceQuery->whereIn('department', $supervisedDepartments);
         }
 
@@ -72,9 +79,12 @@ class AbsenceController extends Controller
             ];
         })->toArray();
 
-        // Fetch employees for the add modal dropdown - filter by supervisor role
+        // Fetch employees for the add modal dropdown - filter by user role
         $employeeQuery = Employee::select('id', 'employeeid', 'employee_name', 'department', 'position');
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $employeeQuery->whereIn('department', $supervisedDepartments);
         }
         $employees = $employeeQuery->get();
@@ -354,12 +364,16 @@ class AbsenceController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
-        // Fetch employees for the credit summary - filter by supervisor role
+        // Fetch employees for the credit summary - filter by user role
         $employeeQuery = Employee::select('id', 'employeeid', 'employee_name', 'department', 'position');
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $employeeQuery->whereIn('department', $supervisedDepartments);
         }
         $employees = $employeeQuery->get();
@@ -478,9 +492,9 @@ class AbsenceController extends Controller
                 'supervisor_comments' => 'nullable|string',
             ]);
 
-            // Validate supervisor can approve for this department
-            if ($isSupervisor && !$isSuperAdmin) {
-                $supervisedDepartments = $user->getEvaluableDepartments();
+            // Validate user can approve for this department (Supervisor, Admin, HR, or Manager)
+            if (!$isSuperAdmin && !$user->canEvaluateDepartment($absence->department)) {
+                $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
                 if (!in_array($absence->department, $supervisedDepartments)) {
                     Log::warning('[ABSENCE UPDATE] Supervisor cannot approve absence for department:', [
                         'supervisor_id' => $user->id,
@@ -684,14 +698,19 @@ class AbsenceController extends Controller
         $isSupervisor = $user->isSupervisor();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        // Get user's supervised departments if supervisor
-        $supervisedDepartments = $isSupervisor ? $user->getEvaluableDepartments() : [];
+        // Get evaluable departments based on user role
+        // HR and Manager see all departments, Admin and Supervisor see only assigned
+        $supervisedDepartments = $this->getEvaluableDepartmentsForUser($user);
 
         // Base query for absences - load all relationships
         $absenceQuery = Absence::with('employee', 'approver', 'supervisorApprover', 'hrApprover');
 
         // Filter absences based on user role
-        if ($isSupervisor && !empty($supervisedDepartments)) {
+        // HR and Manager already get all absences, so only filter for Admin and Supervisor
+        $isHR = $user->isHR() && $user->hrAssignments()->where('can_evaluate', true)->exists();
+        $isManager = $user->isManager() && $user->managerAssignments()->where('can_evaluate', true)->exists();
+
+        if (!$isSuperAdmin && !$isHR && !$isManager && !empty($supervisedDepartments)) {
             $absenceQuery->whereIn('department', $supervisedDepartments);
         }
 

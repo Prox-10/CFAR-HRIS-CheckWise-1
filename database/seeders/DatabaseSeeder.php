@@ -71,6 +71,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SupervisorDepartmentSeeder::class,
             // EvaluationConfigurationSeeder::class, // Add this before EvaluationSeeder
+            EvaluationSeeder::class, // Creates 30 evaluations per department
             // Add recognition award test data
         ]);
     }

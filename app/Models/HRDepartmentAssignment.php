@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HRDepartmentAssignment extends Model
 {
     protected $table = 'hr_department_assignments';
-    
+
     protected $fillable = [
         'user_id',
         'department',
+        'can_evaluate',
     ];
 
     public function user(): BelongsTo
