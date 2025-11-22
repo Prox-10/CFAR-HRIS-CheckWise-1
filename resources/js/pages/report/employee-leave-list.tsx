@@ -117,7 +117,7 @@ export default function EmployeeLeaveListPage() {
                         ]}
                         title={''}
                     />
-                    <Card className="border-main m-5 space-y-4">
+                    <Card className="m-5 space-y-4">
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center">
                                 <ClipboardList className="text-cfarbempco-green mr-2 h-5 w-5" />
@@ -136,7 +136,7 @@ export default function EmployeeLeaveListPage() {
                             ) : (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                     {leaves.map((leave) => (
-                                        <Card key={leave.id} className="border-main transition-shadow hover:shadow-lg hover:shadow-green-500">
+                                        <Card key={leave.id} className="border-emerald-200 bg-emerald-50/50 dark:bg-backgrounds transition-all duration-300 hover:scale-3d hover:shadow-lg">
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-center gap-3">
                                                     {leave.picture ? (
