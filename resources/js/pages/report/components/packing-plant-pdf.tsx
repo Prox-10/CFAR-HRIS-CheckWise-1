@@ -264,9 +264,8 @@ export default function PackingPlantPDF({ evaluation }: PackingPlantPDFProps) {
                         <TH>
                             <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}>CRITERIA</TD>
                             <TD style={{ minWidth: 41 }}></TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>RATING (1-10)</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVERAGE</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 130 }}>RATING (1-10)</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVG VG</TD>
                             <TD style={{ justifyContent: 'center' }}>REMARKS</TD>
                         </TH>
 
@@ -495,12 +494,12 @@ export default function PackingPlantPDF({ evaluation }: PackingPlantPDFProps) {
                             <TD></TD>
                         </TR>
                         {/* TOTAL RATING */}
-                       
+
                         <TR>
-                                                    <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426, justifyContent: 'center' }}>TOTAL RATING</TD>
-                                                    <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
-                                                    <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
-                                                </TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426, justifyContent: 'center' }}>TOTAL RATING</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
+                        </TR>
                     </Table>
 
                     {/* OBSERVATIONS/COMMENTS */}
