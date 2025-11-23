@@ -973,6 +973,20 @@ class EvaluationController extends Controller
                 }
             }
 
+            // Get HR Personnel for the department
+            $hrPersonnel = null;
+            if ($employee->department) {
+                $hrAssignment = \App\Models\HRDepartmentAssignment::where('department', $employee->department)
+                    ->with('user')
+                    ->first();
+                if ($hrAssignment && $hrAssignment->user) {
+                    $hrPersonnel = [
+                        'id' => $hrAssignment->user->id,
+                        'name' => $hrAssignment->user->fullname,
+                    ];
+                }
+            }
+
             return [
                 'id' => $evaluation->id,
                 'employee_id' => $employee->id,
@@ -990,6 +1004,7 @@ class EvaluationController extends Controller
                 'observations' => $evaluation->observations,
                 'department_supervisor' => $departmentSupervisor,
                 'department_manager' => $departmentManager,
+                'hr_personnel' => $hrPersonnel,
                 'attendance' => $evaluation->attendance ? [
                     'days_late' => $evaluation->attendance->days_late,
                     'days_absent' => $evaluation->attendance->days_absent,

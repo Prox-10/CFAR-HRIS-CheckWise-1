@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { MonthlyRecognition } from './components/monthly-recognition';
 import { SectionCards } from './components/section-cards';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs';
+// import PackingPlantPDF from '../report/components/packing-plant-pdf';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -223,6 +224,7 @@ export default function Index({
             <Head title="Dashboard" />
             {/* Sidebar hover logic using the reusable hook and component */}
             {/* Use the hook only after SidebarProvider so context is available */}
+            {/* <PackingPlantPDF /> */}
             <SidebarHoverLogic
                 totalEmployee={totalEmployee}
                 totalDepartment={totalDepartment}
