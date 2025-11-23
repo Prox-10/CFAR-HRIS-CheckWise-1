@@ -116,6 +116,7 @@ Route::get('/daily-checking/settings', [DailyCheckingController::class, 'getSett
 Route::post('/daily-checking/settings', [DailyCheckingController::class, 'saveSettings']);
 Route::get('/daily-checking/hr', [DailyCheckingController::class, 'getHR']);
 Route::get('/daily-checking/manager', [DailyCheckingController::class, 'getManager']);
+Route::get('/daily-checking/approved-ml-pl', [DailyCheckingController::class, 'getApprovedMLPL']);
 
 // Gender Development Report API
 Route::get('/gender-development/hr', [GenderDevelopmentReportController::class, 'getHR'])->middleware('web');

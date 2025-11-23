@@ -73,7 +73,7 @@ const positions = [
 ];
 
 // Leave types
-const leaveTypes = ['CW', 'ML', 'AWP', 'AWOP', 'SICK LEAVE', 'EMERGENCY LEAVE', 'CUT-OFF'];
+const leaveTypes = ['CW', 'ML/PL', 'AWP', 'AWOP', 'SICK LEAVE', 'EMERGENCY LEAVE', 'CUT-OFF'];
 
 // Helper function to format employee name as "Lastname FirstInitial."
 const formatEmployeeDisplayName = (employee: Employee): string => {
@@ -463,15 +463,12 @@ export default function DailyCheckingPage({
         fetchGlobalSelectedEmployees();
     }, [date]);
 
-   
     useEffect(() => {
         if (selectedMicroteam && date) {
-          
             const loadData = async () => {
                 const days = getDaysOfWeek();
                 const weekStartDate = formatDateLocal(days[0]);
 
-               
                 const initialData: { [key: string]: string[] } = {};
                 const initialTimeData: typeof timeData = {};
                 positions.forEach((position) => {
@@ -485,7 +482,6 @@ export default function DailyCheckingPage({
                     }
                 });
 
-                
                 try {
                     const microteamResponse = await axios.get('/api/daily-checking/by-microteam', {
                         params: { week_start_date: weekStartDate, microteam: selectedMicroteam },
@@ -963,9 +959,116 @@ export default function DailyCheckingPage({
         });
     }, [assignmentData, employees]); // Re-run when assignmentData or employees change
 
+    // Auto-count ML/PL (Maternity Leave / Paternity Leave) employees
+    // Only count employees who are selected/assigned in the form
+    useEffect(() => {
+        if (!date) return;
+
+        const fetchAndCountMLPL = async () => {
+            try {
+                const days = getDaysOfWeek();
+                const startDate = formatDateLocal(days[0]);
+                const endDate = formatDateLocal(days[6]);
+
+                // Get lock period from settings
+                const lockPeriod = lockPeriod7Days ? 7 : lockPeriod14Days ? 14 : 0;
+
+                // Get all currently selected employees from assignmentData
+                const selectedEmployees = new Set<string>();
+                Object.values(assignmentData).forEach((slots) => {
+                    slots.forEach((employeeName) => {
+                        if (employeeName) {
+                            selectedEmployees.add(employeeName);
+                        }
+                    });
+                });
+
+                // If no employees are selected, set all ML/PL counts to 0
+                if (selectedEmployees.size === 0) {
+                    setLeaveData((prev) => {
+                        const updated = { ...prev };
+                        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                            updated[`ML/PL_${dayIndex}`] = '0';
+                        }
+                        return updated;
+                    });
+                    return;
+                }
+
+                // Fetch approved ML/PL leaves for the week
+                console.log('🔍 ML/PL Fetch Request:', {
+                    start_date: startDate,
+                    end_date: endDate,
+                    lock_period: lockPeriod,
+                    selected_employees_count: selectedEmployees.size,
+                    selected_employees: Array.from(selectedEmployees),
+                });
+
+                const response = await axios.get('/api/daily-checking/approved-ml-pl', {
+                    params: {
+                        start_date: startDate,
+                        end_date: endDate,
+                        lock_period: lockPeriod,
+                    },
+                });
+
+                console.log('📥 ML/PL API Response:', {
+                    leaves_by_date: response.data?.leaves_by_date,
+                    debug: response.data?.debug,
+                });
+
+                const leavesByDate = response.data?.leaves_by_date || {};
+
+                // Update ML/PL counts for each day of the week
+                // Only count employees who are BOTH selected AND have ML/PL leave
+                const dayCounts: { [dayIndex: number]: { total: number; selected: number; employees: string[] } } = {};
+
+                setLeaveData((prev) => {
+                    const updated = { ...prev };
+                    days.forEach((day, dayIndex) => {
+                        const dayStr = formatDateLocal(day);
+                        const employeesOnLeave = leavesByDate[dayStr] || [];
+
+                        // Filter to only include employees who are selected in the form
+                        const selectedEmployeesOnLeave = employeesOnLeave.filter((empName: string) => selectedEmployees.has(empName));
+
+                        // Count unique selected employees for this day
+                        const count = selectedEmployeesOnLeave.length;
+                        updated[`ML/PL_${dayIndex}`] = count.toString();
+
+                        // Store debug info
+                        dayCounts[dayIndex] = {
+                            total: employeesOnLeave.length,
+                            selected: count,
+                            employees: selectedEmployeesOnLeave,
+                        };
+                    });
+                    return updated;
+                });
+
+                console.log('✅ ML/PL Counts Updated:', {
+                    day_counts: dayCounts,
+                    selected_employees: Array.from(selectedEmployees),
+                });
+            } catch (error) {
+                console.error('Error fetching ML/PL leaves:', error);
+                // On error, set all ML/PL counts to 0
+                setLeaveData((prev) => {
+                    const updated = { ...prev };
+                    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                        updated[`ML/PL_${dayIndex}`] = '0';
+                    }
+                    return updated;
+                });
+            }
+        };
+
+        fetchAndCountMLPL();
+    }, [date, lockPeriod7Days, lockPeriod14Days, assignmentData]); // Re-run when date, lock period, or assignmentData changes
+
     const handleLeaveChange = (type: string, value: string) => {
-        // Prevent manual editing of CW (it's auto-calculated)
-        if (type.startsWith('CW_')) {
+        // Prevent manual editing of CW and ML/PL (they're auto-calculated)
+        if (type.startsWith('CW_') || type.startsWith('ML/PL_')) {
             return;
         }
 
@@ -1800,11 +1903,15 @@ export default function DailyCheckingPage({
                                         {/* Leave Types Section */}
                                         {leaveTypes.map((leaveType) => {
                                             const isCW = leaveType === 'CW';
+                                            const isMLPL = leaveType === 'ML/PL';
+                                            const isAutoCalculated = isCW || isMLPL;
                                             return (
                                                 <tr key={leaveType}>
                                                     <td className="border-2 border-black bg-gray-50 p-2 font-bold" colSpan={3}>
                                                         {leaveType}
-                                                        {isCW && <span className="ml-2 text-xs font-normal text-gray-500"></span>}
+                                                        {isAutoCalculated && (
+                                                            <span className="ml-2 text-xs font-normal text-gray-500">(Auto-calculated)</span>
+                                                        )}
                                                     </td>
                                                     {daysOfWeek.map((_, dayIndex) => (
                                                         <React.Fragment key={dayIndex}>
@@ -1812,12 +1919,12 @@ export default function DailyCheckingPage({
                                                                 <Input
                                                                     className={cn(
                                                                         'h-8 rounded-none border-0 text-center text-xs',
-                                                                        isCW && 'cursor-not-allowed bg-gray-100',
+                                                                        isAutoCalculated && 'cursor-not-allowed bg-gray-100',
                                                                     )}
                                                                     value={leaveData[`${leaveType}_${dayIndex}`] || ''}
                                                                     onChange={(e) => handleLeaveChange(`${leaveType}_${dayIndex}`, e.target.value)}
-                                                                    disabled={isCW}
-                                                                    readOnly={isCW}
+                                                                    disabled={isAutoCalculated}
+                                                                    readOnly={isAutoCalculated}
                                                                 />
                                                             </td>
                                                         </React.Fragment>

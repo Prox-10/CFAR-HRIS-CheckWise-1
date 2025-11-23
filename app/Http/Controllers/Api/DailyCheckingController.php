@@ -8,6 +8,8 @@ use App\Models\DailyCheckingPdf;
 use App\Models\Employee;
 use App\Models\HRDepartmentAssignment;
 use App\Models\ManagerDepartmentAssignment;
+use App\Models\Leave;
+use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -713,6 +715,265 @@ class DailyCheckingController extends Controller
         return response()->json([
             'id' => $managerUser->id,
             'name' => $fullName ?: 'Manager',
+        ]);
+    }
+
+    /**
+     * Get approved Maternity Leave and Paternity Leave requests for a date range
+     * Returns leaves grouped by date for employees from Packing Plant and Coop Area
+     */
+    public function getApprovedMLPL(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+            'lock_period' => 'nullable|integer', // 7 or 14 days
+        ]);
+
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $endDate = \Carbon\Carbon::parse($request->end_date);
+        $lockPeriod = (int)($request->query('lock_period') ?? 0);
+
+        // DEBUG: Log request parameters
+        Log::info('ML/PL API Request', [
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'lock_period' => $lockPeriod,
+            'today' => \Carbon\Carbon::today()->format('Y-m-d'),
+        ]);
+
+        // Get approved leaves (both supervisor and HR approved)
+        // Only Maternity Leave and Paternity Leave
+        $leaves = Leave::with('employee')
+            ->where('supervisor_status', 'approved')
+            ->where('hr_status', 'approved')
+            ->whereIn('leave_type', ['Maternity Leave', 'Paternity Leave'])
+            ->whereHas('employee', function ($query) {
+                // Only employees from Packing Plant and Coop Area
+                $query->whereIn('department', ['Packing Plant', 'Coop Area']);
+            })
+            ->get();
+
+        // DEBUG: Log total leaves found
+        Log::info('ML/PL Leaves Found', [
+            'total_leaves' => $leaves->count(),
+            'leaves_detail' => $leaves->map(function ($leave) {
+                return [
+                    'id' => $leave->id,
+                    'employee_name' => $leave->employee?->employee_name ?? 'N/A',
+                    'employee_id' => $leave->employee_id,
+                    'department' => $leave->employee?->department ?? 'N/A',
+                    'leave_type' => $leave->leave_type,
+                    'leave_start_date' => $leave->leave_start_date instanceof \Carbon\Carbon
+                        ? $leave->leave_start_date->format('Y-m-d')
+                        : ($leave->leave_start_date ? \Carbon\Carbon::parse($leave->leave_start_date)->format('Y-m-d') : null),
+                    'leave_end_date' => $leave->leave_end_date instanceof \Carbon\Carbon
+                        ? $leave->leave_end_date->format('Y-m-d')
+                        : ($leave->leave_end_date ? \Carbon\Carbon::parse($leave->leave_end_date)->format('Y-m-d') : null),
+                    'supervisor_status' => $leave->supervisor_status,
+                    'hr_status' => $leave->hr_status,
+                ];
+            })->toArray(),
+        ]);
+
+        // Filter leaves that overlap with the date range
+        // and check if they're within the lock period
+        $today = \Carbon\Carbon::today();
+        $leavesByDate = [];
+        $debugInfo = [
+            'processed_leaves' => [],
+            'excluded_leaves' => [],
+        ];
+
+        foreach ($leaves as $leave) {
+            $leaveDebug = [
+                'leave_id' => $leave->id,
+                'employee_name' => $leave->employee?->employee_name ?? 'N/A',
+                'employee_id' => $leave->employee_id,
+                'leave_type' => $leave->leave_type,
+                'leave_start' => $leave->leave_start_date instanceof \Carbon\Carbon
+                    ? $leave->leave_start_date->format('Y-m-d')
+                    : ($leave->leave_start_date ? \Carbon\Carbon::parse($leave->leave_start_date)->format('Y-m-d') : null),
+                'leave_end' => $leave->leave_end_date instanceof \Carbon\Carbon
+                    ? $leave->leave_end_date->format('Y-m-d')
+                    : ($leave->leave_end_date ? \Carbon\Carbon::parse($leave->leave_end_date)->format('Y-m-d') : null),
+            ];
+
+            if (!$leave->employee) {
+                $leaveDebug['excluded_reason'] = 'No employee found';
+                $debugInfo['excluded_leaves'][] = $leaveDebug;
+                Log::warning('ML/PL Leave excluded: No employee', $leaveDebug);
+                continue;
+            }
+
+            // Leave dates are already Carbon instances from model casts
+            $leaveStart = $leave->leave_start_date instanceof \Carbon\Carbon
+                ? $leave->leave_start_date
+                : \Carbon\Carbon::parse($leave->leave_start_date);
+            $leaveEnd = $leave->leave_end_date instanceof \Carbon\Carbon
+                ? $leave->leave_end_date
+                : \Carbon\Carbon::parse($leave->leave_end_date);
+
+            // Check if leave overlaps with the requested date range
+            if ($leaveEnd->lt($startDate) || $leaveStart->gt($endDate)) {
+                $leaveDebug['excluded_reason'] = 'Does not overlap with date range';
+                $leaveDebug['date_range_check'] = [
+                    'leave_end' => $leaveEnd->format('Y-m-d'),
+                    'request_start' => $startDate->format('Y-m-d'),
+                    'leave_start' => $leaveStart->format('Y-m-d'),
+                    'request_end' => $endDate->format('Y-m-d'),
+                    'end_before_start' => $leaveEnd->lt($startDate),
+                    'start_after_end' => $leaveStart->gt($endDate),
+                ];
+                $debugInfo['excluded_leaves'][] = $leaveDebug;
+                Log::info('ML/PL Leave excluded: Date range mismatch', $leaveDebug);
+                continue; // Leave doesn't overlap with date range
+            }
+
+            // Check if leave is within lock period (if lock period is set)
+            $isWithinLockPeriod = false;
+            $hasAttendanceBeforeLeave = false;
+
+            if ($lockPeriod > 0) {
+                // Check if any date in the leave range is within lock period from today
+                $currentDate = $leaveStart->copy();
+                $lockPeriodDates = [];
+                while ($currentDate->lte($leaveEnd)) {
+                    $daysFromToday = $today->diffInDays($currentDate, false);
+                    // Check if date is within lock period (within 7 or 14 days from today, future dates only)
+                    if ($daysFromToday >= 0 && $daysFromToday <= $lockPeriod) {
+                        $isWithinLockPeriod = true;
+                        $lockPeriodDates[] = [
+                            'date' => $currentDate->format('Y-m-d'),
+                            'days_from_today' => $daysFromToday,
+                        ];
+                        break;
+                    }
+                    $currentDate->addDay();
+                }
+
+                $leaveDebug['lock_period_check'] = [
+                    'lock_period' => $lockPeriod,
+                    'is_within_lock_period' => $isWithinLockPeriod,
+                    'checked_dates' => $lockPeriodDates,
+                ];
+
+                // NEW: Check if employee had attendance before the leave start date (within lock period)
+                // If employee had attendance before leave, count them for all leave days even without attendance during leave
+                $attendanceCheckStart = $leaveStart->copy()->subDays($lockPeriod);
+                $attendanceCheckEnd = $leaveStart->copy()->subDay(); // Day before leave starts
+
+                // Check if employee has attendance between (leave_start - lock_period) and (leave_start - 1 day)
+                $attendanceRecords = Attendance::where('employee_id', $leave->employee_id)
+                    ->whereBetween('attendance_date', [
+                        $attendanceCheckStart->format('Y-m-d'),
+                        $attendanceCheckEnd->format('Y-m-d')
+                    ])
+                    ->get();
+
+                $hasAttendanceBeforeLeave = $attendanceRecords->count() > 0;
+
+                $leaveDebug['attendance_check'] = [
+                    'check_start' => $attendanceCheckStart->format('Y-m-d'),
+                    'check_end' => $attendanceCheckEnd->format('Y-m-d'),
+                    'has_attendance_before_leave' => $hasAttendanceBeforeLeave,
+                    'attendance_count' => $attendanceRecords->count(),
+                    'attendance_dates' => $attendanceRecords->map(function ($att) {
+                        return $att->attendance_date->format('Y-m-d');
+                    })->toArray(),
+                ];
+
+                // If leave is within lock period OR employee had attendance before leave (within lock period), include it
+                if (!$isWithinLockPeriod && !$hasAttendanceBeforeLeave) {
+                    $leaveDebug['excluded_reason'] = 'Beyond lock period and no attendance before leave';
+                    $debugInfo['excluded_leaves'][] = $leaveDebug;
+                    Log::info('ML/PL Leave excluded: Lock period and attendance check failed', $leaveDebug);
+                    continue; // Leave is beyond lock period and no attendance before leave
+                }
+            } else {
+                // If no lock period, check if employee had attendance before leave (within reasonable range, e.g., 30 days)
+                $attendanceCheckStart = $leaveStart->copy()->subDays(30);
+                $attendanceCheckEnd = $leaveStart->copy()->subDay();
+
+                $attendanceRecords = Attendance::where('employee_id', $leave->employee_id)
+                    ->whereBetween('attendance_date', [
+                        $attendanceCheckStart->format('Y-m-d'),
+                        $attendanceCheckEnd->format('Y-m-d')
+                    ])
+                    ->get();
+
+                $hasAttendanceBeforeLeave = $attendanceRecords->count() > 0;
+
+                $leaveDebug['attendance_check'] = [
+                    'check_start' => $attendanceCheckStart->format('Y-m-d'),
+                    'check_end' => $attendanceCheckEnd->format('Y-m-d'),
+                    'has_attendance_before_leave' => $hasAttendanceBeforeLeave,
+                    'attendance_count' => $attendanceRecords->count(),
+                    'attendance_dates' => $attendanceRecords->map(function ($att) {
+                        return $att->attendance_date->format('Y-m-d');
+                    })->toArray(),
+                ];
+            }
+
+            // Generate all dates in the leave range that fall within the requested date range
+            $currentDate = $leaveStart->copy();
+            if ($currentDate->lt($startDate)) {
+                $currentDate = $startDate->copy();
+            }
+
+            $maxDate = $leaveEnd->copy();
+            if ($maxDate->gt($endDate)) {
+                $maxDate = $endDate->copy();
+            }
+
+            // If employee had attendance before leave, count them for ALL days in leave period
+            // Even if they don't have attendance during the leave days
+            // This applies if leave is within lock period OR if they had attendance before leave
+            if ($hasAttendanceBeforeLeave || $isWithinLockPeriod) {
+                $countedDates = [];
+                while ($currentDate->lte($maxDate)) {
+                    $dateStr = $currentDate->format('Y-m-d');
+                    if (!isset($leavesByDate[$dateStr])) {
+                        $leavesByDate[$dateStr] = [];
+                    }
+
+                    // Add employee to the date (avoid duplicates)
+                    $employeeName = $leave->employee->employee_name;
+                    if (!in_array($employeeName, $leavesByDate[$dateStr])) {
+                        $leavesByDate[$dateStr][] = $employeeName;
+                        $countedDates[] = $dateStr;
+                    }
+
+                    $currentDate->addDay();
+                }
+
+                $leaveDebug['included'] = true;
+                $leaveDebug['counted_dates'] = $countedDates;
+                $leaveDebug['counted_dates_count'] = count($countedDates);
+                $debugInfo['processed_leaves'][] = $leaveDebug;
+                Log::info('ML/PL Leave included', $leaveDebug);
+            } else {
+                $leaveDebug['excluded_reason'] = 'No attendance before leave and not within lock period';
+                $debugInfo['excluded_leaves'][] = $leaveDebug;
+                Log::info('ML/PL Leave excluded: Final check failed', $leaveDebug);
+            }
+        }
+
+        // DEBUG: Log final results
+        Log::info('ML/PL Final Results', [
+            'total_leaves_found' => $leaves->count(),
+            'processed_leaves_count' => count($debugInfo['processed_leaves']),
+            'excluded_leaves_count' => count($debugInfo['excluded_leaves']),
+            'leaves_by_date' => array_map(function ($employees) {
+                return count($employees);
+            }, $leavesByDate),
+            'processed_leaves' => $debugInfo['processed_leaves'],
+            'excluded_leaves' => $debugInfo['excluded_leaves'],
+        ]);
+
+        return response()->json([
+            'leaves_by_date' => $leavesByDate,
+            'debug' => $debugInfo, // Include debug info in response for frontend debugging
         ]);
     }
 }
