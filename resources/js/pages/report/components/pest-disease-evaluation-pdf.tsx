@@ -253,18 +253,24 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TH>
                             <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}>CRITERIA</TD>
                             <TD style={{ minWidth: 41 }}></TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>RATING (1-10)</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 130 }}>RATING (1-10)</TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVERAGE</TD>
                             <TD style={{ justifyContent: 'center' }}>REMARKS</TD>
                         </TH>
+                        <TR>
+                            <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}></TD>
+                            <TD style={{ minWidth: 41 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 130 }}>1-10</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
 
                         {/* 1. ATTENDANCE */}
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, maxWidth: 118, minWidth: 119 }}>1. ATTENDANCE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>LATE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>{formatRating(evaluation.attendance?.rating)}</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.attendance?.rating)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_late || 0}</TD>
                             <TD style={{ justifyContent: 'center' }}>{evaluation.attendance?.remarks || ''}</TD>
                         </TR>
@@ -273,8 +279,8 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                                 FORMULA(NO DAYS LATE OR ABSENT /24X10)-10 = RATING
                             </TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>ABSENT</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_absent || 0}</TD>
                             <TD style={{ justifyContent: 'center' }}></TD>
                         </TR>
@@ -283,10 +289,8 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>2. ATTITUDE TOWARDS SUPERVISOR</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.attitudes?.supervisor_rating)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD style={{ justifyContent: 'center' }}>{evaluation.attitudes?.supervisor_remarks || ''}</TD>
                         </TR>
@@ -295,10 +299,8 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>3. ATTITUDE TOWARDS CO-WORKER</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.attitudes?.coworker_rating)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD style={{ justifyContent: 'center' }}>{evaluation.attitudes?.coworker_remarks || ''}</TD>
                         </TR>
@@ -307,76 +309,93 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>4. WORK ATTITUDE/PERFORMANCE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>RESPONSIBLE IN WORK ASSIGNMENT</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.responsible)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.responsible)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{formatRating(workAttitudeAvg)}</TD>
                             <TD>{evaluation.workAttitude?.remarks || ''}</TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>WORK INITIATIVE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.initiative)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.initiative)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>JOB KNOWLEDGE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.job_knowledge)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.job_knowledge)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>DEPENDABILITY</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.dependability)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.dependability)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>COOPERATION</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.cooperation)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.cooperation)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
                             <TD style={{ maxWidth: 199, minWidth: 199, justifyContent: 'center' }}>RATING</TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}>WORK QUALITY (1-10)</TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}>EFFICIENCY (1-10)</TD>
+                            <TD style={{ maxWidth: 120, minWidth: 130, justifyContent: 'center' }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>WORK QUALITY</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>EFFECIENCY</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 120, minWidth: 130 }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>5. WORK OPERATIONS MONITORING</TD>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>5. WORK OPERATIONS</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}></TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>MONITORING</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>AREA SURVEY</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>AERIAL SPRAY</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>ERADICATION</TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>AREA SURVEY</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>F.O.C AREA</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('AREA SURVEY')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('AREA SURVEY')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -384,11 +403,11 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>AERIAL SPRAY</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>MOKO AREA</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('AERIAL SPRAY')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('AERIAL SPRAY')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -396,48 +415,24 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>F.O.C. AREA</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FENCE/REPAIR</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('F.O.C. AREA')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('F.O.C. AREA')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>MOKO AREA</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>MAINTENANCE</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FOOTBATH</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('MOKO AREA')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('MOKO AREA')?.work_efficiency)}
-                            </TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
-                            <TD></TD>
-                        </TR>
-                        <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>MAINTENANCE</TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FENCE/REPAIR</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('FENCE/REPAIR')?.work_quality)}
-                            </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('FENCE/REPAIR')?.work_efficiency)}
-                            </TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
-                            <TD></TD>
-                        </TR>
-                        <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FOOT BATH</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('FOOT BATH')?.work_quality)}
-                            </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('FOOT BATH')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
                             <TD></TD>
@@ -445,11 +440,11 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>WEED LASHING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('WEED LASHING')?.work_quality)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('FENCE/REPAIR')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('WEED LASHING')?.work_efficiency)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('FENCE/REPAIR')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
                             <TD></TD>
@@ -457,11 +452,11 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>STICKING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('STICKING')?.work_quality)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('FOOT BATH')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('STICKING')?.work_efficiency)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('FOOT BATH')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
                             <TD></TD>
@@ -469,24 +464,22 @@ export default function PestDiseaseEvaluationPDF({ evaluation }: PestDiseaseEval
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>DIGGING SOCKER</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('DIGGING SOCKER')?.work_quality)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('WEED LASHING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
-                                {formatRating(getWorkFunction('DIGGING SOCKER')?.work_efficiency)}
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
+                                {formatRating(getWorkFunction('WEED LASHING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
                             <TD></TD>
                         </TR>
+
                         {/* TOTAL RATING */}
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118, justifyContent: 'center' }}>TOTAL RATING</TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 65, minWidth: 65 }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 65, minWidth: 65 }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
-                            <TD style={{ justifyContent: 'center' }}></TD>
-                        </TR>
+                                                    <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426, }}>TOTAL RATING</TD>
+                                                    <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
+                                                    <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
+                                                </TR>
                     </Table>
 
                     {/* OBSERVATIONS/COMMENTS */}

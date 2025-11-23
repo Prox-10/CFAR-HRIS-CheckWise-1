@@ -259,8 +259,7 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TH>
                             <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}>CRITERIA</TD>
                             <TD style={{ minWidth: 41 }}></TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>RATING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>1-10</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 130 }}>RATING (1-10)</TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVERAGE</TD>
                             <TD style={{ justifyContent: 'center' }}>REMARKS</TD>
                         </TH>
@@ -269,8 +268,8 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, maxWidth: 118, minWidth: 119 }}>1. ATTENDANCE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>LATE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>{formatRating(evaluation.attendance?.rating)}</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.attendance?.rating)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_late || 0}</TD>
                             <TD style={{ justifyContent: 'center' }}>{evaluation.attendance?.remarks || ''}</TD>
                         </TR>
@@ -279,98 +278,97 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                                 FORMULA(NO DAYS LATE OR ABSENT /24X10)-10 = RATING
                             </TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>ABSENT</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_absent || 0}</TD>
                             <TD style={{ justifyContent: 'center' }}></TD>
                         </TR>
 
                         {/* 2. ATTITUDE TOWARDS ARS */}
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>2. ATTITUDE TOWARDS ARS</TD>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>2. ATTITUDE TOWARDS SUPERVISOR</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.attitudes?.supervisor_rating)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD style={{ justifyContent: 'center' }}>{evaluation.attitudes?.supervisor_remarks || ''}</TD>
                         </TR>
 
                         {/* 3. WORK ATTITUDE/PERFORMANCE */}
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>3. WORK ATTITUDE/PERFORMANCE</TD>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>4. WORK ATTITUDE/PERFORMANCE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>RESPONSIBLE IN WORK ASSIGNMENT</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.responsible)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.responsible)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{formatRating(workAttitudeAvg)}</TD>
                             <TD>{evaluation.workAttitude?.remarks || ''}</TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>WORK INITIATIVE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.initiative)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.initiative)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>JOB KNOWLEDGE</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.job_knowledge)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.job_knowledge)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>DEPENDABILITY</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.dependability)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.dependability)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>COOPERATION</TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}>
-                                {formatRating(evaluation.workAttitude?.cooperation)}
-                            </TD>
-                            <TD style={{ minWidth: 65, maxWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.cooperation)}</TD>
+
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
                             <TD style={{ maxWidth: 199, minWidth: 199, justifyContent: 'center' }}>RATING</TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}>WORK QUALITY 1-3</TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}>EFFICIENCY 1-10</TD>
+                            <TD style={{ maxWidth: 120, minWidth: 130, justifyContent: 'center' }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>WORK QUALITY</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>EFFECIENCY</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 120, minWidth: 130 }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>4. WORK OPERATIONS</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}></TD>
-                            <TD style={{ maxWidth: 65, minWidth: 65, justifyContent: 'center' }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
                             <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
                             <TD></TD>
                         </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>PLANT CARE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>WEED CONTROL</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('WEED CONTROL')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('WEED CONTROL')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -379,10 +377,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>CLEANING/CUTTING STUMPS</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('CLEANING/CUTTING STUMPS')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('CLEANING/CUTTING STUMPS')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -391,10 +389,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>PRUNING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('PRUNING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('PRUNING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -403,10 +401,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>REPLANTING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('REPLANTING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('REPLANTING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -415,10 +413,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FERTILIZER APPLICATION</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('FERTILIZER APPLICATION')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('FERTILIZER APPLICATION')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -427,10 +425,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>PROPPING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('PROPPING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('PROPPING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -439,10 +437,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>FRUIT CARE</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>BUD BAGGING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUD BAGGING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUD BAGGING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -451,10 +449,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>CALOCO/DE & D</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('CALOCO/DE & D')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('CALOCO/DE & D')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -463,10 +461,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>BUNCH SPRAY</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUNCH SPRAY')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUNCH SPRAY')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -475,10 +473,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>BAGGING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BAGGING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BAGGING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -487,10 +485,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>HAND BAGGING/SOKSOK</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('HAND BAGGING/SOKSOK')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('HAND BAGGING/SOKSOK')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -499,10 +497,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>DE-SAFING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('DE-SAFING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('DE-SAFING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -511,10 +509,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>SIGATOKA TRIMMING</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('SIGATOKA TRIMMING')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('SIGATOKA TRIMMING')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -523,10 +521,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>PEST & DISEASE CONTROL/ACTUAL</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>MOKO ERADICATION</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('MOKO ERADICATION')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('MOKO ERADICATION')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -535,10 +533,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>FUSARIUM ERADICATION</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('FUSARIUM ERADICATION')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('FUSARIUM ERADICATION')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -547,10 +545,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>SCALE INSECT/MEALY BUG</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('SCALE INSECT/MEALY BUG')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('SCALE INSECT/MEALY BUG')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -559,10 +557,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>BUNCHY TOP ERADICATION</TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUNCHY TOP ERADICATION')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('BUNCHY TOP ERADICATION')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -571,10 +569,10 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>OHCP/ACTUAL</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('OHCP/ACTUAL')?.work_quality)}
                             </TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65, maxWidth: 65 }}>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>
                                 {formatRating(getWorkFunction('OHCP/ACTUAL')?.work_efficiency)}
                             </TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
@@ -582,12 +580,9 @@ export default function CoopAreaPDF({ evaluation }: CoopAreaPDFProps) {
                         </TR>
                         {/* TOTAL RATING */}
                         <TR>
-                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118, justifyContent: 'center' }}>TOTAL RATING</TD>
-                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 65, minWidth: 65 }}></TD>
-                            <TD style={{ justifyContent: 'center', maxWidth: 65, minWidth: 65 }}></TD>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426 }}>TOTAL RATING</TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
-                            <TD style={{ justifyContent: 'center' }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
                         </TR>
                     </Table>
 

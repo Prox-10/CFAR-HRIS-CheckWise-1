@@ -367,6 +367,14 @@ export default function PackingPlantPDF({ evaluation }: PackingPlantPDFProps) {
                             <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>EFFECIENCY</TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 120, minWidth: 130 }}></TD>
                         </TR>
+                         <TR>
+                                                    <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+                        
+                                                    <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
+                                                    <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>1-10</TD>
+                                                    <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                                                    <TD></TD>
+                                                </TR>
                         <TR>
                             <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>5. WORK OPERATIONS</TD>
                             <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>PATIO</TD>
@@ -502,7 +510,7 @@ export default function PackingPlantPDF({ evaluation }: PackingPlantPDFProps) {
                         {/* TOTAL RATING */}
                        
                         <TR>
-                                                    <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426, justifyContent: 'center' }}>TOTAL RATING</TD>
+                                                    <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426,  }}>TOTAL RATING</TD>
                                                     <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
                                                     <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
                                                 </TR>
