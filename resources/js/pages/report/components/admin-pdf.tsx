@@ -1,4 +1,5 @@
-import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
+import { Table, TD, TH, TR } from '@ag-media/react-pdf-table';
+import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 
 interface Evaluation {
     id: number;
@@ -108,62 +109,52 @@ const styles = StyleSheet.create({
     },
     employeeInfoValue: {
         fontSize: 9,
-        flex: 1,
+       width: '30%',
+
+        // Option 2: Use fixed pixel width (uncomment and adjust as needed)
+        // width: 250,
+
+        // Option 3: Use flex with maxWidth (uncomment and adjust)
+        // flex: 1,
+        // maxWidth: 250,
+
         borderBottomWidth: 0.8,
         borderColor: '#000',
-        paddingBottom: 2,
+        marginLeft: 10,
+        minHeight: 15,
     },
     table: {
         marginBottom: 10,
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        borderWidth: 1,
-        borderColor: '#000',
-        backgroundColor: '#f0f0f0',
-        paddingVertical: 4,
     },
     tableHeaderCell: {
         fontSize: 8,
         fontWeight: 'bold',
         textAlign: 'center',
-        borderRightWidth: 1,
-        borderColor: '#000',
+        paddingVertical: 4,
         paddingHorizontal: 2,
-    },
-    tableRow: {
-        flexDirection: 'row',
-        borderWidth: 1,
-        borderTopWidth: 0,
-        borderColor: '#000',
-        minHeight: 20,
+        backgroundColor: '#f0f0f0',
     },
     tableCell: {
         fontSize: 8,
         paddingHorizontal: 3,
         paddingVertical: 3,
-        borderRightWidth: 1,
-        borderColor: '#000',
-        justifyContent: 'center',
     },
     tableCellCriteria: {
-        flex: 3,
         fontSize: 8,
+        textAlign: 'left',
     },
     tableCellRating: {
-        flex: 1,
         fontSize: 8,
         textAlign: 'center',
     },
     tableCellTotal: {
-        flex: 1,
         fontSize: 8,
         textAlign: 'center',
         fontWeight: 'bold',
     },
     tableCellRemarks: {
-        flex: 2,
         fontSize: 7,
+        textAlign: 'left',
     },
     subRow: {
         paddingLeft: 15,
@@ -175,23 +166,21 @@ const styles = StyleSheet.create({
         paddingLeft: 15,
         marginTop: 2,
     },
-    totalRatingSection: {
-        marginTop: 10,
-        marginBottom: 10,
-        alignItems: 'flex-end',
-    },
-    totalRatingLabel: {
-        fontSize: 10,
+    boldText: {
         fontWeight: 'bold',
-        marginBottom: 5,
+    },
+    totalRatingText: {
+        fontWeight: 'bold',
+        fontSize: 10,
+        textAlign: 'left',
     },
     totalRatingValue: {
-        fontSize: 12,
         fontWeight: 'bold',
-        borderWidth: 1,
-        borderColor: '#000',
-        padding: 5,
-        minWidth: 60,
+        fontSize: 10,
+        textAlign: 'center',
+    },
+    workFunctionHeader: {
+        fontSize: 7,
         textAlign: 'center',
     },
     observationsSection: {
@@ -250,6 +239,22 @@ const styles = StyleSheet.create({
         fontSize: 7,
         marginBottom: 2,
     },
+    ratingSubCell: {
+        flexDirection: 'row',
+        width: '100%',
+    },
+    ratingSubCellLeft: {
+        flex: 1,
+        borderRightWidth: 1,
+        borderColor: '#000',
+        padding: 2,
+        justifyContent: 'center',
+    },
+    ratingSubCellRight: {
+        flex: 1,
+        padding: 2,
+        justifyContent: 'center',
+    },
 });
 
 export default function AdminPDF({ evaluation }: AdminPDFProps) {
@@ -290,9 +295,8 @@ export default function AdminPDF({ evaluation }: AdminPDFProps) {
 
     return (
         <Document>
-            <Page size="A4" style={styles.page}>
-                {/* Background Logo */}
-                <Image src="/Logo.png" style={styles.backgroundLogo} />
+            <Page size="LEGAL" style={styles.page}>
+                {/* Background Logo removed to prevent WebAssembly memory issues */}
 
                 {/* Content */}
                 <View style={styles.content}>
@@ -321,221 +325,177 @@ export default function AdminPDF({ evaluation }: AdminPDFProps) {
                     </View>
 
                     {/* Evaluation Table */}
-                    <View style={styles.table}>
+                    <Table style={styles.table}>
                         {/* Table Header */}
-                        <View style={styles.tableHeader}>
-                            <View style={[styles.tableHeaderCell, styles.tableCellCriteria]}>
-                                <Text>CRITERIA</Text>
-                            </View>
-                            <View style={[styles.tableHeaderCell, styles.tableCellRating]}>
-                                <Text>RATING (1-10)</Text>
-                            </View>
-                            <View style={[styles.tableHeaderCell, styles.tableCellTotal]}>
-                                <Text>TOTAL/AVG VG</Text>
-                            </View>
-                            <View style={[styles.tableHeaderCell, styles.tableCellRemarks]}>
-                                <Text>REMARKS</Text>
-                            </View>
-                        </View>
+                        <TH>
+                            <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}>CRITERIA</TD>
+                            <TD style={{ minWidth: 41 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 130 }}>RATING (1-10)</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVG VG</TD>
+                            <TD style={{ justifyContent: 'center' }}>REMARKS</TD>
+                        </TH>
 
                         {/* 1. ATTENDANCE */}
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={{ fontWeight: 'bold' }}>1. ATTENDANCE</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}></View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}>
-                                <Text>{formatRating(evaluation.attendance?.rating)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}>
-                                <Text>{evaluation.attendance?.remarks || ''}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>LATE</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{evaluation.attendance?.days_late || 0}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>ABSENT</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{evaluation.attendance?.days_absent || 0}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.formulaText}>FORMULA(NO DAYS LATE OR ABSENT /24X10)-10 = RATING</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}></View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, maxWidth: 118, minWidth: 119 }}>1. ATTENDANCE</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>Late</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.attendance?.rating)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_late || 0}</TD>
+                            <TD style={{ justifyContent: 'center' }}>{evaluation.attendance?.remarks || ''}</TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>
+                                FORMULA(NO DAYS LATE OR ABSENT /24X10)-10 = RATING
+                            </TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>ABSENT</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}></TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attendance?.days_absent || 0}</TD>
+                            <TD style={{ justifyContent: 'center' }}></TD>
+                        </TR>
 
                         {/* 2. ATTITUDE TOWARDS SUPERVISOR */}
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={{ fontWeight: 'bold' }}>2. ATTITUDE TOWARDS SUPERVISOR</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.attitudes?.supervisor_rating)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}>
-                                <Text>{formatRating(evaluation.attitudes?.supervisor_rating)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}>
-                                <Text>{evaluation.attitudes?.supervisor_remarks || ''}</Text>
-                            </View>
-                        </View>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>2. ATTITUDE TOWARDS SUPERVISOR</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.attitudes?.supervisor_rating)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attitudes?.supervisor_remarks || ''}</TD>
+                            <TD></TD>
+                        </TR>
 
                         {/* 3. ATTITUDE TOWARDS CO-WORKER */}
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={{ fontWeight: 'bold' }}>3. ATTITUDE TOWARDS CO-WORKER</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.attitudes?.coworker_rating)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}>
-                                <Text>{formatRating(evaluation.attitudes?.coworker_rating)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}>
-                                <Text>{evaluation.attitudes?.coworker_remarks || ''}</Text>
-                            </View>
-                        </View>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>3. ATTITUDE TOWARDS CO-WORKER</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}></TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.attitudes?.coworker_rating)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{evaluation.attitudes?.coworker_remarks || ''}</TD>
+                            <TD></TD>
+                        </TR>
 
                         {/* 4. WORK ATTITUDE/PERFORMANCE */}
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={{ fontWeight: 'bold' }}>4. WORK ATTITUDE/PERFORMANCE</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}></View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}>
-                                <Text>{formatRating(workAttitudeAvg)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}>
-                                <Text>{evaluation.workAttitude?.remarks || ''}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>RESPONSIBLE IN WORK ASSIGNMENT</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.workAttitude?.responsible)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>WORK INITIATIVE</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.workAttitude?.initiative)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>JOB KNOWLEDGE</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.workAttitude?.job_knowledge)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>DEPENDABILITY</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.workAttitude?.dependability)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={styles.subRow}>COOPERATION</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRating]}>
-                                <Text>{formatRating(evaluation.workAttitude?.cooperation)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-
-                        {/* 5. WORK FUNCTIONS - Special structure with two rating columns */}
-                        <View style={styles.tableRow}>
-                            <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                <Text style={{ fontWeight: 'bold' }}>5. WORK FUNCTIONS</Text>
-                            </View>
-                            <View style={[styles.tableCell, { flex: 1, flexDirection: 'row' }]}>
-                                <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000', padding: 2 }}>
-                                    <Text style={{ fontSize: 7, textAlign: 'center' }}>WORK QUALITY (1-10)</Text>
-                                </View>
-                                <View style={{ flex: 1, padding: 2 }}>
-                                    <Text style={{ fontSize: 7, textAlign: 'center' }}>EFFICIENCY (1-10)</Text>
-                                </View>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellTotal]}>
-                                <Text>{formatRating(workFunctionsAvg)}</Text>
-                            </View>
-                            <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                        </View>
-                        {evaluation.workFunctions && evaluation.workFunctions.length > 0 ? (
-                            evaluation.workFunctions.map((workFunction, index) => (
-                                <View key={index} style={styles.tableRow}>
-                                    <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                        <Text style={styles.subRow}>{workFunction.function_name.toUpperCase()}</Text>
-                                    </View>
-                                    <View style={[styles.tableCell, { flex: 1, flexDirection: 'row' }]}>
-                                        <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000', padding: 2, justifyContent: 'center' }}>
-                                            <Text style={{ textAlign: 'center' }}>{formatRating(workFunction.work_quality)}</Text>
-                                        </View>
-                                        <View style={{ flex: 1, padding: 2, justifyContent: 'center' }}>
-                                            <Text style={{ textAlign: 'center' }}>{formatRating(workFunction.work_efficiency)}</Text>
-                                        </View>
-                                    </View>
-                                    <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                                    <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                                </View>
-                            ))
-                        ) : (
-                            <View style={styles.tableRow}>
-                                <View style={[styles.tableCell, styles.tableCellCriteria]}>
-                                    <Text style={styles.subRow}>-</Text>
-                                </View>
-                                <View style={[styles.tableCell, { flex: 1, flexDirection: 'row' }]}>
-                                    <View style={{ flex: 1, borderRightWidth: 1, borderColor: '#000', padding: 2 }}>
-                                        <Text style={{ textAlign: 'center' }}>-</Text>
-                                    </View>
-                                    <View style={{ flex: 1, padding: 2 }}>
-                                        <Text style={{ textAlign: 'center' }}>-</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.tableCell, styles.tableCellTotal]}></View>
-                                <View style={[styles.tableCell, styles.tableCellRemarks]}></View>
-                            </View>
-                        )}
-                    </View>
-
-                    {/* TOTAL RATING */}
-                    <View style={styles.totalRatingSection}>
-                        <Text style={styles.totalRatingLabel}>TOTAL RATING:</Text>
-                        <Text style={styles.totalRatingValue}>{formatRating(evaluation.total_rating)}</Text>
-                    </View>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>4. WORK ATTITUDE/PERFORMANCE</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>RESPONSIBLE IN WORK ASSIGNMENT</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.responsible)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}>{formatRating(workAttitudeAvg)}</TD>
+                            <TD>{evaluation.workAttitude?.remarks || ''}</TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>WORK INITIATIVE</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.initiative)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>JOB KNOWLEDGE</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.job_knowledge)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>DEPENDABILITY</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.dependability)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>COOPERATION</TD>
+                            <TD style={{ minWidth: 130, justifyContent: 'center' }}>{formatRating(evaluation.workAttitude?.cooperation)}</TD>
+                            <TD style={{ maxWidth: 60, justifyContent: 'center' }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+                            <TD style={{ maxWidth: 199, minWidth: 199, justifyContent: 'center' }}>RATING</TD>
+                            <TD style={{ maxWidth: 120, minWidth: 130, justifyContent: 'center' }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 228, maxWidth: 228 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>WORK QUALITY</TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}>EFFECIENCY</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 120, minWidth: 130 }}></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}>5. WORK FUNCTIONS</TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                ENCODE WORKERS DAILY TIME & ACCOMPLISHMENT REPORT (WDTAR)
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                PREPARE THE PAYROLL OF PERIODIC PAID EMPLOYEES, COOP LEAVE, HONORARIUM AND HIRED WORKERS
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                MAINTAIN FILES OF TIMESHEETS AND OTHER SOURCE DOCUMENTS
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                UPDATE GENERATION OF DOCUMENTS IN ORDER TO CATCH UP WITH THE REMITTANCE/PAYMENTS SCHEDULES
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                PREPARE AND FURNISH THE BOOKKEEPER SUMMARY OF BENEFICIARY'S DEDUCTIONS MADE AGAINTS THEIR RESPECTIVE PROCEEDS
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                PREPARE INDIVIDUAL BILLING OF BENEFICIARIEW BASED ON THE INDIVIDUAL PRODUTION REPORT SUMMARY SUBMITTED BY THE AGRI &
+                                PROD. FACILATATOR
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 119, maxWidth: 118 }}></TD>
+                            <TD style={{ maxWidth: 110, minWidth: 110, justifyContent: 'center' }}>
+                                PERFORM OTHER DUTIES AS MAY BE ASSIGNED BY HIS/HER IMMEDIATE SUPERIOR AND NOR THE MANAGER
+                            </TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 100, maxWidth: 100 }}></TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60 }}></TD>
+                            <TD></TD>
+                        </TR>
+                        {/* TOTAL RATING - Inside table, spans CRITERIA and RATING columns */}
+                        <TR>
+                            <TD style={{ paddingLeft: 5, paddingRight: 5, minWidth: 426, maxWidth: 426, justifyContent: 'center' }}>TOTAL RATING</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 60, minWidth: 60 }}>{formatRating(evaluation.total_rating)}</TD>
+                            <TD style={{ justifyContent: 'center', maxWidth: 71, minWidth: 71 }}></TD>
+                        </TR>
+                    </Table>
 
                     {/* OBSERVATIONS/COMMENTS */}
                     <View style={styles.observationsSection}>
@@ -552,7 +512,6 @@ export default function AdminPDF({ evaluation }: AdminPDFProps) {
                             {evaluation.department_supervisor?.name && (
                                 <Text style={styles.signatureName}>{capitalizeName(evaluation.department_supervisor.name)}</Text>
                             )}
-
                             <Text style={styles.signatureTitle}>SUPERVISOR</Text>
                         </View>
                         <View style={styles.signatureBox}>
@@ -560,19 +519,23 @@ export default function AdminPDF({ evaluation }: AdminPDFProps) {
                             {evaluation.department_manager?.name && (
                                 <Text style={styles.signatureName}>{capitalizeName(evaluation.department_manager.name)}</Text>
                             )}
-                            <View style={{ borderBottomWidth: 0.8, borderColor: '#000', minHeight: 15, marginTop: 5, marginBottom: 50 }} />
                             <Text style={styles.signatureTitle}>MANAGER</Text>
                         </View>
                     </View>
 
                     {/* Legend */}
-                    <View style={styles.legend}>
-                        <Text style={styles.legendTitle}>LEGEND:</Text>
-                        <Text style={styles.legendItem}>1-4: Fail</Text>
-                        <Text style={styles.legendItem}>5-7: Satisfactory</Text>
-                        <Text style={styles.legendItem}>8-9: Very Satisfactory</Text>
-                        <Text style={styles.legendItem}>10: Excellent</Text>
-                    </View>
+                    <Table style={styles.legend}>
+                        <TH>
+                            <TD>LEGEND:</TD>
+                        </TH>
+                        <TR>
+                            <TD>1-4: Fail</TD>
+                            <TD>LEGEND:</TD>
+                            <TD>5-7: Satisfactory</TD>
+                            <TD>8-9: Very Satisfactory</TD>
+                            <TD>10: Excellent</TD>
+                        </TR>
+                    </Table>
                 </View>
             </Page>
         </Document>

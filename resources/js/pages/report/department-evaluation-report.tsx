@@ -90,30 +90,50 @@ export default function DepartmentEvaluationReportPage() {
 
     const handleExportPDF = async (evaluation: Evaluation) => {
         setExporting(evaluation.id);
+        let instance: any = null;
+        let url: string | null = null;
+
         try {
             const filename = `Evaluation_${evaluation.employeeid}_${format(new Date(evaluation.rating_date || new Date()), 'yyyy-MM-dd')}.pdf`;
 
             // Use AdminPDF for Management & Staff(Admin) department, otherwise use EvaluationFormPDF
             const isAdminDepartment = evaluation.department === 'Management & Staff(Admin)';
             const pdfDocument = isAdminDepartment ? <AdminPDF evaluation={evaluation} /> : <EvaluationFormPDF evaluation={evaluation} />;
-            const instance = pdf(pdfDocument);
+
+            // Create PDF instance with error handling
+            instance = pdf(pdfDocument);
             const blob = await instance.toBlob();
 
             // Create download link
-            const url = URL.createObjectURL(blob);
+            url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(url);
 
             toast.success('PDF exported successfully');
         } catch (error) {
             console.error('Error exporting PDF:', error);
-            toast.error('Failed to export PDF');
+            if (error instanceof Error && error.message.includes('Out of memory')) {
+                toast.error('PDF is too large. Please try again or contact support.');
+            } else {
+                toast.error('Failed to export PDF. Please try again.');
+            }
         } finally {
+            // Cleanup
+            if (url) {
+                URL.revokeObjectURL(url);
+            }
+            if (instance) {
+                // Cleanup PDF instance if possible
+                try {
+                    instance = null;
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+            }
             setExporting(null);
         }
     };
@@ -285,6 +305,7 @@ export default function DepartmentEvaluationReportPage() {
                             `}
                             </style>
                             <PDFViewer
+                                key={selectedEvaluation.id}
                                 width="100%"
                                 height="100%"
                                 style={{

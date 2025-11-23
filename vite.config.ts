@@ -22,6 +22,11 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    optimizeDeps: {
+        include: ['motion/react', 'motion/react-client'],
+        exclude: [],
+        force: false, // Set to true only if needed to force re-optimization
+    },
     server: {
         host: 'localhost',
         port: 5173,
@@ -30,6 +35,10 @@ export default defineConfig({
             host: 'localhost',
             port: 5173,
             protocol: 'ws',
+        },
+        watch: {
+            // Prevent unnecessary restarts
+            ignored: ['**/node_modules/**', '**/.git/**'],
         },
     },
 });
