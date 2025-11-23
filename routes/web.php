@@ -78,6 +78,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('report/pest-disease-performance', function () {
             return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Pest & Decease');
         })->name('report.pest-disease-performance');
+        Route::get('report/utility-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Utility');
+        })->name('report.utility-performance');
+        Route::get('report/engineering-department-performance', function () {
+            return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Engineering');
+        })->name('report.engineering-department-performance');
         Route::get('report/coop-harvester-maintenance-performance', function () {
             return app(\App\Http\Controllers\EvaluationController::class)->departmentEvaluationsReport(request(), 'Coop Harvester Maintenance');
         })->name('report.coop-harvester-maintenance-performance');

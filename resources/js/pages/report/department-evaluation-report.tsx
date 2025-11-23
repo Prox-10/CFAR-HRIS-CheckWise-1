@@ -13,7 +13,13 @@ import { ArrowLeft, ClipboardList, Download, Eye, FileText, Star } from 'lucide-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import AdminPDF from './components/admin-pdf';
+import CoopAreaPDF from './components/coop-area-pdf';
+import EngineeringPDF from './components/engineering-pdf';
 import EvaluationFormPDF from './components/evaluation-form-pdf';
+import HarvestingPDF from './components/harvesting-pdf';
+import PackingPlantPDF from './components/packing-plant-pdf';
+import PestDiseaseEvaluationPDF from './components/pest-disease-evaluation-pdf';
+import UtilityPDF from './components/utility-pdf';
 
 function SidebarHoverLogic({ children }: { children: React.ReactNode }) {
     const { state } = useSidebar();
@@ -44,6 +50,7 @@ interface Evaluation {
     observations: string | null;
     department_supervisor: { id: number; name: string } | null;
     department_manager: { id: number; name: string } | null;
+    hr_personnel?: { id: number; name: string } | null;
     attendance: {
         days_late: number;
         days_absent: number;
@@ -96,9 +103,33 @@ export default function DepartmentEvaluationReportPage() {
         try {
             const filename = `Evaluation_${evaluation.employeeid}_${format(new Date(evaluation.rating_date || new Date()), 'yyyy-MM-dd')}.pdf`;
 
-            // Use AdminPDF for Management & Staff(Admin) department, otherwise use EvaluationFormPDF
+            // Use appropriate PDF component based on department
             const isAdminDepartment = evaluation.department === 'Management & Staff(Admin)';
-            const pdfDocument = isAdminDepartment ? <AdminPDF evaluation={evaluation} /> : <EvaluationFormPDF evaluation={evaluation} />;
+            const isPackingPlantDepartment = evaluation.department === 'Packing Plant';
+            const isPestDiseaseDepartment = evaluation.department === 'Pest & Disease' || evaluation.department === 'Pest & Decease';
+            const isUtilityDepartment = evaluation.department === 'Utility';
+            const isEngineeringDepartment = evaluation.department === 'Engineering';
+            const isHarvestingDepartment = evaluation.department === 'Harvesting';
+            const isCoopAreaDepartment = evaluation.department === 'Coop Area';
+
+            let pdfDocument;
+            if (isAdminDepartment) {
+                pdfDocument = <AdminPDF evaluation={evaluation} />;
+            } else if (isPackingPlantDepartment) {
+                pdfDocument = <PackingPlantPDF evaluation={evaluation} />;
+            } else if (isPestDiseaseDepartment) {
+                pdfDocument = <PestDiseaseEvaluationPDF evaluation={evaluation} />;
+            } else if (isUtilityDepartment) {
+                pdfDocument = <UtilityPDF evaluation={evaluation} />;
+            } else if (isEngineeringDepartment) {
+                pdfDocument = <EngineeringPDF evaluation={evaluation} />;
+            } else if (isHarvestingDepartment) {
+                pdfDocument = <HarvestingPDF evaluation={evaluation} />;
+            } else if (isCoopAreaDepartment) {
+                pdfDocument = <CoopAreaPDF evaluation={evaluation} />;
+            } else {
+                pdfDocument = <EvaluationFormPDF evaluation={evaluation} />;
+            }
 
             // Create PDF instance with error handling
             instance = pdf(pdfDocument);
@@ -316,6 +347,18 @@ export default function DepartmentEvaluationReportPage() {
                             >
                                 {selectedEvaluation.department === 'Management & Staff(Admin)' ? (
                                     <AdminPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Packing Plant' ? (
+                                    <PackingPlantPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Pest & Disease' || selectedEvaluation.department === 'Pest & Decease' ? (
+                                    <PestDiseaseEvaluationPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Utility' ? (
+                                    <UtilityPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Engineering' ? (
+                                    <EngineeringPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Harvesting' ? (
+                                    <HarvestingPDF evaluation={selectedEvaluation} />
+                                ) : selectedEvaluation.department === 'Coop Area' ? (
+                                    <CoopAreaPDF evaluation={selectedEvaluation} />
                                 ) : (
                                     <EvaluationFormPDF evaluation={selectedEvaluation} />
                                 )}
