@@ -889,6 +889,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.email} />
                                 </div>
+                                {can('Add Password') && (
                                 <div>
                                     <Label>Password</Label>
                                     <span className="ms-2 text-[15px] font-medium text-red-600">*</span>
@@ -902,6 +903,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.gmail_password} />
                                 </div>
+                                )}
                             </div>
                         )}
                         <div>{hasWorkStatus && !isAddCrew && <h3 className="text-lg font-bold">HDMF</h3>}</div>
@@ -920,6 +922,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.hdmf_user_id} />
                                 </div>
+                                {can('Add Username') && (
                                 <div>
                                     <Label>Username/Email Address</Label>
 
@@ -933,6 +936,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.hdmf_username} />
                                 </div>
+                                )}
                                 {can('Add Password') && (
                                     <div>
                                         <Label>Password</Label>
@@ -971,6 +975,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                         />
                                         <InputError message={errors.sss_user_id} />
                                     </div>
+                                    {can('Add Username') && (
                                     <div>
                                         <Label>Username/Email Address</Label>
                                         {/* */}
@@ -982,8 +987,9 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                             className="border-green-300 focus:border-cfar-500"
                                             aria-invalid={!!errors.sss_username}
                                         />
-                                        <InputError message={errors.sss_username} />
-                                    </div>
+                                            <InputError message={errors.sss_username} />
+                                        </div>
+                                    )}
                                     {can('Add Password') && (
                                         <div>
                                             <Label>Password</Label>
@@ -1023,6 +1029,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                         />
                                         <InputError message={errors.philhealth_user_id} />
                                     </div>
+                                    {can('Add Username') && (
                                     <div>
                                         <Label>Username/Email Address</Label>
                                         {/* */}
@@ -1036,6 +1043,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                         />
                                         <InputError message={errors.philhealth_username} />
                                     </div>
+                                    )}
                                     {can('Add Password') && (
                                         <div className="">
                                             <Label>Philhealth Password</Label>
@@ -1069,6 +1077,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.tin_user_id} />
                                 </div>
+                                {can('Add Username') && (
                                 <div>
                                     <Label htmlFor="state">Username/Email Address</Label>
                                     <Input
@@ -1081,6 +1090,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSuccess }: EmployeeDetails) => {
                                     />
                                     <InputError message={errors.tin_username} />
                                 </div>
+                                )}
                                 {can('Add Password') && (
                                     <div>
                                         <Label htmlFor="state">Tin Password</Label>
