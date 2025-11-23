@@ -933,7 +933,49 @@ export default function DailyCheckingPage({
         return { packingPlant, coopArea };
     };
 
+    // Auto-count Coop Area employees for CW (Coop Work) leave type
+    useEffect(() => {
+        // Count Coop Area employees from assignmentData
+        const countCoopAreaEmployees = () => {
+            const coopAreaCount = new Set<string>();
+
+            // Iterate through all positions and slots
+            Object.keys(assignmentData).forEach((positionField) => {
+                const slots = assignmentData[positionField] || [];
+                slots.forEach((employeeName) => {
+                    if (employeeName) {
+                        // Find the employee to check their department
+                        const employee = employees.find((emp) => emp.employee_name === employeeName);
+                        if (employee && employee.department === 'Coop Area') {
+                            coopAreaCount.add(employeeName);
+                        }
+                    }
+                });
+            });
+
+            return coopAreaCount.size;
+        };
+
+        // Update CW counts for all 7 days
+        const coopAreaCount = countCoopAreaEmployees();
+
+        // Only update CW fields, preserve other leave data
+        setLeaveData((prev) => {
+            const updated = { ...prev };
+            // Update CW for each day of the week
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                updated[`CW_${dayIndex}`] = coopAreaCount.toString();
+            }
+            return updated;
+        });
+    }, [assignmentData, employees]); // Re-run when assignmentData or employees change
+
     const handleLeaveChange = (type: string, value: string) => {
+        // Prevent manual editing of CW (it's auto-calculated)
+        if (type.startsWith('CW_')) {
+            return;
+        }
+
         setLeaveData((prev) => ({
             ...prev,
             [type]: value,
@@ -1764,24 +1806,33 @@ export default function DailyCheckingPage({
                                         ))}
 
                                         {/* Leave Types Section */}
-                                        {leaveTypes.map((leaveType) => (
-                                            <tr key={leaveType}>
-                                                <td className="border-2 border-black bg-gray-50 p-2 font-bold" colSpan={3}>
-                                                    {leaveType}
-                                                </td>
-                                                {daysOfWeek.map((_, dayIndex) => (
-                                                    <React.Fragment key={dayIndex}>
-                                                        <td className="border-2 border-black p-0" colSpan={2}>
-                                                            <Input
-                                                                className="h-8 rounded-none border-0 text-center text-xs"
-                                                                value={leaveData[`${leaveType}_${dayIndex}`] || ''}
-                                                                onChange={(e) => handleLeaveChange(`${leaveType}_${dayIndex}`, e.target.value)}
-                                                            />
-                                                        </td>
-                                                    </React.Fragment>
-                                                ))}
-                                            </tr>
-                                        ))}
+                                        {leaveTypes.map((leaveType) => {
+                                            const isCW = leaveType === 'CW';
+                                            return (
+                                                <tr key={leaveType}>
+                                                    <td className="border-2 border-black bg-gray-50 p-2 font-bold" colSpan={3}>
+                                                        {leaveType}
+                                                        {isCW && <span className="ml-2 text-xs font-normal text-gray-500">(Auto-calculated)</span>}
+                                                    </td>
+                                                    {daysOfWeek.map((_, dayIndex) => (
+                                                        <React.Fragment key={dayIndex}>
+                                                            <td className="border-2 border-black p-0" colSpan={2}>
+                                                                <Input
+                                                                    className={cn(
+                                                                        'h-8 rounded-none border-0 text-center text-xs',
+                                                                        isCW && 'cursor-not-allowed bg-gray-100',
+                                                                    )}
+                                                                    value={leaveData[`${leaveType}_${dayIndex}`] || ''}
+                                                                    onChange={(e) => handleLeaveChange(`${leaveType}_${dayIndex}`, e.target.value)}
+                                                                    disabled={isCW}
+                                                                    readOnly={isCW}
+                                                                />
+                                                            </td>
+                                                        </React.Fragment>
+                                                    ))}
+                                                </tr>
+                                            );
+                                        })}
 
                                         {/* Total Row */}
                                         <tr className="bg-gray-100 font-bold">
