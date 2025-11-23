@@ -152,7 +152,8 @@ export default function LeaveRequestForm() {
                                         <SelectItem value="Vacation">Vacation Leave</SelectItem>
                                         <SelectItem value="Sick">Sick Leave</SelectItem>
                                         <SelectItem value="Emergency">Emergency Leave</SelectItem>
-                                        <SelectItem value="Others">Others</SelectItem>
+                                        <SelectItem value="Maternity">Maternity Leave</SelectItem>
+                                        <SelectItem value="Paternity">Paternity Leave</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

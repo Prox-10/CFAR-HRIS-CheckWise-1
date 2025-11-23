@@ -145,6 +145,14 @@ export function DataTable<TData, TValue>({ columns, data, employees = [] }: Data
                                 Add Absence
                             </Button>
                         )} */}
+                        {/* {can('Add Absence') && (
+                        <Link href={route('employee-view.absence-request-form')} className="ml-auto">
+                            <Button variant="main" className="">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Absence Request
+                            </Button>
+                        </Link>
+                        )} */}
                         {can('Absence Request') && (
                             <Link href={route('absence.absence-approve')}>
                                 <Button variant="main">Absence Request</Button>
