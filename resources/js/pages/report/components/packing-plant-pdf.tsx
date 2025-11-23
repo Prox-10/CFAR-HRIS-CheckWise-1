@@ -263,12 +263,20 @@ export default function PackingPlantPDF({ evaluation }: PackingPlantPDFProps) {
                         {/* Table Header */}
                         <TH>
                             <TD style={{ justifyContent: 'center', padding: 5, maxWidth: 118, minWidth: 119 }}>CRITERIA</TD>
-                            <TD style={{ minWidth: 41 }}></TD>
-                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>RATING (1-10)</TD>
+                            <TD style={{ minWidth: 51 }}></TD>
+                            <TD style={{ justifyContent: 'center', minWidth: 65 }}>RATING</TD>
                             <TD style={{ justifyContent: 'center', minWidth: 65 }}></TD>
                             <TD style={{ justifyContent: 'center', maxWidth: 60 }}>TOTAL/AVERAGE</TD>
                             <TD style={{ justifyContent: 'center' }}>REMARKS</TD>
                         </TH>
+                        <TR>
+                            <TD></TD>
+                            <TD></TD>
+                            <TD>1-10</TD>
+                            <TD></TD>
+                            <TD></TD>
+                            <TD></TD>
+                        </TR>
 
                         {/* 1. ATTENDANCE */}
                         <TR>
