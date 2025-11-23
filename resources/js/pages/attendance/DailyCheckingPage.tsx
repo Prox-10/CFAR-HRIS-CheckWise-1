@@ -463,17 +463,15 @@ export default function DailyCheckingPage({
         fetchGlobalSelectedEmployees();
     }, [date]);
 
-    // Reload form data when date changes and microteam is selected
-    // NOTE: This only loads data when week/microteam changes, not after saving
-    // This ensures data persists for the whole week after saving
+   
     useEffect(() => {
         if (selectedMicroteam && date) {
-            // Only reload if we have a microteam selected
+          
             const loadData = async () => {
                 const days = getDaysOfWeek();
                 const weekStartDate = formatDateLocal(days[0]);
 
-                // Initialize structures
+               
                 const initialData: { [key: string]: string[] } = {};
                 const initialTimeData: typeof timeData = {};
                 positions.forEach((position) => {
@@ -487,7 +485,7 @@ export default function DailyCheckingPage({
                     }
                 });
 
-                // Load microteam data (includes Add Crew if it was saved with this microteam)
+                
                 try {
                     const microteamResponse = await axios.get('/api/daily-checking/by-microteam', {
                         params: { week_start_date: weekStartDate, microteam: selectedMicroteam },
@@ -507,8 +505,6 @@ export default function DailyCheckingPage({
                         });
 
                         if (microteamResponse.data.time_data) {
-                            // Merge microteam time data (including SUPPORT: ABSENT)
-                            // This loads ALL 7 days of time data for the week
                             Object.keys(microteamResponse.data.time_data).forEach((positionField) => {
                                 if (initialTimeData[positionField]) {
                                     const savedTimeData = microteamResponse.data.time_data[positionField];
@@ -538,9 +534,6 @@ export default function DailyCheckingPage({
                 } catch (error) {
                     console.error('Error loading microteam data:', error);
                 }
-
-                // Only set data if we're loading a different week/microteam
-                // This preserves unsaved changes when working on the same week
                 setAssignmentData(initialData);
                 setTimeData(initialTimeData);
             };
@@ -1789,7 +1782,6 @@ export default function DailyCheckingPage({
                                                                 </SelectContent>
                                                             </Select>
                                                         </td>
-                                                        {/* Days of week IN/OUT columns */}
                                                         {daysOfWeek.map((_, dayIndex) => (
                                                             <React.Fragment key={dayIndex}>
                                                                 <td className="border-2 border-black p-1 text-center text-xs">
@@ -1812,7 +1804,7 @@ export default function DailyCheckingPage({
                                                 <tr key={leaveType}>
                                                     <td className="border-2 border-black bg-gray-50 p-2 font-bold" colSpan={3}>
                                                         {leaveType}
-                                                        {isCW && <span className="ml-2 text-xs font-normal text-gray-500">(Auto-calculated)</span>}
+                                                        {isCW && <span className="ml-2 text-xs font-normal text-gray-500"></span>}
                                                     </td>
                                                     {daysOfWeek.map((_, dayIndex) => (
                                                         <React.Fragment key={dayIndex}>
